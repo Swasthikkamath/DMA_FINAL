@@ -1,21 +1,21 @@
-`ifndef DMA2D_BLOCK_TRANSFER_WITH_XWRAP_YCONTINUE_AND_HWTI_HITO_INCLUDED
-`define DMA2D_BLOCK_TRANSFER_WITH_XWRAP_YCONTINUE_AND_HWTI_HITO_INCLUDED
+`ifndef DMA2D_BLOCK_TRANSFER_WITH_XCONTINUE_SRCGT_DESXSIZE_YFILL_SRCLT_DESYSIZE_AND_HWTI_HITO_INCLUDED
+`define DMA2D_BLOCK_TRANSFER_WITH_XCONTINUE_SRCGT_DESXSIZE_YFILL_SRCLT_DESYSIZE_AND_HWTI_HITO_INCLUDED
 
-class dma2dBlockTransferWithXWrapYContinueAndHwTiAndHiTo extends dmaBaseTest;
-  `uvm_component_utils(dma2dBlockTransferWithXWrapYContinueAndHwTiAndHiTo);
+class dma2dBlockTransferWithXContinueSrcGreaterDesXsizeYFillSrcSmallerDesYsizeAndHwTiAndHiTo extends dmaBaseTest;
+  `uvm_component_utils(dma2dBlockTransferWithXContinueSrcGreaterDesXsizeYFillSrcSmallerDesYsizeAndHwTiAndHiTo);
   dma1DVirtualSeq dma1DVirtualSeqHandle;
   dmaPollingVirtualSeq pollingSeq;
-  extern function new(string name ="dma2dBlockTransferWithXWrapYContinueAndHwTiAndHiTo",uvm_component parent = null);
+  extern function new(string name ="dma2dBlockTransferWithXContinueSrcGreaterDesXsizeYFillSrcSmallerDesYsizeAndHwTiAndHiTo",uvm_component parent = null);
   extern virtual function void build_phase(uvm_phase phase);
   extern virtual task run_phase(uvm_phase phase);
 endclass
 
-function dma2dBlockTransferWithXWrapYContinueAndHwTiAndHiTo :: new(string name ="dma2dBlockTransferWithXWrapYContinueAndHwTiAndHiTo",uvm_component parent = null);
+function dma2dBlockTransferWithXContinueSrcGreaterDesXsizeYFillSrcSmallerDesYsizeAndHwTiAndHiTo :: new(string name ="dma2dBlockTransferWithXContinueSrcGreaterDesXsizeYFillSrcSmallerDesYsizeAndHwTiAndHiTo",uvm_component parent = null);
   super.new(name,parent);
 endfunction
 
 
-function void dma2dBlockTransferWithXWrapYContinueAndHwTiAndHiTo::build_phase(uvm_phase phase);
+function void dma2dBlockTransferWithXContinueSrcGreaterDesXsizeYFillSrcSmallerDesYsizeAndHwTiAndHiTo::build_phase(uvm_phase phase);
   super.build_phase(phase);
   topEnvConfigHandle.numberOfCommandPerChannel.rand_mode(0);
   topEnvConfigHandle.numberOfCommandPerChannel[0]=1;
@@ -31,10 +31,13 @@ function void dma2dBlockTransferWithXWrapYContinueAndHwTiAndHiTo::build_phase(uv
   topEnvConfigHandle.randomize() with {  foreach(topEnvConfigHandle.addressIfLinking[i,j]) { topEnvConfigHandle.addressIfLinking[i][j] inside {[topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[topEnvConfigHandle.peripheralSlaveMemory].min_address : topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[topEnvConfigHandle.peripheralSlaveMemory].max_address]};}};
 
   //==================================================================
-  // CHANNEL 0 : 2D BLOCK TRANSFER  ->  XTYPE = X_WRAP , YTYPE = Y_CONTINUE
+  // CHANNEL 0 : 2D BLOCK TRANSFER
+  //   XTYPE = X_CONTINUE , YTYPE = Y_FILL
+  //   X SIZE : SRCXSIZE > DESXSIZE   (CH_XSIZE = 'h0005000A -> DESXSIZE[31:16], SRCXSIZE[15:0])
+  //   Y SIZE : SRCYSIZE < DESYSIZE   (CH_YSIZE = 'h00050003 -> DESYSIZE[31:16], SRCYSIZE[15:0])
   //==================================================================
   // Enable 2D on the Y dimension
-  topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.YTYPE=Y_CONTINUE;
+  topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.YTYPE=Y_FILL;
 
   // TRIGGER SRC BLK SIZE
   topEnvConfigHandle.allChannelConfig[0][0].CH_SRCTRIGINCFG.SRCTRIGINBLKSIZE = 10;
@@ -67,8 +70,8 @@ function void dma2dBlockTransferWithXWrapYContinueAndHwTiAndHiTo::build_phase(uv
   // TRIGGER OUT SEL
   topEnvConfigHandle.allChannelConfig[0][0].CH_TRIGOUTCFG.TRIGOUTSEL = 0;
 
-  // XTYPE = X_WRAP
-  topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.XTYPE = X_WRAP;
+  // XTYPE = X_CONTINUE
+  topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.XTYPE = X_CONTINUE;
 
   topEnvConfigHandle.allChannelConfig[0][0].CH_AUTOCFG.CMDRESTARTCNT=0;
   topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.DONEPAUSEEN=0;
@@ -89,10 +92,10 @@ function void dma2dBlockTransferWithXWrapYContinueAndHwTiAndHiTo::build_phase(uv
   topEnvConfigHandle.allChannelConfig[0][0].CH_SRCADDR = 'd 700;
   topEnvConfigHandle.allChannelConfig[0][0].CH_DESADDR = 'd 2400;
 
-  // X SIZE  : {DESXSIZE[31:16], SRCXSIZE[15:0]}
-  topEnvConfigHandle.allChannelConfig[0][0].CH_XSIZE = 'h 000A000A;
-  // Y SIZE  : {DESYSIZE[31:16], SRCYSIZE[15:0]}  (2D outer dimension)
-  topEnvConfigHandle.allChannelConfig[0][0].CH_YSIZE = 'h 00050005;
+  // X SIZE  : {DESXSIZE[31:16], SRCXSIZE[15:0]}  -> SRCXSIZE > DESXSIZE
+  topEnvConfigHandle.allChannelConfig[0][0].CH_XSIZE = 'h 0005000A;
+  // Y SIZE  : {DESYSIZE[31:16], SRCYSIZE[15:0]}  -> SRCYSIZE < DESYSIZE  (2D outer dimension)
+  topEnvConfigHandle.allChannelConfig[0][0].CH_YSIZE = 'h 00050003;
   // Y ADDRESS STRIDE : {DESYADDRSTRIDE[31:16], SRCYADDRSTRIDE[15:0]}
   topEnvConfigHandle.allChannelConfig[0][0].CH_YADDRSTRIDE ='h 000A000A;
 
@@ -107,9 +110,9 @@ function void dma2dBlockTransferWithXWrapYContinueAndHwTiAndHiTo::build_phase(uv
   topEnvConfigHandle.allChannelConfig[0][0].CH_LINKADDR.LINKADDR = 3000;
 
   //==================================================================
-  // CHANNEL 1 : 2D BLOCK TRANSFER  ->  XTYPE = X_WRAP , YTYPE = Y_CONTINUE
+  // CHANNEL 1 : 2D BLOCK TRANSFER  (same XTYPE/YTYPE and size relations)
   //==================================================================
-  topEnvConfigHandle.allChannelConfig[1][0].CH_CTRL.YTYPE=Y_CONTINUE;
+  topEnvConfigHandle.allChannelConfig[1][0].CH_CTRL.YTYPE=Y_FILL;
 
   topEnvConfigHandle.allChannelConfig[1][0].CH_SRCTRIGINCFG.SRCTRIGINBLKSIZE = 10;
   topEnvConfigHandle.allChannelConfig[1][0].CH_SRCTRIGINCFG.SRCTRIGINMODE = 0;
@@ -131,8 +134,8 @@ function void dma2dBlockTransferWithXWrapYContinueAndHwTiAndHiTo::build_phase(uv
   topEnvConfigHandle.allChannelConfig[1][0].CH_TRIGOUTCFG.TRIGOUTTYPE = 2'b 10;
   topEnvConfigHandle.allChannelConfig[1][0].CH_TRIGOUTCFG.TRIGOUTSEL = 2;
 
-  // XTYPE = X_WRAP
-  topEnvConfigHandle.allChannelConfig[1][0].CH_CTRL.XTYPE = X_WRAP;
+  // XTYPE = X_CONTINUE
+  topEnvConfigHandle.allChannelConfig[1][0].CH_CTRL.XTYPE = X_CONTINUE;
 
   topEnvConfigHandle.allChannelConfig[1][0].CH_CTRL.USETRIGOUT = 1;
   topEnvConfigHandle.allChannelConfig[1][0].CH_CTRL.USESRCTRIGIN =1;
@@ -143,8 +146,10 @@ function void dma2dBlockTransferWithXWrapYContinueAndHwTiAndHiTo::build_phase(uv
   topEnvConfigHandle.allChannelConfig[1][0].CH_SRCADDR = 'd 900;
   topEnvConfigHandle.allChannelConfig[1][0].CH_DESADDR = 'd 3400;
 
-  topEnvConfigHandle.allChannelConfig[1][0].CH_XSIZE = 'h 000A000A;
-  topEnvConfigHandle.allChannelConfig[1][0].CH_YSIZE = 'h 00050005;
+  // X SIZE -> SRCXSIZE > DESXSIZE
+  topEnvConfigHandle.allChannelConfig[1][0].CH_XSIZE = 'h 0005000A;
+  // Y SIZE -> SRCYSIZE < DESYSIZE
+  topEnvConfigHandle.allChannelConfig[1][0].CH_YSIZE = 'h 00050003;
 
   topEnvConfigHandle.allChannelConfig[1][0].CH_SRCTRANSCFG.SRCMAXBURSTLEN=10;
   topEnvConfigHandle.allChannelConfig[1][0].CH_DESTRANSCFG.DESMAXBURSTLEN=6;
@@ -163,7 +168,7 @@ function void dma2dBlockTransferWithXWrapYContinueAndHwTiAndHiTo::build_phase(uv
 
 endfunction
 
-task dma2dBlockTransferWithXWrapYContinueAndHwTiAndHiTo::run_phase(uvm_phase phase);
+task dma2dBlockTransferWithXContinueSrcGreaterDesXsizeYFillSrcSmallerDesYsizeAndHwTiAndHiTo::run_phase(uvm_phase phase);
   super.run_phase(phase);
   phase.raise_objection(this);
   `uvm_info(get_type_name(),"Starting dma1DVirtualSequence (2D BLOCK transfer)",UVM_LOW)
