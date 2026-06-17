@@ -65,7 +65,22 @@ package dmaTestPkg;
   `include "dma1dBlockTransferWithWrapSrcSmallerThanDesXsizeAndHwTiAndHiTo.sv"
   `include "dma1dBlockTransferWithFillSrcSmallerThanDesXsizeAndHwTiAndHiTo.sv"
   `include "dma1dBlockTransferWithContinueSrcSmallerThanDesXsizeAndHwTiAndHiTo.sv"
- 
+
+  //==================================================================
+  // 2D BLOCK TRANSFER TESTCASES (all XTYPE x YTYPE combinations)
+  //==================================================================
+  `include "2d/dma2dBlockTransferWithXContinueYContinueAndHwTiAndHiTo.sv"
+  `include "2d/dma2dBlockTransferWithXContinueYWrapAndHwTiAndHiTo.sv"
+  `include "2d/dma2dBlockTransferWithXContinueYFillAndHwTiAndHiTo.sv"
+
+  `include "2d/dma2dBlockTransferWithXWrapYContinueAndHwTiAndHiTo.sv"
+  `include "2d/dma2dBlockTransferWithXWrapYWrapAndHwTiAndHiTo.sv"
+  `include "2d/dma2dBlockTransferWithXWrapYFillAndHwTiAndHiTo.sv"
+
+  `include "2d/dma2dBlockTransferWithXFillYContinueAndHwTiAndHiTo.sv"
+  `include "2d/dma2dBlockTransferWithXFillYWrapAndHwTiAndHiTo.sv"
+  `include "2d/dma2dBlockTransferWithXFillYFillAndHwTiAndHiTo.sv"
+
 endpackage
 
 `endif
