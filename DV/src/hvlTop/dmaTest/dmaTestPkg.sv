@@ -161,6 +161,20 @@ package dmaTestPkg;
   `include "2d/dma2dBlockTransferWithXFillSrcEqualDesXsizeYFillSrcSmallerDesYsizeAndHwTiAndHiTo.sv"
   `include "2d/dma2dBlockTransferWithXFillSrcEqualDesXsizeYFillSrcEqualDesYsizeAndHwTiAndHiTo.sv"
 
+  // ADDRESS INCREMENT TESTS (varying SRCXADDRINC / DESXADDRINC via CH_XADDRINC)
+  `include "addressIncrement/dma1dBlockTransferWithSrcAddrIncrEqualDesAddrIncrAndHwTiAndHiTo.sv"
+  `include "addressIncrement/dma1dBlockTransferWithSrcAddrIncrGreaterThanDesAddrIncrAndHwTiAndHiTo.sv"
+  `include "addressIncrement/dma1dBlockTransferWithSrcAddrIncrSmallerThanDesAddrIncrAndHwTiAndHiTo.sv"
+  `include "addressIncrement/dma1dBlockTransferWithSrcAddrIncrZeroDesAddrIncrNonZeroAndHwTiAndHiTo.sv"
+  `include "addressIncrement/dma1dBlockTransferWithSrcAddrIncrNonZeroDesAddrIncrZeroAndHwTiAndHiTo.sv"
+  `include "addressIncrement/dma1dBlockTransferWithSrcAddrIncrTwoDesAddrIncrFourAndHwTiAndHiTo.sv"
+  `include "addressIncrement/dma1dBlockTransferWithSrcAddrIncrFourDesAddrIncrTwoAndHwTiAndHiTo.sv"
+  `include "addressIncrement/dma1dBlockTransferWithSrcAndDesAddrIncrMaxPositiveAndHwTiAndHiTo.sv"
+  `include "addressIncrement/dma1dBlockTransferWithSrcAndDesAddrIncrEqualSixteenAndHwTiAndHiTo.sv"
+  `include "addressIncrement/dma1dBlockTransferWithSrcAndDesAddrIncrBit15SetWithIncrOneAndHwTiAndHiTo.sv"
+  `include "addressIncrement/dma1dBlockTransferWithSrcAddrIncrBit15SetGreaterThanDesAddrIncrBit15SetAndHwTiAndHiTo.sv"
+  `include "addressIncrement/dma1dBlockTransferWithSrcAddrIncrBit15SetSmallerThanDesAddrIncrBit15SetAndHwTiAndHiTo.sv"
+
 endpackage
 
 `endif
