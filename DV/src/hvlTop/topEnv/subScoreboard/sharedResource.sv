@@ -593,9 +593,20 @@ task sharedResource::setUp1DAddress(int channel);
   srcYaddrStride = dmaChannelRegHandle[channel].CH_YADDRSTRIDE.SRCYADDRSTRIDE;
   desYaddrStride = dmaChannelRegHandle[channel].CH_YADDRSTRIDE.DESYADDRSTRIDE;
   has2D=dmaChannelRegHandle[channel].CH_BUILDCFG1.HAS_2D;
-  srcIncr = dmaChannelRegHandle[channel].CH_XADDRINC.SRCXADDRINC;
-  desIncr = dmaChannelRegHandle[channel].CH_XADDRINC.DESXADDRINC;
-
+  if(dmaChannelRegHandle[channel].CH_XADDRINC.SRCXADDRINC[15]==1)begin //to support negative dir 
+   srcIncr[31:16] = '1;
+   srcIncr = dmaChannelRegHandle[channel].CH_XADDRINC.SRCXADDRINC;
+  end 
+  else begin 
+    srcIncr = dmaChannelRegHandle[channel].CH_XADDRINC.SRCXADDRINC;
+  end 
+  if(dmaChannelRegHandle[channel].CH_XADDRINC.DESXADDRINC[15]==1)begin 
+    desIncr[31:16]='1;
+    desIncr = dmaChannelRegHandle[channel].CH_XADDRINC.DESXADDRINC;
+  end 
+  else begin 
+    desIncr = dmaChannelRegHandle[channel].CH_XADDRINC.DESXADDRINC;
+  end 
   calculateSrcXsize = determineNumberOfReads(channel);
   calculateDesXsize = determineNumberOfWrites(channel);;
   beat_bytes = 1 << tranSize;
