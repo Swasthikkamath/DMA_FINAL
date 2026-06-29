@@ -483,7 +483,7 @@ end
                 end
             end
             
-            else if (case6 && x_type == 1) begin
+            else if (case6 && x_type == 1 && y_type ==0) begin
                 y_transfer_count_UPDATED <= {des_y_left + (desy_transfer_count_reg - srcy_transfer_count_reg), src_y_left};
             end
             else if((cmd_restart_en || restart_cnt_reg1 != 0) && (src_y_left == 0 && des_y_left == 0 &&  DONE_temp) && (reg_reload_type != 0))
@@ -584,9 +584,13 @@ end
                 STAT_RESUMEWAIT_DATA <= 0;
             end
             if(wr_state == W_DONE_ST)
-               STAT_DONE_DATA <= (done_type == 0)? 0 : 
-                                       (done_type == 1 && !(cmd_restart_en || restart_cnt_reg1>0))? 1:
-                                       (done_type == 3)? (1 & (cmd_restart_en || restart_cnt_reg1>0)):0;
+//               STAT_DONE_DATA <= (done_type == 0)? 0 : 
+//                                       (done_type == 1 && !(cmd_restart_en || restart_cnt_reg1>0))? 1:
+//                                       (done_type == 3)? (1 & (cmd_restart_en || restart_cnt_reg1>0)):0;
+                                 STAT_DONE_DATA <= (done_type == 0)? 0 : 
+                                       (done_type == 1 && !(cmd_restart_en || restart_cnt_reg1 > 1 || (cmd_restart_cnt && restart_cnt_reg1 == 0)))? 1:
+                                      (done_type == 3)? (1 & (cmd_restart_en || restart_cnt_reg1>0)):0;
+
 //    STAT_DONE_DATA <= !(link_en || cmd_restart_en || restart_cnt_reg >0 ) ? 1 : 0;
             else if (rd_state == RD_IDLE )
                 STAT_DONE_DATA <= !(link_en )?STAT_DONE_DATA :0;
@@ -1210,9 +1214,9 @@ end
                                         src_x_left <= (cmd_restart_en || cmd_restart_cnt != 0)? des_x_transfer_count_reload : desx_transfer_count;
                                      case(y_type)
                                           0:src_y_left <= 0;
-                                            1:src_y_left <= (src_y_transfer_count >= des_y_transfer_count)?des_y_transfer_count:src_y_transfer_count;
-                                            2:src_y_left <= (src_y_transfer_count >= des_y_transfer_count)?src_y_transfer_count:des_y_transfer_count;
-                                            3:src_y_left <= (src_y_transfer_count >= des_y_transfer_count)?des_y_transfer_count:src_y_transfer_count;
+                                            1:src_y_left <= /*(src_y_transfer_count >= des_y_transfer_count)?des_y_transfer_count:*/src_y_transfer_count;
+                                            2:src_y_left <= /*(src_y_transfer_count >= des_y_transfer_count)?src_y_transfer_count:*/src_y_transfer_count;
+                                            3:src_y_left <= /*(src_y_transfer_count >= des_y_transfer_count)?des_y_transfer_count:*/src_y_transfer_count;
                                             default : src_y_left <= src_y_transfer_count;
                                        endcase
                                    end
@@ -1221,7 +1225,8 @@ end
                                    
                                     if(src_y_transfer_count >= des_y_transfer_count)
                                     begin
-                                        src_y_left <= des_y_transfer_count;
+                                       // src_y_left <= (srcx_transfer_count >= (2*desx_transfer_count))? des_y_transfer_count/2 : des_y_transfer_count;//11/0
+                                        src_y_left <= ((area_des % srcx_transfer_count) == 0 )? (area_des / srcx_transfer_count) : (area_des / srcx_transfer_count) + 1;  
                                         src_x_left <= (x_type == 1)?((cmd_restart_en || cmd_restart_cnt != 0)? src_x_transfer_count_reload : srcx_transfer_count) : ((cmd_restart_en || cmd_restart_cnt != 0)? des_x_transfer_count_reload : desx_transfer_count);
                                     end
 //                                    else if(src_y_transfer_count < des_y_transfer_count)begin
@@ -1265,7 +1270,8 @@ end
                                         case(y_type)
                                             0 : src_y_left <= src_y_transfer_count;
                                             1 : src_y_left <= src_y_transfer_count; //continue
-                                            2 : src_y_left <= des_y_transfer_count; // wrap
+                                            //2 : src_y_left <= des_y_transfer_count; // wrap
+                                            2 : src_y_left <= ((area_des % srcx_transfer_count) == 0 )? (area_des / srcx_transfer_count) : (area_des / srcx_transfer_count) + 1;
                                             3 : src_y_left <= src_y_transfer_count; //fill
                                         default: src_y_left <= src_y_transfer_count;
                                         endcase
@@ -1276,7 +1282,8 @@ end
                                         case(y_type)
                                             0 : src_y_left <= src_y_transfer_count;
                                             1 : src_y_left <= src_y_transfer_count; //continue
-                                            2 : src_y_left <= des_y_transfer_count; // wrap
+                                            //2 : src_y_left <= des_y_transfer_count; // wrap
+                                            2 : src_y_left <= ((area_des % srcx_transfer_count) == 0 )? (area_des / srcx_transfer_count) : (area_des / srcx_transfer_count) + 1; // wrap
                                             3 : src_y_left <= src_y_transfer_count; //fill
                                         default: src_y_left <= src_y_transfer_count;
                                         endcase
@@ -1298,7 +1305,7 @@ end
                                       
                                         case(y_type)
                                             0 : src_y_left <= src_y_transfer_count;
-                                            1 : src_y_left <= (x_type == 'd2 || x_type == 'd3)? des_y_transfer_count : src_y_transfer_count; //continue
+                                            1 : src_y_left <= (x_type == 'd2 || x_type == 'd3)? (area_src >area_des)?(((area_des % srcx_transfer_count) == 0 )? (area_des / srcx_transfer_count) : (area_des / srcx_transfer_count) + 1):des_y_transfer_count : (/*(area_src >area_des)?(((area_des % srcx_transfer_count) == 0 )? (area_des / srcx_transfer_count) : (area_des / srcx_transfer_count) + 1):*/src_y_transfer_count); //continue
                                             2 : src_y_left <= des_y_transfer_count; // wrap
                                             3 : src_y_left <= des_y_transfer_count; //fill
                                         default: src_y_left <= src_y_transfer_count;
@@ -1311,7 +1318,7 @@ end
                                         src_x_left <= /*(y_type == 2)? desx_transfer_count :*/ (cmd_restart_en || cmd_restart_cnt != 0)? src_x_transfer_count_reload : srcx_transfer_count;
                                         case(y_type)
                                             0 : src_y_left <= src_y_transfer_count;
-                                            1 : src_y_left <= src_y_transfer_count; //continue
+                                            1 : src_y_left <= (area_src >area_des)?(((area_des % srcx_transfer_count) == 0 )? (area_des / srcx_transfer_count) : (area_des / srcx_transfer_count) + 1):src_y_transfer_count; //continue
                                             2 : src_y_left <= (area_des > area_src) ? (area_des/srcx_transfer_count) + 1 : src_y_transfer_count; // wrap unknown
                                            // 2 : src_y_left <= (area_des > area_src) ? area_des/srcx_transfer_count : src_y_transfer_count; // wrap unknown
                                             3 : src_y_left <= src_y_transfer_count; //fill  
@@ -1324,7 +1331,7 @@ end
                                        src_x_left <=(cmd_restart_en || cmd_restart_cnt != 0)? src_x_transfer_count_reload : srcx_transfer_count;
                                         case(y_type)
                                             0 : src_y_left <= src_y_transfer_count;
-                                            1 : src_y_left <= src_y_transfer_count; //continue
+                                            1 : src_y_left <= (area_src >area_des)?(((area_des % srcx_transfer_count) == 0 )? (area_des / srcx_transfer_count) : (area_des / srcx_transfer_count) + 1):src_y_transfer_count; //continue
                                             2 : src_y_left <= (area_des > area_src) ? (((area_des % srcx_transfer_count)==0)? (area_des/srcx_transfer_count) :((area_des/srcx_transfer_count) +1)): src_y_transfer_count; // wrap
                                             3 : src_y_left <= src_y_transfer_count; //fill
                                         default: src_y_left <= src_y_transfer_count;
@@ -1512,7 +1519,7 @@ src_trigack_type <= (src_trigin_type == 2'b10 /*&& (src_trig_req_type == 0||src_
                     else /*if(src_trig_req_type_reg == 'd2)*/
                         ARLEN <= ((src_x_transfer_count_remaining - 1) > src_max_burst_len) ? {4'd0,src_max_burst_len} : src_x_transfer_count_remaining - 1;
                     
-                    ARBURST <= ((src_xaddr_inc == 1)) ? 2'b01 : 2'b00;
+                    ARBURST <= /*((src_xaddr_inc == 1)) ? 2'b01 :*/ 2'b01;
                     ARSIZE  <= transize;
                     ARID    <= 0;
                    // ARVALID <= 1;
@@ -1692,7 +1699,6 @@ src_trigack_type <= (src_trigin_type == 2'b10 /*&& (src_trig_req_type == 0||src_
                                     fill_count_y <= (r1 == des_x_left_initial-1)? fill_count_y - 1 : fill_count_y;
                                     end
                             end
-                         
                             
                             else if (fill_count_y >0 && src_y_left == 0 && (ycase2 || ycase5)) begin
                                 //for(r = 0; r < src_x_left_initial_integer ; r=r+1)
@@ -1700,7 +1706,7 @@ src_trigack_type <= (src_trigin_type == 2'b10 /*&& (src_trig_req_type == 0||src_
                                 begin
                                     fifo_mem[fifo_wptr[4:0]] <= {96'd0, fillval};
                                     fifo_wptr           <= fifo_wptr + 1;
-                                    r1 <= r1+1;end
+                                    r1 <= (r1 == des_x_left_initial - 1) ? 0 : r1 + 1;end
                                     fill_count_y <= (r1 == src_x_left_initial-1)? fill_count_y - 1 : fill_count_y;
                             end
                             
@@ -1991,7 +1997,7 @@ if(rd_state == RD_CONFIG) begin
                         des_x_left <= (cmd_restart_en || cmd_restart_cnt != 0)? des_x_transfer_count_reload:desx_transfer_count;
                         case(y_type)
                             0 : des_y_left <= des_y_transfer_count;
-                            1 : des_y_left <= area_src/desx_transfer_count; //continue
+                            1 : des_y_left <= (area_src > area_des)?des_y_transfer_count:area_src/desx_transfer_count; //continue
                             2 : des_y_left <= des_y_transfer_count; // wrap unknown
                             3 : des_y_left <= des_y_transfer_count; //fill  
                         default: des_y_left <= des_y_transfer_count;
@@ -2140,7 +2146,7 @@ end
                         end
                     end
 //                    AWLEN <= ((des_x_transfer_count_remaining - 1) > des_max_burst_len) ? des_max_burst_len : des_x_transfer_count_remaining - 1;//(case6 && x_type == 1)? srcx_transfer_count - 1: desx_transfer_count - 1;
-                    AWBURST <= (des_xaddr_inc == 1) ? 2'b01 : 2'b00;
+                    AWBURST <= /*(des_xaddr_inc == 1) ? 2'b01 :*/ 2'b01;
                     AWSIZE  <= transize;
                     AWID    <= 0;
                     //AWVALID <= (!stop_cmd_apb)?AWVALID:0;
@@ -2181,14 +2187,14 @@ end
                     end
                 end                
                 W_TRIG_OUT: begin
-                    if(use_trigout && trigout_type == 'b10 && trig_out_ack)
+                 if(use_trigout && trigout_type == 'b10 && trig_out_ack)
                         trig_out_req <= 0;
-                    else if (use_trigout && trigout_type == 'b10)
-                       trig_out_req <= 1;  
-                    else if (use_trigout && trigout_type == 'b00)             
-                        SWTRIGOUTACK_DATA <= 1;   
-                    
+                 else if (use_trigout && trigout_type == 'b10)
+                   trig_out_req <= 1;  
+                  else if (use_trigout && trigout_type == 'b00)             
+                        SWTRIGOUTACK_DATA <= 1;  
                     if (use_trigout && !trig_out_ack_sw && trigout_type == 'b00) 
+
                         STAT_TRIGOUTACKWAIT_DATA <= 1'b1;
                     else if (use_trigout && !trig_out_ack && trigout_type == 'b10)
                         STAT_TRIGOUTACKWAIT_DATA <= 1'b1;
@@ -2232,4 +2238,3 @@ end
     end 
     
 endmodule
- 

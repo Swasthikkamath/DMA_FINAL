@@ -1,9 +1,0 @@
-var g_db_data = [
-{dummy:0},
-{name:'apb_master_covergroup',f:1,type:6,id:74560,tb:'145',h:'10',m:'135',hp:'6.89%',cov:['20.48%','R'],g:'100.00%',gp:['20.48%','R'],opts:[[],['merge_instance','auto(true)']],hdlPath:'/apb_master_pkg/apb_master_coverage',parent:'74555'},
-{name:'axi4_slave_covergroup',f:1,type:6,id:74812,tb:'1136',h:'29',m:'1107',hp:'2.55%',cov:['19.42%','R'],g:'100.00%',gp:['19.42%','R'],opts:[[],['merge_instance','auto(true)']],hdlPath:'/axi4_slave_pkg/axi4_slave_coverage',parent:'74807'},
-{name:'axi4_master_covergroup',f:1,type:6,id:75544,tb:'1136',h:'29',m:'1107',hp:'2.55%',cov:['19.42%','R'],g:'100.00%',gp:['19.42%','R'],opts:[[],['merge_instance','auto(true)']],hdlPath:'/axi4_master_pkg/axi4_master_coverage',parent:'75539'},
-{name:'apb_master_covergroup',f:1,type:6,id:79637,tb:'145',h:'10',m:'135',hp:'6.89%',cov:['20.48%','R'],g:'100.00%',gp:['20.48%','R'],opts:[[],['merge_instance','true']],hdlPath:'work.apb_master_pkg::apb_master_coverage',parent:'79632'},
-{name:'axi4_slave_covergroup',f:1,type:6,id:79887,tb:'1136',h:'29',m:'1107',hp:'2.55%',cov:['19.42%','R'],g:'100.00%',gp:['19.42%','R'],opts:[[],['merge_instance','true']],hdlPath:'work.axi4_slave_pkg::axi4_slave_coverage',parent:'79882'},
-{name:'axi4_master_covergroup',f:1,type:6,id:80619,tb:'1136',h:'29',m:'1107',hp:'2.55%',cov:['19.42%','R'],g:'100.00%',gp:['19.42%','R'],opts:[[],['merge_instance','true']],hdlPath:'work.axi4_master_pkg::axi4_master_coverage',parent:'80614'}];
-processConsCovergroupsData(g_db_data);
