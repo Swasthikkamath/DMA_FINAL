@@ -121,6 +121,12 @@ module hdlTop;
   apb_master_agent_bfm apbMasterAgentBfm(apbInterfaceHandle);
   interruptSlaveAgentBfm interruptSlaveAgentBfmHandle(interruptInterfaceHandle);
   interruptMasterAgentBfm interruptMasterAgentBfmHandle(interruptInterfaceHandle);
+
+  initial begin
+        $dumpfile("simulation_output.vcd"); // Name of the VCD file
+        $dumpvars(0, u_dma);       // Dumps all signals in the module
+  end
+
 endmodule 
 `endif
 
