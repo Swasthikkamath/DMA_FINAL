@@ -105,23 +105,49 @@ class topCoverage extends uvm_subsriber;
 
     coverpoint  writeDataTx.pdata iff(writeDataTx !=null) {
       bins legalFirstRegval with{(!(|writeDataTx.pdata[15:6])) && (!(|writeDataTx.pdata[31:25]))&& (writeDataTx.pdata[23]==0) && (writeDataTx.pdata[19]==0)};
-      illegal_bins illegalFirstRegVal with{(|writeDataTx.pdata[15:6]) || (|writeDataTx.pdata[31:25]) || (writeDataTx.pdata[23]==1) ||(writeDataTx.pdata[19]==1)};
      
       bins legalSecondRegval with {(!(|writeDataTx.pdata[31:27]) )&& (!(|writeDataTx.pdata[23:22])) && (!(|writeDataTx.pdata[15:11])) && (!(|writeDataTx[7:4]))};
-      illegal_bins illegalSecondRegVal with{(|writeDataTx.pdata[15:11]) || (|writeDataTx.pdata[7:4]) ||(|writeDataTx.pdata[23:22]) || (|writeDataTx.pdata[31:27])};
 
 
       bins legalThirdRegval with {(!(|writeDataTx.pdata[31:11]) )&& (!(|writeDataTx.pdata[23:22])) &&(!(|writeDataTx[7:4]))};
-      illegal_bins illegalThirdRegVal with{(|writeDataTx.pdata[31:11]) || (|writeDataTx.pdata[7:4])};
 
       bins legalFourthRegval with {(!(|writeDataTx.pdata[31:27]) )&& (!(|writeDataTx.pdata[23:22])) && (!(|writeDataTx.pdata[15:11])) && (!(|writeDataTx[7:4]))};
-      illegal_bins illegalFourthRegVal with{(|writeDataTx.pdata[15:11]) || (|writeDataTx.pdata[7:4]) ||(|writeDataTx.pdata[23:22]) || (|writeDataTx.pdata[31:27])};
 
       bins legalFifthRegval with {(!(|writeDataTx.pdata[31:30]) )&& (!(|writeDataTx.pdata[17:15])) && (!(|writeDataTx.pdata[8])) && (!(|writeDataTx[3]))};
-      illegal_bins illegalFifthRegVal with{(|writeDataTx.pdata[31:30]) || (|writeDataTx.pdata[17:15]) ||(|writeDataTx.pdata[8]) || (|writeDataTx.pdata[3])};
 
+      bins allLegalVal; //6 to 11 ,14,15,16,17,19,20,24,25,30,31,33,35
 
+    
+      bins legalTwelfthRegVal with {(!(|writeDataTx.pdata[31:20]) )&& (!(|writeDataTx.pdata[15:12]))};
+     
+      bins legalThirteenthRegVal with {(!(|writeDataTx.pdata[31:20]) )&& (!(|writeDataTx.pdata[15:12]))};
 
+      bins legalEighteenthRegVal with{(!(|writeDataTx.pdata[31:21]) )&& (!(|writeDataTx.pdata[15 :13])) && (!(|writeDataTx.pdata[7:0]))};
+
+      bins legalTwentyOneRegVal with {(!(|writeDataTx.pdata[31:24]) )&& (!(|writeDataTx.pdata[15:12]))};
+      
+      bins legalTwentyTwoRegVal with {(!(|writeDataTx.pdata[31:24]) )&& (!(|writeDataTx.pdata[15:12]))};
+
+      bins legalTwentyThreeRegVal with {(!(|writeDataTx.pdata[31:10]) )};
+
+      bins legalTwentySixRegVal with {(!(|writeDataTx.pdata[31:11]) )&& (!(|writeDataTx.pdata[8:0]))};
+      bins legalTwentySevenRegVal with {(!(|writeDataTx.pdata[31:10]) )};
+
+      bins legalTwentyEigthRegVal with {(!(|writeDataTx.pdata[31:17]))};
+
+      bins legalTwentyNineRegVal with {(!(|writeDataTx.pdata[1]))};
+
+      bins legalThirtyTwoRegVal with {(!(|writeDataTx.pdata[31:4]))};
+
+      bins legalThirtyFourRegVal with{(!(|writeDataTx.pdata[15:8])) && (!(|writeDataTx.pdata[6:5]))};
+
+      bins legalTwentySixRegVal with {(!(|writeDataTx.pdata[31:8]) )};
+
+      bins legalThirtySevenRegVal with {(!(|writeDataTx.pdata[31:3]) )};
+
+      bins legalThirtyEigthRegVal with{(!(|writeDataTx.pdata[31:30])) && (!(|writeDataTx.pdata[25]))};
+
+      bins legalThirtyNineRegVal with{(!(|writeDataTx.pdata[31:26])) && (!(|writeDataTx.pdata[17:13]))};
    }
 
     coverpoint addressDecodeForSlave(writeAddrTx.awaddr)iff(writeAddrTx!=null){ //need to look any generic way
