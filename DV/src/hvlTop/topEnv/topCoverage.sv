@@ -31,7 +31,7 @@ class topCoverage extends uvm_subsriber;
       bins targetCh7 = {['h 800: 'h 8ff]}with (axi4_globals_pkg::NUM_CHANNELS >7 && ((apbTx.padd    r)%4==0 ));
     }
 
-    ADDR_CROSS: coverpoint apbTx.paddr iff(apbTx != null)
+    LEGAL_ADDR: coverpoint apbTx.paddr iff(apbTx != null)
     {
       option.auto_bin_max = 2500; 
       bins addrApbFirstReg[] = {'h 100 ,'h 200,'h 300,'h 400,'h 500,'h 600,'h 700,'h 800};
@@ -103,7 +103,7 @@ class topCoverage extends uvm_subsriber;
 
   // data legal for each of the registers and then cross first adddress reg with legal data 
 
-    coverpoint  writeDataTx.pdata iff(writeDataTx !=null) {
+    LEGAL_VAL:coverpoint  writeDataTx.pdata iff(writeDataTx !=null) {
       bins legalFirstRegval with{(!(|writeDataTx.pdata[15:6])) && (!(|writeDataTx.pdata[31:25]))&& (writeDataTx.pdata[23]==0) && (writeDataTx.pdata[19]==0)};
      
       bins legalSecondRegval with {(!(|writeDataTx.pdata[31:27]) )&& (!(|writeDataTx.pdata[23:22])) && (!(|writeDataTx.pdata[15:11])) && (!(|writeDataTx[7:4]))};
@@ -150,6 +150,11 @@ class topCoverage extends uvm_subsriber;
       bins legalThirtyNineRegVal with{(!(|writeDataTx.pdata[31:26])) && (!(|writeDataTx.pdata[17:13]))};
    }
 
+    cross LEGAL_ADDR,LEGAL_VAL{
+      bins legalRegOne =binsof(LEGAL_ADDR.addrApbFirstReg) && binsof(LEGAL_VAL.legalFirstRegval);
+     
+
+    }
     coverpoint addressDecodeForSlave(writeAddrTx.awaddr)iff(writeAddrTx!=null){ //need to look any generic way
       bins destinationSlaveTargeted[] = {[0:NO_OF_SLAVES-1]}; //based on function return val we can increment the counter of finite slave bin
     }
