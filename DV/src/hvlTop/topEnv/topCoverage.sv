@@ -34,7 +34,7 @@ class topCoverage extends uvm_subsriber;
     ADDR_CROSS: coverpoint apbTx.paddr iff(apbTx != null)
     {
       option.auto_bin_max = 2500; 
-      bins addrApbFirstReg[] = {'h 100 ,'h 200,'h 30,'h 400,'h 500,'h 600,'h 700,'h 800};
+      bins addrApbFirstReg[] = {'h 100 ,'h 200,'h 300,'h 400,'h 500,'h 600,'h 700,'h 800};
       bins addrApbSecondReg[] = {'h 104 ,'h 204,'h 304,'h 404,'h 504,'h 604,'h 704,'h 804};
       bins addrApbThirdReg[] = {'h 108 ,'h 208,'h 308,'h 408,'h 508,'h 608,'h 708,'h 808};
       bins addrApbFourthReg[] = {'h 10c ,'h 20c,'h 30c,'h 40c,'h 50c,'h 60c,'h 70c,'h 80c};
@@ -104,8 +104,24 @@ class topCoverage extends uvm_subsriber;
   // data legal for each of the registers and then cross first adddress reg with legal data 
 
     coverpoint  writeDataTx.pdata iff(writeDataTx !=null) {
-       bins legalFirstRegval with{(!(|writeDataTx.pdata[15:6])) && (!(|writeDataTx.pdata[31:25]))&& (writeDataTx.pdata[23]==0) && (writeDataTx.pdata[19]==0)};
+      bins legalFirstRegval with{(!(|writeDataTx.pdata[15:6])) && (!(|writeDataTx.pdata[31:25]))&& (writeDataTx.pdata[23]==0) && (writeDataTx.pdata[19]==0)};
       illegal_bins illegalFirstRegVal with{(|writeDataTx.pdata[15:6]) || (|writeDataTx.pdata[31:25]) || (writeDataTx.pdata[23]==1) ||(writeDataTx.pdata[19]==1)};
+     
+      bins legalSecondRegval with {(!(|writeDataTx.pdata[31:27]) )&& (!(|writeDataTx.pdata[23:22])) && (!(|writeDataTx.pdata[15:11])) && (!(|writeDataTx[7:4]))};
+      illegal_bins illegalSecondRegVal with{(|writeDataTx.pdata[15:11]) || (|writeDataTx.pdata[7:4]) ||(|writeDataTx.pdata[23:22]) || (|writeDataTx.pdata[31:27])};
+
+
+      bins legalThirdRegval with {(!(|writeDataTx.pdata[31:11]) )&& (!(|writeDataTx.pdata[23:22])) &&(!(|writeDataTx[7:4]))};
+      illegal_bins illegalThirdRegVal with{(|writeDataTx.pdata[31:11]) || (|writeDataTx.pdata[7:4])};
+
+      bins legalFourthRegval with {(!(|writeDataTx.pdata[31:27]) )&& (!(|writeDataTx.pdata[23:22])) && (!(|writeDataTx.pdata[15:11])) && (!(|writeDataTx[7:4]))};
+      illegal_bins illegalFourthRegVal with{(|writeDataTx.pdata[15:11]) || (|writeDataTx.pdata[7:4]) ||(|writeDataTx.pdata[23:22]) || (|writeDataTx.pdata[31:27])};
+
+      bins legalFifthRegval with {(!(|writeDataTx.pdata[31:30]) )&& (!(|writeDataTx.pdata[17:15])) && (!(|writeDataTx.pdata[8])) && (!(|writeDataTx[3]))};
+      illegal_bins illegalFifthRegVal with{(|writeDataTx.pdata[31:30]) || (|writeDataTx.pdata[17:15]) ||(|writeDataTx.pdata[8]) || (|writeDataTx.pdata[3])};
+
+
+
    }
 
     coverpoint addressDecodeForSlave(writeAddrTx.awaddr)iff(writeAddrTx!=null){ //need to look any generic way
