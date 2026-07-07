@@ -141,7 +141,7 @@ class topCoverage extends uvm_subsriber;
 
       bins legalThirtyFourRegVal with{(!(|writeDataTx.pdata[15:8])) && (!(|writeDataTx.pdata[6:5]))};
 
-      bins legalTwentySixRegVal with {(!(|writeDataTx.pdata[31:8]) )};
+      bins legalThirtySixRegVal with {(!(|writeDataTx.pdata[31:8]) )};
 
       bins legalThirtySevenRegVal with {(!(|writeDataTx.pdata[31:3]) )};
 
@@ -152,9 +152,47 @@ class topCoverage extends uvm_subsriber;
 
     cross LEGAL_ADDR,LEGAL_VAL{
       bins legalRegOne =binsof(LEGAL_ADDR.addrApbFirstReg) && binsof(LEGAL_VAL.legalFirstRegval);
-     
-
+      bins legalRegTwo = binsof(LEGAL_ADDR.addrApbSecondReg) && binsof(LEGAL_VAL.legalSecondRegval);
+      bins legalRegThree = binsof(LEGAL_ADDR.addrApbThirdReg) && binsof(LEGAL_VAL.legalThirdRegval);
+      bins legalRegFour = binsof(LEGAL_ADDR.addrApbFourthReg) && binsof(LEGAL_VAL.legalFourthRegval);
+      bins legalRegFive = binsof(LEGAL_ADDR.addrApbFifthReg) && binsof(LEGAL_VAL.legalFifthRegval);
+      bins legalRegSix = binsof(LEGAL_ADDR.addrApbSixthReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegSeven = binsof(LEGAL_ADDR.addrApbSeventhReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegEight = binsof(LEGAL_ADDR.addrApbEighthReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegNine = binsof(LEGAL_ADDR.addrApbNinthReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegTen = binsof(LEGAL_ADDR.addrApbTenthReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegEleven = binsof(LEGAL_ADDR.addrApbEleventhReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegTwelve = binsof(LEGAL_ADDR.addrApbTwelfthReg) && binsof(LEGAL_VAL.legalTwelfthRegVal);
+      bins legalRegThirteen = binsof(LEGAL_ADDR.addrApbThirteenthReg) && binsof(LEGAL_VAL.legalThirteenthRegVal);
+      bins legalRegFourteen = binsof(LEGAL_ADDR.addrApbFourteenthReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegFifteen = binsof(LEGAL_ADDR.addrApbFifteenthReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegSixteen = binsof(LEGAL_ADDR.addrApbSixteenthReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegSeventeen = binsof(LEGAL_ADDR.addrApbSeventeenthReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegEighteen = binsof(LEGAL_ADDR.addrApbEighteenthReg) && binsof(LEGAL_VAL.legalEighteenthRegVal);
+      bins legalRegNineteen = binsof(LEGAL_ADDR.addrApbNineteenthReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegTwenty = binsof(LEGAL_ADDR.addrApbTwentiethReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegTwentyOne = binsof(LEGAL_ADDR.addrApbTwentyFirstReg) && binsof(LEGAL_VAL.legalTwentyOneRegVal);
+      bins legalRegTwentyTwo = binsof(LEGAL_ADDR.addrApbTwentySecondReg) && binsof(LEGAL_VAL.legalTwentyTwoRegVal);
+      bins legalRegTwentyThree = binsof(LEGAL_ADDR.addrApbTwentyThirdReg) && binsof(LEGAL_VAL.legalTwentyThreeRegVal);
+      bins legalRegTwentyFour = binsof(LEGAL_ADDR.addrApbTwentyFourthReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegTwentyFive = binsof(LEGAL_ADDR.addrApbTwentyFifthReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegTwentySix = binsof(LEGAL_ADDR.addrApbTwentySixthReg) && binsof(LEGAL_VAL.legalTwentySixRegVal);
+      bins legalRegTwentySeven = binsof(LEGAL_ADDR.addrApbTwentySeventhReg) && binsof(LEGAL_VAL.legalTwentySevenRegVal);
+      bins legalRegTwentyEight = binsof(LEGAL_ADDR.addrApbTwentyEighthReg) && binsof(LEGAL_VAL.legalTwentyEigthRegVal);
+      bins legalRegTwentyNine = binsof(LEGAL_ADDR.addrApbTwentyNinethReg) && binsof(LEGAL_VAL.legalTwentyNineRegVal);
+      bins legalRegThirty = binsof(LEGAL_ADDR.addrApbThirtiethReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegThirtyOne= binsof(LEGAL_ADDR.addrApbThirtyFirstReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegThirtyTwo = binsof(LEGAL_ADDR.addrApbThirtySecondReg) && binsof(LEGAL_VAL.legalThirtyTwoRegVal);
+      bins legalRegThirtyThree= binsof(LEGAL_ADDR.addrApbThirtyThirdReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegThirtyFour = binsof(LEGAL_ADDR.addrApbThirtyFourthReg) && binsof(LEGAL_VAL.legalThirtyFourRegVal);
+      bins legalRegThirtyFive= binsof(LEGAL_ADDR.addrApbThirtyFiveReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegThirtySix = binsof(LEGAL_ADDR.addrApbThirtySixthReg) && binsof(LEGAL_VAL.legalThirtySixRegVal);
+      bins legalRegThirtySeven = binsof(LEGAL_ADDR.addrApbThirtySeventhReg) && binsof(LEGAL_VAL.legalThirtySevenRegVal);
+      bins legalRegThirtyEight = binsof(LEGAL_ADDR.addrApbThirtyEighthReg) && binsof(LEGAL_VAL.legalThirtyEigthRegVal);
+      bins legalRegThirtyNine = binsof(LEGAL_ADDR.addrApbThirtyNinthReg) && binsof(LEGAL_VAL.legalThirtyNineRegVal);
     }
+
+
     coverpoint addressDecodeForSlave(writeAddrTx.awaddr)iff(writeAddrTx!=null){ //need to look any generic way
       bins destinationSlaveTargeted[] = {[0:NO_OF_SLAVES-1]}; //based on function return val we can increment the counter of finite slave bin
     }
