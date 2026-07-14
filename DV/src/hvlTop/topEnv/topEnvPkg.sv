@@ -24,6 +24,7 @@ package topEnvPkg;
  `include "subScoreboard/topInterruptSubScoreboard.sv"
  `include "topScoreboard.sv"
  `include "topEnvVirtualSequencer.sv"
+ `include "topCoverage.sv"
  `include "topEnv.sv"
  
 endpackage

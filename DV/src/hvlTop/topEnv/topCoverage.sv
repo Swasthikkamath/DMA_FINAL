@@ -1,13 +1,13 @@
 `ifndef TOP_COVERAGE
 `define TOP_COVERAGE
 
-class topCoverage extends uvm_subsriber;
+class topCoverage extends uvm_subscriber#(axi4_slave_tx);
   `uvm_component_utils(topCoverage)
 
   uvm_tlm_analysis_fifo#(apb_master_tx) coverageConfigUnitApbPathAnalysisExport;
   
    // Analysis  - AXI Slave Path
-  uvm_tlm_analysis_fifo#(axi4_slave_tx) coveragePeripheralUnitAxi4SlavePathWriteAddressAnalysisExport[];
+  axi4_slave_tx coveragePeripheralUnitAxi4SlavePathWriteAddressAnalysisExport[][$];
   uvm_tlm_analysis_fifo#(axi4_slave_tx) coveragePeripheralUnitAxi4SlavePathWriteDataAnalysisExport[];
   uvm_tlm_analysis_fifo#(axi4_slave_tx) coveragePeripheralUnitAxi4SlavePathWriteResponseAnalysisExport[];
   uvm_tlm_analysis_fifo#(axi4_slave_tx) coveragePeripheralUnitAxi4SlavePathReadAddressAnalysisExport[];
@@ -19,16 +19,17 @@ class topCoverage extends uvm_subsriber;
   
   uvm_tlm_analysis_fifo#(interruptSlaveTx) coverageConfigUnitInterruptPathAnalysisExport;
 
+  topEnvConfig topEnvConfigHandle;
   covergroup cg with function sample(apb_master_tx apbTx=null,axi4_slave_tx writeAddrTx=null,axi4_slave_tx writeDataTx=null,axi4_slave_tx writeRespTx=null,axi4_slave_tx readAddrTx=null,axi4_slave_tx readDataTx=null,triggerSlaveTx triggerTx=null,interruptSlaveTx interruptTx=null);
     coverpoint apbTx.paddr iff(apbTx != null){
-      bins targetCh0 = {['h 100: 'h 1ff]}with (axi4_globals_pkg::NUM_CHANNELS >0 && ((apbTx.paddr)%4==0 ));
-      bins targetCh1 = {['h 200: 'h 2ff]}with (axi4_globals_pkg::NUM_CHANNELS >1 && ((apbTx.padd    r)%4==0 ));
-      bins targetCh2= {['h 300: 'h 3ff]}with (axi4_globals_pkg::NUM_CHANNELS >2 && ((apbTx.padd    r)%4==0 ));
-      bins targetCh3= {['h 400: 'h 4ff]}with (axi4_globals_pkg::NUM_CHANNELS >3 && ((apbTx.padd    r)%4==0 ));
-      bins targetCh4 = {['h 500: 'h 5ff]}with (axi4_globals_pkg::NUM_CHANNELS >4 && ((apbTx.padd    r)%4==0 ));
-      bins targetCh5 = {['h 600: 'h 6ff]}with (axi4_globals_pkg::NUM_CHANNELS >5 && ((apbTx.padd    r)%4==0 ));
-      bins targetCh6 = {['h 700: 'h 7ff]}with (axi4_globals_pkg::NUM_CHANNELS >6 && ((apbTx.padd    r)%4==0 ));
-      bins targetCh7 = {['h 800: 'h 8ff]}with (axi4_globals_pkg::NUM_CHANNELS >7 && ((apbTx.padd    r)%4==0 ));
+      bins targetCh0 = {['h 100: 'h 1ff]}with (dmaGlobalPkg::NUM_CHANNELS >0 && ((apbTx.paddr)%4==0 ));
+      bins targetCh1 = {['h 200: 'h 2ff]}with (dmaGlobalPkg::NUM_CHANNELS >1 && ((apbTx.paddr)%4==0 ));
+      bins targetCh2= {['h 300: 'h 3ff]}with (dmaGlobalPkg::NUM_CHANNELS >2 && ((apbTx.paddr)%4==0 ));
+      bins targetCh3= {['h 400: 'h 4ff]}with (dmaGlobalPkg::NUM_CHANNELS >3 && ((apbTx.paddr)%4==0 ));
+      bins targetCh4 = {['h 500: 'h 5ff]}with (dmaGlobalPkg::NUM_CHANNELS >4 && ((apbTx.paddr)%4==0 ));
+      bins targetCh5 = {['h 600: 'h 6ff]}with (dmaGlobalPkg::NUM_CHANNELS >5 && ((apbTx.paddr)%4==0 ));
+      bins targetCh6 = {['h 700: 'h 7ff]}with (dmaGlobalPkg::NUM_CHANNELS >6 && ((apbTx.paddr)%4==0 ));
+      bins targetCh7 = {['h 800: 'h 8ff]}with (dmaGlobalPkg::NUM_CHANNELS >7 && ((apbTx.paddr)%4==0 ));
     }
 
     LEGAL_ADDR: coverpoint apbTx.paddr iff(apbTx != null)
@@ -103,51 +104,50 @@ class topCoverage extends uvm_subsriber;
 
   // data legal for each of the registers and then cross first adddress reg with legal data 
 
-    LEGAL_VAL:coverpoint  writeDataTx.pdata iff(writeDataTx !=null) {
-      bins legalFirstRegval with{(!(|writeDataTx.pdata[15:6])) && (!(|writeDataTx.pdata[31:25]))&& (writeDataTx.pdata[23]==0) && (writeDataTx.pdata[19]==0)};
+    LEGAL_VAL:coverpoint  apbTx.pwdata iff(apbTx !=null) {
+      bins legalFirstRegval = {[0:$]} with((!(|apbTx.pwdata[15:6])) && (!(|apbTx.pwdata[31:25]))&& (apbTx.pwdata[23]==0) && (apbTx.pwdata[19]==0));
      
-      bins legalSecondRegval with {(!(|writeDataTx.pdata[31:27]) )&& (!(|writeDataTx.pdata[23:22])) && (!(|writeDataTx.pdata[15:11])) && (!(|writeDataTx[7:4]))};
+      bins legalSecondRegval = {[0:$]} with ((!(|apbTx.pwdata[31:27]) )&& (!(|apbTx.pwdata[23:22])) && (!(|apbTx.pwdata[15:11])) && (!(|apbTx.pwdata[7:4])));
 
 
-      bins legalThirdRegval with {(!(|writeDataTx.pdata[31:11]) )&& (!(|writeDataTx.pdata[23:22])) &&(!(|writeDataTx[7:4]))};
+      bins legalThirdRegval = {[0:$]} with ((!(|apbTx.pwdata[31:11]) )&&(!(|apbTx.pwdata[7:4])));
 
-      bins legalFourthRegval with {(!(|writeDataTx.pdata[31:27]) )&& (!(|writeDataTx.pdata[23:22])) && (!(|writeDataTx.pdata[15:11])) && (!(|writeDataTx[7:4]))};
+      bins legalFourthRegval = {[0:$]} with ((!(|apbTx.pwdata[31:30]) )&& (!(|apbTx.pwdata[17:15])) && (!(|apbTx.pwdata[8])) && (!(|apbTx.pwdata[3])));
 
-      bins legalFifthRegval with {(!(|writeDataTx.pdata[31:30]) )&& (!(|writeDataTx.pdata[17:15])) && (!(|writeDataTx.pdata[8])) && (!(|writeDataTx[3]))};
 
-      bins allLegalVal; //6 to 11 ,14,15,16,17,19,20,24,25,30,31,33,35
+      bins allLegalVal ={[0:$]}; //5 to 11 ,13,14,15,16,18,19,23,24,29,30,32,34
 
     
-      bins legalTwelfthRegVal with {(!(|writeDataTx.pdata[31:20]) )&& (!(|writeDataTx.pdata[15:12]))};
+      bins legalEleventhRegVal = {[0:$]} with ((!(|apbTx.pwdata[31:20]) )&& (!(|apbTx.pwdata[15:12]))); //11
      
-      bins legalThirteenthRegVal with {(!(|writeDataTx.pdata[31:20]) )&& (!(|writeDataTx.pdata[15:12]))};
+      bins legalTwelfthRegVal ={[0:$]}with ((!(|apbTx.pwdata[31:20]) )&& (!(|apbTx.pwdata[15:12]))); //12
 
-      bins legalEighteenthRegVal with{(!(|writeDataTx.pdata[31:21]) )&& (!(|writeDataTx.pdata[15 :13])) && (!(|writeDataTx.pdata[7:0]))};
+      bins legalSeventeenthRegVal ={[0:$]} with((!(|apbTx.pwdata[31:21]) )&& (!(|apbTx.pwdata[15 :13])) && (!(|apbTx.pwdata[7:0]))); //17
 
-      bins legalTwentyOneRegVal with {(!(|writeDataTx.pdata[31:24]) )&& (!(|writeDataTx.pdata[15:12]))};
+      bins legalTwentiethRegVal ={[0:$]}with ((!(|apbTx.pwdata[31:24]) )&& (!(|apbTx.pwdata[15:12]))); //
       
-      bins legalTwentyTwoRegVal with {(!(|writeDataTx.pdata[31:24]) )&& (!(|writeDataTx.pdata[15:12]))};
+      bins legalTwentyOneRegVal ={[0:$]}with ((!(|apbTx.pwdata[31:24]) )&& (!(|apbTx.pwdata[15:12])));
 
-      bins legalTwentyThreeRegVal with {(!(|writeDataTx.pdata[31:10]) )};
+      bins legalTwentyTwoRegVal={[0:$]} with ((!(|apbTx.pwdata[31:10]) ));
 
-      bins legalTwentySixRegVal with {(!(|writeDataTx.pdata[31:11]) )&& (!(|writeDataTx.pdata[8:0]))};
-      bins legalTwentySevenRegVal with {(!(|writeDataTx.pdata[31:10]) )};
+      bins legalTwentyFiveRegVal ={[0:$]} with ((!(|apbTx.pwdata[31:11]) )&& (!(|apbTx.pwdata[8:0])));
+      bins legalTwentySixRegVal ={[0:$]} with ((!(|apbTx.pwdata[31:10]) ));
 
-      bins legalTwentyEigthRegVal with {(!(|writeDataTx.pdata[31:17]))};
+      bins legalTwentySevenRegVal = {[0:$]} with ((!(|apbTx.pwdata[31:17])));
 
-      bins legalTwentyNineRegVal with {(!(|writeDataTx.pdata[1]))};
+      bins legalTwentyEigthRegVal ={[0:$]}with ((!(|apbTx.pwdata[1])));
 
-      bins legalThirtyTwoRegVal with {(!(|writeDataTx.pdata[31:4]))};
+      bins legalThirtyOneRegVal ={[0:$]}with ((!(|apbTx.pwdata[31:4])));
 
-      bins legalThirtyFourRegVal with{(!(|writeDataTx.pdata[15:8])) && (!(|writeDataTx.pdata[6:5]))};
+      bins legalThirtyThreeRegVal={[0:$]} with((!(|apbTx.pwdata[15:8])) && (!(|apbTx.pwdata[6:5])));
 
-      bins legalThirtySixRegVal with {(!(|writeDataTx.pdata[31:8]) )};
+      bins legalThirtyFiveRegVal ={[0:$]}with ((!(|apbTx.pwdata[31:8]) ));
 
-      bins legalThirtySevenRegVal with {(!(|writeDataTx.pdata[31:3]) )};
+      bins legalThirtySixRegVal ={[0:$]}with (!(|apbTx.pwdata[31:3]) );
 
-      bins legalThirtyEigthRegVal with{(!(|writeDataTx.pdata[31:30])) && (!(|writeDataTx.pdata[25]))};
+      bins legalThirtySevenRegVal ={[0:$]}with((!(|apbTx.pwdata[31:30])) && (!(|apbTx.pwdata[25])));
 
-      bins legalThirtyNineRegVal with{(!(|writeDataTx.pdata[31:26])) && (!(|writeDataTx.pdata[17:13]))};
+      bins legalThirtyEigthRegVal={[0:$]} with((!(|apbTx.pwdata[31:26])) && (!(|apbTx.pwdata[17:13])));
    }
 
     cross LEGAL_ADDR,LEGAL_VAL{
@@ -155,41 +155,40 @@ class topCoverage extends uvm_subsriber;
       bins legalRegTwo = binsof(LEGAL_ADDR.addrApbSecondReg) && binsof(LEGAL_VAL.legalSecondRegval);
       bins legalRegThree = binsof(LEGAL_ADDR.addrApbThirdReg) && binsof(LEGAL_VAL.legalThirdRegval);
       bins legalRegFour = binsof(LEGAL_ADDR.addrApbFourthReg) && binsof(LEGAL_VAL.legalFourthRegval);
-      bins legalRegFive = binsof(LEGAL_ADDR.addrApbFifthReg) && binsof(LEGAL_VAL.legalFifthRegval);
+      bins legalRegFive = binsof(LEGAL_ADDR.addrApbFifthReg) && binsof(LEGAL_VAL.allLegalVal);
       bins legalRegSix = binsof(LEGAL_ADDR.addrApbSixthReg) && binsof(LEGAL_VAL.allLegalVal);
       bins legalRegSeven = binsof(LEGAL_ADDR.addrApbSeventhReg) && binsof(LEGAL_VAL.allLegalVal);
       bins legalRegEight = binsof(LEGAL_ADDR.addrApbEighthReg) && binsof(LEGAL_VAL.allLegalVal);
       bins legalRegNine = binsof(LEGAL_ADDR.addrApbNinthReg) && binsof(LEGAL_VAL.allLegalVal);
       bins legalRegTen = binsof(LEGAL_ADDR.addrApbTenthReg) && binsof(LEGAL_VAL.allLegalVal);
-      bins legalRegEleven = binsof(LEGAL_ADDR.addrApbEleventhReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegEleven = binsof(LEGAL_ADDR.addrApbEleventhReg) && binsof(LEGAL_VAL.legalEleventhRegVal);
       bins legalRegTwelve = binsof(LEGAL_ADDR.addrApbTwelfthReg) && binsof(LEGAL_VAL.legalTwelfthRegVal);
-      bins legalRegThirteen = binsof(LEGAL_ADDR.addrApbThirteenthReg) && binsof(LEGAL_VAL.legalThirteenthRegVal);
+      bins legalRegThirteen = binsof(LEGAL_ADDR.addrApbThirteenthReg) && binsof(LEGAL_VAL.allLegalVal);
       bins legalRegFourteen = binsof(LEGAL_ADDR.addrApbFourteenthReg) && binsof(LEGAL_VAL.allLegalVal);
       bins legalRegFifteen = binsof(LEGAL_ADDR.addrApbFifteenthReg) && binsof(LEGAL_VAL.allLegalVal);
       bins legalRegSixteen = binsof(LEGAL_ADDR.addrApbSixteenthReg) && binsof(LEGAL_VAL.allLegalVal);
-      bins legalRegSeventeen = binsof(LEGAL_ADDR.addrApbSeventeenthReg) && binsof(LEGAL_VAL.allLegalVal);
-      bins legalRegEighteen = binsof(LEGAL_ADDR.addrApbEighteenthReg) && binsof(LEGAL_VAL.legalEighteenthRegVal);
+      bins legalRegSeventeen = binsof(LEGAL_ADDR.addrApbSeventeenthReg) && binsof(LEGAL_VAL.legalSeventeenthRegVal);
+      bins legalRegEighteen = binsof(LEGAL_ADDR.addrApbEighteenthReg) && binsof(LEGAL_VAL.allLegalVal);
       bins legalRegNineteen = binsof(LEGAL_ADDR.addrApbNineteenthReg) && binsof(LEGAL_VAL.allLegalVal);
-      bins legalRegTwenty = binsof(LEGAL_ADDR.addrApbTwentiethReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegTwenty = binsof(LEGAL_ADDR.addrApbTwentiethReg) && binsof(LEGAL_VAL.legalTwentiethRegVal);
       bins legalRegTwentyOne = binsof(LEGAL_ADDR.addrApbTwentyFirstReg) && binsof(LEGAL_VAL.legalTwentyOneRegVal);
       bins legalRegTwentyTwo = binsof(LEGAL_ADDR.addrApbTwentySecondReg) && binsof(LEGAL_VAL.legalTwentyTwoRegVal);
-      bins legalRegTwentyThree = binsof(LEGAL_ADDR.addrApbTwentyThirdReg) && binsof(LEGAL_VAL.legalTwentyThreeRegVal);
-      bins legalRegTwentyFour = binsof(LEGAL_ADDR.addrApbTwentyFourthReg) && binsof(LEGAL_VAL.allLegalVal);
-      bins legalRegTwentyFive = binsof(LEGAL_ADDR.addrApbTwentyFifthReg) && binsof(LEGAL_VAL.allLegalVal);
-      bins legalRegTwentySix = binsof(LEGAL_ADDR.addrApbTwentySixthReg) && binsof(LEGAL_VAL.legalTwentySixRegVal);
-      bins legalRegTwentySeven = binsof(LEGAL_ADDR.addrApbTwentySeventhReg) && binsof(LEGAL_VAL.legalTwentySevenRegVal);
-      bins legalRegTwentyEight = binsof(LEGAL_ADDR.addrApbTwentyEighthReg) && binsof(LEGAL_VAL.legalTwentyEigthRegVal);
-      bins legalRegTwentyNine = binsof(LEGAL_ADDR.addrApbTwentyNinethReg) && binsof(LEGAL_VAL.legalTwentyNineRegVal);
-      bins legalRegThirty = binsof(LEGAL_ADDR.addrApbThirtiethReg) && binsof(LEGAL_VAL.allLegalVal);
-      bins legalRegThirtyOne= binsof(LEGAL_ADDR.addrApbThirtyFirstReg) && binsof(LEGAL_VAL.allLegalVal);
-      bins legalRegThirtyTwo = binsof(LEGAL_ADDR.addrApbThirtySecondReg) && binsof(LEGAL_VAL.legalThirtyTwoRegVal);
-      bins legalRegThirtyThree= binsof(LEGAL_ADDR.addrApbThirtyThirdReg) && binsof(LEGAL_VAL.allLegalVal);
-      bins legalRegThirtyFour = binsof(LEGAL_ADDR.addrApbThirtyFourthReg) && binsof(LEGAL_VAL.legalThirtyFourRegVal);
-      bins legalRegThirtyFive= binsof(LEGAL_ADDR.addrApbThirtyFiveReg) && binsof(LEGAL_VAL.allLegalVal);
-      bins legalRegThirtySix = binsof(LEGAL_ADDR.addrApbThirtySixthReg) && binsof(LEGAL_VAL.legalThirtySixRegVal);
-      bins legalRegThirtySeven = binsof(LEGAL_ADDR.addrApbThirtySeventhReg) && binsof(LEGAL_VAL.legalThirtySevenRegVal);
-      bins legalRegThirtyEight = binsof(LEGAL_ADDR.addrApbThirtyEighthReg) && binsof(LEGAL_VAL.legalThirtyEigthRegVal);
-      bins legalRegThirtyNine = binsof(LEGAL_ADDR.addrApbThirtyNinthReg) && binsof(LEGAL_VAL.legalThirtyNineRegVal);
+      bins legalRegTwentyThree = binsof(LEGAL_ADDR.addrApbTwentyThirdReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegTwentyFour = binsof(LEGAL_ADDR.addrApbTwentyFifthReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegTwentyFive = binsof(LEGAL_ADDR.addrApbTwentySeventhReg) && binsof(LEGAL_VAL.legalTwentyFiveRegVal);
+      bins legalRegTwentySix = binsof(LEGAL_ADDR.addrApbTwentyNinthReg) && binsof(LEGAL_VAL.legalTwentySixRegVal);
+      bins legalRegTwentySeven = binsof(LEGAL_ADDR.addrApbThirtiethReg) && binsof(LEGAL_VAL.legalTwentySevenRegVal);
+      bins legalRegTwentyEight = binsof(LEGAL_ADDR.addrApbThirtyFirstReg) && binsof(LEGAL_VAL.legalTwentyEigthRegVal);
+      bins legalRegTwentyNine = binsof(LEGAL_ADDR.addrApbThirtySecondReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegThirty = binsof(LEGAL_ADDR.addrApbThirtyThirdReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegThirtyOne= binsof(LEGAL_ADDR.addrApbThirtyFifthReg) && binsof(LEGAL_VAL.legalThirtyOneRegVal);
+      bins legalRegThirtyTwo = binsof(LEGAL_ADDR.addrApbThirtySixthReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegThirtyThree= binsof(LEGAL_ADDR.addrApbThirtySeventhReg) && binsof(LEGAL_VAL.legalThirtyThreeRegVal);
+      bins legalRegThirtyFour = binsof(LEGAL_ADDR.addrApbFiftyFirstReg) && binsof(LEGAL_VAL.allLegalVal);
+      bins legalRegThirtyFive= binsof(LEGAL_ADDR.addrApbFiftySecondReg) && binsof(LEGAL_VAL.legalTwentyFiveRegVal);
+      bins legalRegThirtySix = binsof(LEGAL_ADDR.addrApbFiftyNinthReg) && binsof(LEGAL_VAL.legalThirtySixRegVal);
+      bins legalRegThirtySeven = binsof(LEGAL_ADDR.addrApbSixtyThirdReg) && binsof(LEGAL_VAL.legalThirtySevenRegVal);
+      bins legalRegThirtyEight = binsof(LEGAL_ADDR.addrApbSixtyFourthReg) && binsof(LEGAL_VAL.legalThirtyEigthRegVal);
     }
 
 
@@ -210,7 +209,7 @@ class topCoverage extends uvm_subsriber;
     coverpoint writeAddrTx.awlen iff(writeAddrTx !=null){
       bins lowLen = {[0:100]};
       bins mediumLen = {[101:200]};
-      bins highLen = {{201:255}}; //burst can be 0 to 255 (awburst 1 is legal so)
+      bins highLen = {[201:255]}; //burst can be 0 to 255 (awburst 1 is legal so)
     }
     
     coverpoint addressDecodeForSlave(readAddrTx.araddr)iff(readAddrTx!=null){ //need to look any generic way
@@ -230,19 +229,26 @@ class topCoverage extends uvm_subsriber;
     coverpoint readAddrTx.arlen iff(readAddrTx !=null){
       bins lowLen = {[0:100]};
       bins mediumLen = {[101:200]};
-      bins highLen = {{201:255}}; //burst can be 0 to 255 (awburst 1 is legal so)
+      bins highLen = {[201:255]}; //burst can be 0 to 255 (awburst 1 is legal so)
     }
     
   endgroup
  
 
   extern function new(string name = "topCoverage",uvm_component parent=null);
-  extern virtual function build_phase(uvm_phase phase);
+  extern virtual function void  build_phase(uvm_phase phase);
   extern virtual task run_phase(uvm_phase phase);
   extern function int addressDecodeForSlave(bit[31:0] addr);
   extern function int decodeTheChannelTask(apb_master_tx tx);
+  extern function void write(axi4_slave_tx t);
 endclass
 
+
+function void topCoverage::write(axi4_slave_tx t);
+  int slaveId;
+  slaveId = addressDecodeForSlave(t.awaddr);
+  coveragePeripheralUnitAxi4SlavePathWriteAddressAnalysisExport[slaveId].push_back(t);
+endfunction
 
 function int topCoverage::decodeTheChannelTask(apb_master_tx tx);
   for (int i = 0; i < dmaGlobalPkg::NUM_CHANNELS; i++) begin
@@ -262,7 +268,8 @@ task topCoverage::run_phase(uvm_phase phase);
       begin 
         forever begin 
          axi4_slave_tx tx1;
-         coveragePeripheralUnitAxi4SlavePathWriteAddressAnalysisExport[j].get(tx1);
+         wait(coveragePeripheralUnitAxi4SlavePathWriteAddressAnalysisExport[j].size()>0)
+          tx1 = coveragePeripheralUnitAxi4SlavePathWriteAddressAnalysisExport[j].pop_front();
         end 
       end  
 
@@ -314,17 +321,17 @@ task topCoverage::run_phase(uvm_phase phase);
 endtask
 
 function topCoverage::new(string name="topCoverage",uvm_component parent=null);
-   super.new(name,paren);
+   super.new(name,parent);
 endfunction 
 
 function int topCoverage :: addressDecodeForSlave(bit[31:0] addr);
   for(int i=0;i<axi4_globals_pkg::NO_OF_SLAVES;i++)begin 
-    if(addr inside {[topEnvConfigHandle.axi4SlaveAgentConfigHandle[i].min_address : topEnvConfigHandle.axi4SlaveAgentConfigHandle[i].max_addres]})
+    if(addr inside {[topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].min_address : topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].max_address]})
       return i;
   end
-endtask
+endfunction 
 
-virtual function topCoverage::build_phase(uvm_phase phase);
+function void  topCoverage::build_phase(uvm_phase phase);
   super.build_phase(phase);
 
   if(!(uvm_config_db #(topEnvConfig) :: get(this,"","topCoverage",topEnvConfigHandle)))begin 
@@ -333,7 +340,7 @@ virtual function topCoverage::build_phase(uvm_phase phase);
   coverageConfigUnitApbPathAnalysisExport = new("coverageConfigUnitApbPathAnalysisExport",this);
   coverageConfigUnitInterruptPathAnalysisExport = new("coverageConfigUnitInterruptPathAnalysisExport",this);
   for(int i=0;i<axi4_globals_pkg::NO_OF_SLAVES;i++)begin 
-    coveragePeripheralUnitAxi4SlavePathWriteAddressAnalysisExport[i] = new($sformatf("coveragePeripheralUnitAxi4SlavePathWriteAddressAnalysisExport[%0d]",i),this);
+    coveragePeripheralUnitAxi4SlavePathWriteAddressAnalysisExport[i] = new[1];
     coveragePeripheralUnitAxi4SlavePathWriteDataAnalysisExport[i] = new($sformatf("coveragePeripheralUnitAxi4SlavePathWriteDataAnalysisExport[%0d]",i),this);
     coveragePeripheralUnitAxi4SlavePathWriteResponseAnalysisExport[i] = new($sformatf("coveragePeripheralUnitAxi4SlavePathWriteResponseAnalysisExport[%0d]",i),this);
     coveragePeripheralUnitAxi4SlavePathReadAddressAnalysisExport[i] = new($sformatf("coveragePeripheralUnitAxi4SlavePathReadAddressAnalysisExport",i),this);

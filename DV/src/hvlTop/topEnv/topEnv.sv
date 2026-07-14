@@ -32,7 +32,8 @@ class topEnv extends uvm_env;
    
    //adapter instantiation
    apb_master_adapter adapter_inst; 
-   
+
+  topCoverage topCoverageHandle;
    uvm_reg_predictor#(apb_master_tx) topPredictor;
 
    extern function new(string  name = "topEnv",uvm_component parent = null);
@@ -95,6 +96,12 @@ function void topEnv::build_phase(uvm_phase phase);
     topScoreboardHandle = topScoreboard :: type_id :: create("topScoreboardHandle",this);
     uvm_config_db #(topEnvConfig) :: set(this ,"topScoreboardHandle","topEnvConfigHandle",topEnvConfigHandle); 
   end 
+
+  if(topEnvConfigHandle.hasCoverage) begin
+    topCoverageHandle = topCoverage :: type_id :: create("topEnvConfigHandle",this);
+    uvm_config_db #(topEnvConfig) :: set(this ,"topCoverageHandle","topEnvConfigHandle",topEnvConfigHandle); 
+  
+  end 
 endfunction 
 
 //------------------------------------------------------------------------------
@@ -113,24 +120,38 @@ function void topEnv::connect_phase(uvm_phase phase);
     foreach(peripheralEnvHandle[i]) begin     
       // AXI master & slave path connections
       peripheralEnvHandle[i].axi4MasterPathWriteAddressAnalysisPort.connect(topScoreboardHandle.peripheralUnitAxi4MasterPathWriteAddressAnalysisExport[i]);
-	  peripheralEnvHandle[i].axi4MasterPathWriteDataAnalysisPort.connect(topScoreboardHandle.peripheralUnitAxi4MasterPathWriteDataAnalysisExport[i]);
-	  peripheralEnvHandle[i].axi4MasterPathWriteResponseAnalysisPort.connect(topScoreboardHandle.peripheralUnitAxi4MasterPathWriteResponseAnalysisExport[i]);
-	  peripheralEnvHandle[i].axi4MasterPathReadAddressAnalysisPort.connect(topScoreboardHandle.peripheralUnitAxi4MasterPathReadAddressAnalysisExport[i]);
-	  peripheralEnvHandle[i].axi4MasterPathReadDataAnalysisPort.connect(topScoreboardHandle.peripheralUnitAxi4MasterPathReadDataAnalysisExport[i]);
-	  peripheralEnvHandle[i].axi4SlavePathWriteAddressAnalysisPort.connect(topScoreboardHandle.peripheralUnitAxi4SlavePathWriteAddressAnalysisExport[i]);
-	  peripheralEnvHandle[i].axi4SlavePathWriteDataAnalysisPort.connect(topScoreboardHandle.peripheralUnitAxi4SlavePathWriteDataAnalysisExport[i]);
-	  peripheralEnvHandle[i].axi4SlavePathWriteResponseAnalysisPort.connect(topScoreboardHandle.peripheralUnitAxi4SlavePathWriteResponseAnalysisExport[i]);
-	  peripheralEnvHandle[i].axi4SlavePathReadAddressAnalysisPort.connect(topScoreboardHandle.peripheralUnitAxi4SlavePathReadAddressAnalysisExport[i]);
-	  peripheralEnvHandle[i].axi4SlavePathReadDataAnalysisPort.connect(topScoreboardHandle.peripheralUnitAxi4SlavePathReadDataAnalysisExport[i]);
+	    peripheralEnvHandle[i].axi4MasterPathWriteDataAnalysisPort.connect(topScoreboardHandle.peripheralUnitAxi4MasterPathWriteDataAnalysisExport[i]);
+	    peripheralEnvHandle[i].axi4MasterPathWriteResponseAnalysisPort.connect(topScoreboardHandle.peripheralUnitAxi4MasterPathWriteResponseAnalysisExport[i]);
+	    peripheralEnvHandle[i].axi4MasterPathReadAddressAnalysisPort.connect(topScoreboardHandle.peripheralUnitAxi4MasterPathReadAddressAnalysisExport[i]);
+	    peripheralEnvHandle[i].axi4MasterPathReadDataAnalysisPort.connect(topScoreboardHandle.peripheralUnitAxi4MasterPathReadDataAnalysisExport[i]);
+	    peripheralEnvHandle[i].axi4SlavePathWriteAddressAnalysisPort.connect(topScoreboardHandle.peripheralUnitAxi4SlavePathWriteAddressAnalysisExport[i]);
+	    peripheralEnvHandle[i].axi4SlavePathWriteDataAnalysisPort.connect(topScoreboardHandle.peripheralUnitAxi4SlavePathWriteDataAnalysisExport[i]);
+	    peripheralEnvHandle[i].axi4SlavePathWriteResponseAnalysisPort.connect(topScoreboardHandle.peripheralUnitAxi4SlavePathWriteResponseAnalysisExport[i]);
+	    peripheralEnvHandle[i].axi4SlavePathReadAddressAnalysisPort.connect(topScoreboardHandle.peripheralUnitAxi4SlavePathReadAddressAnalysisExport[i]);
+	    peripheralEnvHandle[i].axi4SlavePathReadDataAnalysisPort.connect(topScoreboardHandle.peripheralUnitAxi4SlavePathReadDataAnalysisExport[i]);
       // Trigger connections
-          peripheralEnvHandle[i].triggerMasterPathAnalysisPort.connect(topScoreboardHandle.peripheralUnitTriggerMasterPathAnalysisExport[i]);
-	  peripheralEnvHandle[i].triggerSlavePathAnalysisPort.connect(topScoreboardHandle.peripheralUnitTriggerSlavePathAnalysisExport[i]);
-          peripheralEnvHandle[i].triggerOutMasterPathAnalysisPort.connect(topScoreboardHandle.peripheralUnitTriggerOutMasterPathAnalysisExport[i]);
-          peripheralEnvHandle[i].triggerOutSlavePathAnalysisPort.connect(topScoreboardHandle.peripheralUnitTriggerOutSlavePathAnalysisExport[i]);
+      peripheralEnvHandle[i].triggerMasterPathAnalysisPort.connect(topScoreboardHandle.peripheralUnitTriggerMasterPathAnalysisExport[i]);
+	    peripheralEnvHandle[i].triggerSlavePathAnalysisPort.connect(topScoreboardHandle.peripheralUnitTriggerSlavePathAnalysisExport[i]);
+      peripheralEnvHandle[i].triggerOutMasterPathAnalysisPort.connect(topScoreboardHandle.peripheralUnitTriggerOutMasterPathAnalysisExport[i]);
+      peripheralEnvHandle[i].triggerOutSlavePathAnalysisPort.connect(topScoreboardHandle.peripheralUnitTriggerOutSlavePathAnalysisExport[i]);
         
    end 
   end
 
+  if(topEnvConfigHandle.hasCoverage)begin
+    foreach(peripheralEnvHandle[i]) begin 
+      peripheralEnvHandle[i].axi4SlavePathWriteAddressAnalysisPort.connect(topCoverageHandle.analysis_export);
+	    peripheralEnvHandle[i].axi4SlavePathWriteDataAnalysisPort.connect(topCoverageHandle.coveragePeripheralUnitAxi4SlavePathWriteDataAnalysisExport[i].analysis_export);
+	    peripheralEnvHandle[i].axi4SlavePathWriteResponseAnalysisPort.connect(topCoverageHandle.coveragePeripheralUnitAxi4SlavePathWriteResponseAnalysisExport[i].analysis_export);
+	    peripheralEnvHandle[i].axi4SlavePathReadAddressAnalysisPort.connect(topCoverageHandle.coveragePeripheralUnitAxi4SlavePathReadAddressAnalysisExport[i].analysis_export);
+	    peripheralEnvHandle[i].axi4SlavePathReadDataAnalysisPort.connect(topCoverageHandle.coveragePeripheralUnitAxi4SlavePathReadDataAnalysisExport[i].analysis_export);
+      peripheralEnvHandle[i].triggerSlavePathAnalysisPort.connect(topCoverageHandle.coveragePeripheralUnitTriggerSlavePathAnalysisExport[i].analysis_export);
+      peripheralEnvHandle[i].triggerOutSlavePathAnalysisPort.connect(topCoverageHandle.coveragePeripheralUnitTriggerOutSlavePathAnalysisExport[i].analysis_export);   
+    end
+    configUnitEnvHandle.apbPathAnalysisPort.connect(topCoverageHandle.coverageConfigUnitApbPathAnalysisExport.analysis_export);
+    configUnitEnvHandle.interruptPathAnalysisPort.connect(topCoverageHandle.coverageConfigUnitInterruptPathAnalysisExport.analysis_export);   
+
+  end 
   configUnitEnvHandle.apbPathAnalysisPort.connect(topPredictor.bus_in);
   
   topPredictor.map = topEnvConfigHandle.regBlockHandle.address_map;
