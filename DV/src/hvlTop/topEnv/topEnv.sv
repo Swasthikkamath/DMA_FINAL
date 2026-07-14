@@ -98,7 +98,7 @@ function void topEnv::build_phase(uvm_phase phase);
   end 
 
   if(topEnvConfigHandle.hasCoverage) begin
-    topCoverageHandle = topCoverage :: type_id :: create("topEnvConfigHandle",this);
+    topCoverageHandle = topCoverage :: type_id :: create("topCoverageHandle",this);
     uvm_config_db #(topEnvConfig) :: set(this ,"topCoverageHandle","topEnvConfigHandle",topEnvConfigHandle); 
   
   end 

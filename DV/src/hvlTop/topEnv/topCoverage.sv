@@ -7,22 +7,22 @@ class topCoverage extends uvm_subscriber#(axi4_slave_tx);
   uvm_tlm_analysis_fifo#(apb_master_tx) coverageConfigUnitApbPathAnalysisExport;
   
    // Analysis  - AXI Slave Path
-  axi4_slave_tx coveragePeripheralUnitAxi4SlavePathWriteAddressAnalysisExport[][$];
-  uvm_tlm_analysis_fifo#(axi4_slave_tx) coveragePeripheralUnitAxi4SlavePathWriteDataAnalysisExport[];
-  uvm_tlm_analysis_fifo#(axi4_slave_tx) coveragePeripheralUnitAxi4SlavePathWriteResponseAnalysisExport[];
-  uvm_tlm_analysis_fifo#(axi4_slave_tx) coveragePeripheralUnitAxi4SlavePathReadAddressAnalysisExport[];
-  uvm_tlm_analysis_fifo#(axi4_slave_tx) coveragePeripheralUnitAxi4SlavePathReadDataAnalysisExport[];
+  axi4_slave_tx coveragePeripheralUnitAxi4SlavePathWriteAddressAnalysisExport[axi4_globals_pkg::NO_OF_SLAVES][$];
+  uvm_tlm_analysis_fifo#(axi4_slave_tx) coveragePeripheralUnitAxi4SlavePathWriteDataAnalysisExport[axi4_globals_pkg::NO_OF_SLAVES];
+  uvm_tlm_analysis_fifo#(axi4_slave_tx) coveragePeripheralUnitAxi4SlavePathWriteResponseAnalysisExport[axi4_globals_pkg::NO_OF_SLAVES];
+  uvm_tlm_analysis_fifo#(axi4_slave_tx) coveragePeripheralUnitAxi4SlavePathReadAddressAnalysisExport[axi4_globals_pkg::NO_OF_SLAVES];
+  uvm_tlm_analysis_fifo#(axi4_slave_tx) coveragePeripheralUnitAxi4SlavePathReadDataAnalysisExport[axi4_globals_pkg::NO_OF_SLAVES];
   
-  uvm_tlm_analysis_fifo#(triggerSlaveTx) coveragePeripheralUnitTriggerSlavePathAnalysisExport[];
+  uvm_tlm_analysis_fifo#(triggerSlaveTx) coveragePeripheralUnitTriggerSlavePathAnalysisExport[axi4_globals_pkg::NO_OF_SLAVES];
    // Analysis FIFOs - Trigger Path
-  uvm_tlm_analysis_fifo#(triggerSlaveTx) coveragePeripheralUnitTriggerOutSlavePathAnalysisExport[];
+  uvm_tlm_analysis_fifo#(triggerSlaveTx) coveragePeripheralUnitTriggerOutSlavePathAnalysisExport[axi4_globals_pkg::NO_OF_SLAVES];
   
   uvm_tlm_analysis_fifo#(interruptSlaveTx) coverageConfigUnitInterruptPathAnalysisExport;
 
   topEnvConfig topEnvConfigHandle;
   covergroup cg with function sample(apb_master_tx apbTx=null,axi4_slave_tx writeAddrTx=null,axi4_slave_tx writeDataTx=null,axi4_slave_tx writeRespTx=null,axi4_slave_tx readAddrTx=null,axi4_slave_tx readDataTx=null,triggerSlaveTx triggerTx=null,interruptSlaveTx interruptTx=null);
     coverpoint apbTx.paddr iff(apbTx != null){
-      bins targetCh0 = {['h 100: 'h 1ff]}with (dmaGlobalPkg::NUM_CHANNELS >0 && ((apbTx.paddr)%4==0 ));
+      bins targetCh0 = {['h 100: 'h 1ff]}with (dmaGlobalPkg::NUM_CHANNELS >0 && ((item)%4==0 ));
       bins targetCh1 = {['h 200: 'h 2ff]}with (dmaGlobalPkg::NUM_CHANNELS >1 && ((apbTx.paddr)%4==0 ));
       bins targetCh2= {['h 300: 'h 3ff]}with (dmaGlobalPkg::NUM_CHANNELS >2 && ((apbTx.paddr)%4==0 ));
       bins targetCh3= {['h 400: 'h 4ff]}with (dmaGlobalPkg::NUM_CHANNELS >3 && ((apbTx.paddr)%4==0 ));
@@ -105,7 +105,7 @@ class topCoverage extends uvm_subscriber#(axi4_slave_tx);
   // data legal for each of the registers and then cross first adddress reg with legal data 
 
     LEGAL_VAL:coverpoint  apbTx.pwdata iff(apbTx !=null) {
-      bins legalFirstRegval = {[0:$]} with((!(|apbTx.pwdata[15:6])) && (!(|apbTx.pwdata[31:25]))&& (apbTx.pwdata[23]==0) && (apbTx.pwdata[19]==0));
+      bins legalFirstRegval = {[0:$]} with((!(|item[15:6])) && (!(|item[31:25]))&& (item[23]==0) && (item[19]==0));
      
       bins legalSecondRegval = {[0:$]} with ((!(|apbTx.pwdata[31:27]) )&& (!(|apbTx.pwdata[23:22])) && (!(|apbTx.pwdata[15:11])) && (!(|apbTx.pwdata[7:4])));
 
@@ -322,6 +322,7 @@ endtask
 
 function topCoverage::new(string name="topCoverage",uvm_component parent=null);
    super.new(name,parent);
+  cg =new();
 endfunction 
 
 function int topCoverage :: addressDecodeForSlave(bit[31:0] addr);
@@ -333,8 +334,7 @@ endfunction
 
 function void  topCoverage::build_phase(uvm_phase phase);
   super.build_phase(phase);
-
-  if(!(uvm_config_db #(topEnvConfig) :: get(this,"","topCoverage",topEnvConfigHandle)))begin 
+  if(!(uvm_config_db #(topEnvConfig) :: get(this,"","topEnvConfigHandle",topEnvConfigHandle)))begin 
     `uvm_fatal("TOP_COVERAGE","COULDNT GET TOP ENV COVERAGE")
   end 
   coverageConfigUnitApbPathAnalysisExport = new("coverageConfigUnitApbPathAnalysisExport",this);
