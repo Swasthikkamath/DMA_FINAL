@@ -22,14 +22,14 @@ class topCoverage extends uvm_subscriber#(axi4_slave_tx);
   topEnvConfig topEnvConfigHandle;
   covergroup cg with function sample(apb_master_tx apbTx=null,axi4_slave_tx writeAddrTx=null,axi4_slave_tx writeDataTx=null,axi4_slave_tx writeRespTx=null,axi4_slave_tx readAddrTx=null,axi4_slave_tx readDataTx=null,triggerSlaveTx triggerTx=null,interruptSlaveTx interruptTx=null);
     coverpoint apbTx.paddr iff(apbTx != null){
-      bins targetCh0 = {['h 100: 'h 1ff]}with (dmaGlobalPkg::NUM_CHANNELS >0 && ((item)%4==0 ));
-      bins targetCh1 = {['h 200: 'h 2ff]}with (dmaGlobalPkg::NUM_CHANNELS >1 && ((apbTx.paddr)%4==0 ));
-      bins targetCh2= {['h 300: 'h 3ff]}with (dmaGlobalPkg::NUM_CHANNELS >2 && ((apbTx.paddr)%4==0 ));
-      bins targetCh3= {['h 400: 'h 4ff]}with (dmaGlobalPkg::NUM_CHANNELS >3 && ((apbTx.paddr)%4==0 ));
-      bins targetCh4 = {['h 500: 'h 5ff]}with (dmaGlobalPkg::NUM_CHANNELS >4 && ((apbTx.paddr)%4==0 ));
-      bins targetCh5 = {['h 600: 'h 6ff]}with (dmaGlobalPkg::NUM_CHANNELS >5 && ((apbTx.paddr)%4==0 ));
-      bins targetCh6 = {['h 700: 'h 7ff]}with (dmaGlobalPkg::NUM_CHANNELS >6 && ((apbTx.paddr)%4==0 ));
-      bins targetCh7 = {['h 800: 'h 8ff]}with (dmaGlobalPkg::NUM_CHANNELS >7 && ((apbTx.paddr)%4==0 ));
+      bins targetCh0 = {['h 100: 'h 1ff]}with (((item)%4==0 ));
+      bins targetCh1 = {['h 200: 'h 2ff]}with (((item)%4==0 ));
+      bins targetCh2= {['h 300: 'h 3ff]}with (((item)%4==0 ));
+      bins targetCh3= {['h 400: 'h 4ff]}with (((item)%4==0 ));
+      bins targetCh4 = {['h 500: 'h 5ff]}with (((item)%4==0 ));
+      bins targetCh5 = {['h 600: 'h 6ff]}with (((item)%4==0 ));
+      bins targetCh6 = {['h 700: 'h 7ff]}with (((item)%4==0 ));
+      bins targetCh7 = {['h 800: 'h 8ff]}with (((item)%4==0 ));
     }
 
     LEGAL_ADDR: coverpoint apbTx.paddr iff(apbTx != null)
@@ -107,47 +107,47 @@ class topCoverage extends uvm_subscriber#(axi4_slave_tx);
     LEGAL_VAL:coverpoint  apbTx.pwdata iff(apbTx !=null) {
       bins legalFirstRegval = {[0:$]} with((!(|item[15:6])) && (!(|item[31:25]))&& (item[23]==0) && (item[19]==0));
      
-      bins legalSecondRegval = {[0:$]} with ((!(|apbTx.pwdata[31:27]) )&& (!(|apbTx.pwdata[23:22])) && (!(|apbTx.pwdata[15:11])) && (!(|apbTx.pwdata[7:4])));
+      bins legalSecondRegval = {[0:$]} with ((!(|item[31:27]) )&& (!(|item[23:22])) && (!(|item[15:11])) && (!(|item[7:4])));
 
 
-      bins legalThirdRegval = {[0:$]} with ((!(|apbTx.pwdata[31:11]) )&&(!(|apbTx.pwdata[7:4])));
+      bins legalThirdRegval = {[0:$]} with ((!(|item[31:11]) )&&(!(|item[7:4])));
 
-      bins legalFourthRegval = {[0:$]} with ((!(|apbTx.pwdata[31:30]) )&& (!(|apbTx.pwdata[17:15])) && (!(|apbTx.pwdata[8])) && (!(|apbTx.pwdata[3])));
+      bins legalFourthRegval = {[0:$]} with ((!(|item[31:30]) )&& (!(|item[17:15])) && (!(|item[8])) && (!(|item[3])));
 
 
       bins allLegalVal ={[0:$]}; //5 to 11 ,13,14,15,16,18,19,23,24,29,30,32,34
 
     
-      bins legalEleventhRegVal = {[0:$]} with ((!(|apbTx.pwdata[31:20]) )&& (!(|apbTx.pwdata[15:12]))); //11
+      bins legalEleventhRegVal = {[0:$]} with ((!(|item[31:20]) )&& (!(|item[15:12]))); //11
      
-      bins legalTwelfthRegVal ={[0:$]}with ((!(|apbTx.pwdata[31:20]) )&& (!(|apbTx.pwdata[15:12]))); //12
+      bins legalTwelfthRegVal ={[0:$]}with ((!(|item[31:20]) )&& (!(|item[15:12]))); //12
 
-      bins legalSeventeenthRegVal ={[0:$]} with((!(|apbTx.pwdata[31:21]) )&& (!(|apbTx.pwdata[15 :13])) && (!(|apbTx.pwdata[7:0]))); //17
+      bins legalSeventeenthRegVal ={[0:$]} with((!(|item[31:21]) )&& (!(|item[15 :13])) && (!(|item[7:0]))); //17
 
-      bins legalTwentiethRegVal ={[0:$]}with ((!(|apbTx.pwdata[31:24]) )&& (!(|apbTx.pwdata[15:12]))); //
+      bins legalTwentiethRegVal ={[0:$]}with ((!(|item[31:24]) )&& (!(|item[15:12]))); //
       
-      bins legalTwentyOneRegVal ={[0:$]}with ((!(|apbTx.pwdata[31:24]) )&& (!(|apbTx.pwdata[15:12])));
+      bins legalTwentyOneRegVal ={[0:$]}with ((!(|item[31:24]) )&& (!(|item[15:12])));
 
-      bins legalTwentyTwoRegVal={[0:$]} with ((!(|apbTx.pwdata[31:10]) ));
+      bins legalTwentyTwoRegVal={[0:$]} with ((!(|item[31:10]) ));
 
-      bins legalTwentyFiveRegVal ={[0:$]} with ((!(|apbTx.pwdata[31:11]) )&& (!(|apbTx.pwdata[8:0])));
-      bins legalTwentySixRegVal ={[0:$]} with ((!(|apbTx.pwdata[31:10]) ));
+      bins legalTwentyFiveRegVal ={[0:$]} with ((!(|item[31:11]) )&& (!(|item[8:0])));
+      bins legalTwentySixRegVal ={[0:$]} with ((!(|item[31:10]) ));
 
-      bins legalTwentySevenRegVal = {[0:$]} with ((!(|apbTx.pwdata[31:17])));
+      bins legalTwentySevenRegVal = {[0:$]} with ((!(|item[31:17])));
 
-      bins legalTwentyEigthRegVal ={[0:$]}with ((!(|apbTx.pwdata[1])));
+      bins legalTwentyEigthRegVal ={[0:$]}with ((!(|item[1])));
 
-      bins legalThirtyOneRegVal ={[0:$]}with ((!(|apbTx.pwdata[31:4])));
+      bins legalThirtyOneRegVal ={[0:$]}with ((!(|item[31:4])));
 
-      bins legalThirtyThreeRegVal={[0:$]} with((!(|apbTx.pwdata[15:8])) && (!(|apbTx.pwdata[6:5])));
+      bins legalThirtyThreeRegVal={[0:$]} with((!(|item[15:8])) && (!(|item[6:5])));
 
-      bins legalThirtyFiveRegVal ={[0:$]}with ((!(|apbTx.pwdata[31:8]) ));
+      bins legalThirtyFiveRegVal ={[0:$]}with ((!(|item[31:8]) ));
 
-      bins legalThirtySixRegVal ={[0:$]}with (!(|apbTx.pwdata[31:3]) );
+      bins legalThirtySixRegVal ={[0:$]}with (!(|item[31:3]) );
 
-      bins legalThirtySevenRegVal ={[0:$]}with((!(|apbTx.pwdata[31:30])) && (!(|apbTx.pwdata[25])));
+      bins legalThirtySevenRegVal ={[0:$]}with((!(|item[31:30])) && (!(|item[25])));
 
-      bins legalThirtyEigthRegVal={[0:$]} with((!(|apbTx.pwdata[31:26])) && (!(|apbTx.pwdata[17:13])));
+      bins legalThirtyEigthRegVal={[0:$]} with((!(|item[31:26])) && (!(|item[17:13])));
    }
 
     cross LEGAL_ADDR,LEGAL_VAL{
