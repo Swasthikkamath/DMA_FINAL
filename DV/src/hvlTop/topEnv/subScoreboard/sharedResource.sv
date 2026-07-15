@@ -780,7 +780,7 @@ task sharedResource::setUp1DAddress(int channel);
           calculateSrcXsize = srcXsize;
         end
   
-        if((yType==Y_WRAP  && totalElements == (srcXsize * srcYsize) && xType==X_CONTINUE) || (yType==Y_WRAP && ((totalTransferPerRow % desXsize)==0)&&(row_no==(srcYsize) && xType != X_CONTINUE) && (desXsize < srcXsize))  || (yType==Y_WRAP && ((totalTransferPerRow % srcXsize)==0)&&(row_no==(srcYsize) && xType == X_FILL) && (desXsize > srcXsize)) || (yType==Y_WRAP && ((totalTransferPerRow % desXsize)==0)&&(row_no==(srcYsize) && xType == X_WRAP) && (desXsize > srcXsize)))begin //is not triggered for xtype fill/wrap and ytype in des is greater 
+        if((yType==Y_WRAP  && totalElements == (srcXsize * srcYsize) && xType==X_CONTINUE) || (yType==Y_WRAP && ((totalTransferPerRow % desXsize)==0)&&(row_no==(srcYsize) && xType != X_CONTINUE) && (desXsize <= srcXsize))  || (yType==Y_WRAP && ((totalTransferPerRow % srcXsize)==0)&&(row_no==(srcYsize) && xType == X_FILL) && (desXsize > srcXsize)) || (yType==Y_WRAP && ((totalTransferPerRow % desXsize)==0)&&(row_no==(srcYsize) && xType == X_WRAP) && (desXsize > srcXsize)))begin //is not triggered for xtype fill/wrap and ytype in des is greater 
           row_base = srcAddr;
           row_no=1;
           push_addr = row_base;
