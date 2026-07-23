@@ -595,14 +595,14 @@ task sharedResource::setUp1DAddress(int channel);
   has2D=dmaChannelRegHandle[channel].CH_BUILDCFG1.HAS_2D;
   if(dmaChannelRegHandle[channel].CH_XADDRINC.SRCXADDRINC[15]==1)begin //to support negative dir 
    srcIncr[31:16] = '1;
-   srcIncr = dmaChannelRegHandle[channel].CH_XADDRINC.SRCXADDRINC;
+   srcIncr[15:0] = dmaChannelRegHandle[channel].CH_XADDRINC.SRCXADDRINC;
   end 
   else begin 
     srcIncr = dmaChannelRegHandle[channel].CH_XADDRINC.SRCXADDRINC;
   end 
   if(dmaChannelRegHandle[channel].CH_XADDRINC.DESXADDRINC[15]==1)begin 
     desIncr[31:16]='1;
-    desIncr = dmaChannelRegHandle[channel].CH_XADDRINC.DESXADDRINC;
+    desIncr[15:0] = dmaChannelRegHandle[channel].CH_XADDRINC.DESXADDRINC;
   end 
   else begin 
     desIncr = dmaChannelRegHandle[channel].CH_XADDRINC.DESXADDRINC;
@@ -768,10 +768,11 @@ task sharedResource::setUp1DAddress(int channel);
       push_addr = row_base;
 
       for(int i=0;i<numberOfReadReq[channel];i++) begin
-        push_addr = push_addr + ( ((totalTransferPerRow==0 )|| (totalTransferPerRow%srcXsize)==0&& (i!=1)) ? 0 : (beat_bytes *srcIncr));
+        push_addr = push_addr + ( ((totalTransferPerRow==0 )|| (totalTransferPerRow%srcXsize)==0&& (i!=1)) ? 0 : (int'(beat_bytes *srcIncr)));
         totalTransferPerRow++; 
         totalElements++;
         expectedReadAddr[channel].push_back(push_addr);
+        $display("PUSH ADDRESS = %d", push_addr);
        `uvm_info("TOP_SCOREBOARD",$sformatf("2D Excepted Read Addr:%p and qsize is %0d row_no=%0d srcysize=%0d noOfElem=%0d ytype %s",expectedReadAddr,expectedReadAddr[channel].size(),row_no,srcYsize,totalTransferPerRow,yType),UVM_NONE)
  
         calculateSrcXsize--;
@@ -815,6 +816,7 @@ task sharedResource::setUp1DAddress(int channel);
           push_addr = row_base;
         end 
       end 
+      $display("DESTINATION ADDRESS=%p",expectedWriteAddr[channel]);
     end  
   end 
 endtask

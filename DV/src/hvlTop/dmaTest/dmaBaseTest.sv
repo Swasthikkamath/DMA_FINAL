@@ -52,7 +52,7 @@ endfunction
 function void dmaBaseTest::setUpConfigHeirarchy();
   topEnvConfigHandle  = topEnvConfig :: type_id :: create("topEnvConfigHandle");
   topEnvConfigHandle.hasScoreboard = 1;
-  topEnvConfigHandle.hasCoverage = 1;
+  topEnvConfigHandle.hasCoverage = 0;
   topEnvConfigHandle.hasVirtualSequencer = 1;
   topEnvConfigHandle.regBlockHandle = reg_block_top :: type_id :: create("regBlockHandle");
   topEnvConfigHandle.regBlockHandle.build();
