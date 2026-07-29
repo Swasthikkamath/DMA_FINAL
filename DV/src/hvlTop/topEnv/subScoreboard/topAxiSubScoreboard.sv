@@ -139,11 +139,15 @@
           $display("HEY BYE SRC %d DES %d transfer %d",sharedResource::initialSrcXsize[arbitChannel],sharedResource::initialDesXsize[arbitChannel],numberOfTransfer[arbitChannel]);
           if((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE == X_CONTINUE) &&(sharedResource::initialSrcXsize[arbitChannel] > sharedResource::initialDesXsize[arbitChannel])&&(numberOfTransfer[arbitChannel] == sharedResource::initialSrcXsize[arbitChannel]))begin 
             numOfRows[arbitChannel]++;
+            $display("HELLO CHECK NUMBER OF ROWS %d",numOfRows[arbitChannel]);
+            $display("HELLO CHECK NUMBER OF TRANSFER %d",numberOfTransfer[arbitChannel]);
             numberOfTransfer[arbitChannel]=0;
             $display("HEY BYE");
           end 
           else if((numberOfTransfer[arbitChannel] ==  sharedResource::initialSrcXsize[arbitChannel] )&&((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE == X_CONTINUE) &&(sharedResource::initialSrcXsize[arbitChannel] <= sharedResource::initialDesXsize[arbitChannel]))) begin 
             numOfRows[arbitChannel]++;
+            $display("HELLO CHECK NUMBER OF ROWS %d",numOfRows[arbitChannel]);
+            $display("HELLO CHECK NUMBER OF TRANSFER %d",numberOfTransfer[arbitChannel]);
             numberOfTransfer[arbitChannel]=0;
           end
           else if (sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE != X_CONTINUE &&(numberOfTransfer[arbitChannel] == sharedResource::initialDesXsize[arbitChannel]))begin
@@ -252,9 +256,13 @@
           numberOfTransfer[arbitChannel]=0;
           $display("HEY BYE");
         end 
-        else if((numberOfTransfer[arbitChannel] ==  sharedResource::initialDesXsize[arbitChannel] )&&((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE == X_CONTINUE) &&(sharedResource::initialSrcXsize[arbitChannel] <= sharedResource::initialDesXsize[arbitChannel]))) begin 
+        else if((numberOfTransfer[arbitChannel] ==  sharedResource::initialSrcXsize[arbitChannel] )&&((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE == X_CONTINUE) &&(sharedResource::initialSrcXsize[arbitChannel] <= sharedResource::initialDesXsize[arbitChannel]))) begin 
           numOfRows[arbitChannel]++;
+          $display("HELLO CHECK NUMBER OF TRANSFER %d",numberOfTransfer[arbitChannel]);
+           
+          $display("HELLO CHECK THIS %d",numOfRows[arbitChannel]);
           numberOfTransfer[arbitChannel]=0;
+
         end
         else if (sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE != X_CONTINUE &&(numberOfTransfer[arbitChannel] == sharedResource::initialDesXsize[arbitChannel]))begin
           numOfRows[arbitChannel]++;
