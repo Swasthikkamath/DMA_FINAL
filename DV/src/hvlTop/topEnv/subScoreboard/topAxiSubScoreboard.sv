@@ -33,17 +33,17 @@
 
   function void topAxiSubScoreboard :: build_phase(uvm_phase phase); 
     super.build_phase(phase);
-    peripheralUnitAxi4MasterPathWriteAddressAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES];
-    peripheralUnitAxi4MasterPathWriteDataAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES];
-    peripheralUnitAxi4MasterPathWriteResponseAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES];
-    peripheralUnitAxi4MasterPathReadAddressAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES];
-    peripheralUnitAxi4MasterPathReadDataAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES];
+    peripheralUnitAxi4MasterPathWriteAddressAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES+1];
+    peripheralUnitAxi4MasterPathWriteDataAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES+1];
+    peripheralUnitAxi4MasterPathWriteResponseAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES+1];
+    peripheralUnitAxi4MasterPathReadAddressAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES+1];
+    peripheralUnitAxi4MasterPathReadDataAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES+1];
 
-    peripheralUnitAxi4SlavePathWriteAddressAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES];
-    peripheralUnitAxi4SlavePathWriteDataAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES];
-    peripheralUnitAxi4SlavePathWriteResponseAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES];
-    peripheralUnitAxi4SlavePathReadAddressAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES];
-    peripheralUnitAxi4SlavePathReadDataAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES];
+    peripheralUnitAxi4SlavePathWriteAddressAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES+1];
+    peripheralUnitAxi4SlavePathWriteDataAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES+1];
+    peripheralUnitAxi4SlavePathWriteResponseAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES+1];
+    peripheralUnitAxi4SlavePathReadAddressAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES+1];
+    peripheralUnitAxi4SlavePathReadDataAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES+1];
 
 
     foreach (peripheralUnitAxi4MasterPathWriteAddressAnalysisExport[i]) begin

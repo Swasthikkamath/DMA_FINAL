@@ -81,7 +81,8 @@ function void axi4_slave_agent::build_phase(uvm_phase phase);
    if(axi4_slave_agent_cfg_h.has_coverage) begin
     axi4_slave_cov_h = axi4_slave_coverage::type_id::create("axi4_slave_cov_h",this);
    end
-       axi4_slave_drv_proxy_h.axi4_slave_agent_cfg_h  = axi4_slave_agent_cfg_h;
+  axi4_slave_drv_proxy_h.slaveId = slaveId;
+    axi4_slave_drv_proxy_h.axi4_slave_agent_cfg_h  = axi4_slave_agent_cfg_h;
     axi4_slave_write_seqr_h.axi4_slave_agent_cfg_h = axi4_slave_agent_cfg_h;
     axi4_slave_read_seqr_h.axi4_slave_agent_cfg_h  = axi4_slave_agent_cfg_h;
     axi4_slave_cov_h.axi4_slave_agent_cfg_h        = axi4_slave_agent_cfg_h;

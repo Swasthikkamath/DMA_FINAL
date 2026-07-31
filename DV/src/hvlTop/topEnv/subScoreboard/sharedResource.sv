@@ -7,7 +7,7 @@ class sharedResource extends uvm_object;
   //variable: flowControl
   //type: bit
   //used to as flag to indicate mode of trigger except command mode
-  static bit flowControl[axi4_globals_pkg::NO_OF_SLAVES];
+  static bit flowControl[axi4_globals_pkg::NO_OF_SLAVES+1];
 
   //Variable: topEnvConfigHandle
   //Type : topEnvConfig
@@ -65,14 +65,14 @@ class sharedResource extends uvm_object;
   //Variable: triggerPortChannelMap
   //Type : int
   //Description : Variable is used to hold the channel assoiated to a channel
-  static int triggerPortChannelMap[axi4_globals_pkg::NO_OF_SLAVES];
+  static int triggerPortChannelMap[axi4_globals_pkg::NO_OF_SLAVES+1];
 
   static int reloadCount[dmaGlobalPkg :: NUM_CHANNELS];
 
   //Variable: triggerOutPortChannelMap
   //Type : int
   //Description : Variable is used to hold the channel assoiated to a channel
-  static int triggerOutPortChannelMap[axi4_globals_pkg::NO_OF_SLAVES];
+  static int triggerOutPortChannelMap[axi4_globals_pkg::NO_OF_SLAVES+1];
 
   //Variable: triggerSrcTaskCall
   //Type : bit
@@ -98,7 +98,7 @@ class sharedResource extends uvm_object;
   //Type : bit
   //Description :Variable is used as flag to indicate whether a command is done and to leave the 
   //accessed trigger
-  static bit commandDone[axi4_globals_pkg :: NO_OF_SLAVES];
+  static bit commandDone[axi4_globals_pkg :: NO_OF_SLAVES+1];
   
   //Variable: pauseChannel
   //Type : bit
@@ -140,7 +140,7 @@ class sharedResource extends uvm_object;
   //Variable: respref
   //Type : axi4_master_tx
   //Description : This handle is used to hold the expected response of axi4 transaction
-  static axi4_master_tx respRef[axi4_globals_pkg::NO_OF_SLAVES];
+  static axi4_master_tx respRef[axi4_globals_pkg::NO_OF_SLAVES+1];
   
   //Variable: channelQueue
   //Type : anonymous
@@ -151,12 +151,12 @@ class sharedResource extends uvm_object;
   //Variable: triggerAccessed
   //Type : bit
   //Description : This handle is used as a flag to indicate whether currently trigger is accessed or   //not this is made zero when the trigger associated channel command is done
-  static bit triggerAccessed[axi4_globals_pkg::NO_OF_SLAVES];
+  static bit triggerAccessed[axi4_globals_pkg::NO_OF_SLAVES+1];
 
   //Variable: triggerOutAccessed
   //Type : bit
   //Description : This handle is used as a flag to indicate whether currently trigger is accessed or   //not this is made zero when the trigger associated channel command is done
-  static bit triggerOutAccessed[axi4_globals_pkg::NO_OF_SLAVES];
+  static bit triggerOutAccessed[axi4_globals_pkg::NO_OF_SLAVES+1];
  
   //Variable: peripheralMem
   //Type : axi4_slave_memory
@@ -221,14 +221,14 @@ class sharedResource extends uvm_object;
   //Type : semaphore
   //Description : This handle of semaphore is used to control when we can expect a trigger
   //key is allocated when we are expecting a harware based trigger and not during software one 
-  static semaphore semaPhoreTriggerHandle[axi4_globals_pkg::NO_OF_SLAVES];
+  static semaphore semaPhoreTriggerHandle[axi4_globals_pkg::NO_OF_SLAVES+1];
  
-  static semaphore semaPhoreTriggerOutHandle[axi4_globals_pkg::NO_OF_SLAVES]; 
+  static semaphore semaPhoreTriggerOutHandle[axi4_globals_pkg::NO_OF_SLAVES+1]; 
   //Variable: readWriteTriggerMap
   //Type : array of bits
   //Description : This variable is used to keep track of whether a trigger port is for source or is 
   // it for the destination side 
-  static bit readWriteTriggerMap[axi4_globals_pkg::NO_OF_SLAVES];
+  static bit readWriteTriggerMap[axi4_globals_pkg::NO_OF_SLAVES+1];
  
   //Variable: interruptAccessed
   //Type : int 

@@ -21,11 +21,11 @@ extern task handleTriggerOut();
 endclass
 
 function void topTriggerSubScoreboard :: build_phase(uvm_phase phase);
-  peripheralUnitTriggerMasterPathAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES];
-  peripheralUnitTriggerSlavePathAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES];
+  peripheralUnitTriggerMasterPathAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES+1];
+  peripheralUnitTriggerSlavePathAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES+1];
   
-  peripheralUnitTriggerOutMasterPathAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES];
-  peripheralUnitTriggerOutSlavePathAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES];
+  peripheralUnitTriggerOutMasterPathAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES+1];
+  peripheralUnitTriggerOutSlavePathAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES+1];
 
   foreach(peripheralUnitTriggerMasterPathAnalysisExport[i]) begin
     peripheralUnitTriggerMasterPathAnalysisExport[i] =new($sformatf("peripheralUnitTriggerMasterPathAnalysisExport[%0d]", i), this);

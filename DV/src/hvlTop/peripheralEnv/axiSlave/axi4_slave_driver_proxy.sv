@@ -21,6 +21,7 @@ class axi4_slave_driver_proxy extends uvm_driver#(axi4_slave_tx);
   uvm_analysis_port #(RSP) axi_write_rsp_port;
   uvm_analysis_port #(RSP) axi_read_rsp_port;
   
+  int slaveId;
   REQ req_wr, req_rd;
   RSP rsp_wr, rsp_rd;
 
@@ -317,9 +318,14 @@ task axi4_slave_driver_proxy::axi4_write_task();
         end 
         `uvm_info("slave_driver_proxy",$sformatf("fifo_size = %0d",axi4_slave_write_data_out_fifo_h.used()),UVM_DEBUG)
         if(axi4_slave_agent_cfg_h.read_data_mode == SLAVE_MEM_MODE || axi4_slave_agent_cfg_h.read_data_mode == SLAVE_ERR_RESP_MODE) begin 
-          if(!((local_slave_addr_tx.awaddr inside {[axi4_slave_agent_cfg_h.min_address :axi4_slave_agent_cfg_h.max_address]}) && (end_wrap_addr inside{[axi4_slave_agent_cfg_h.min_address : axi4_slave_agent_cfg_h.max_address]}))) begin 
-            struct_write_packet.bresp = WRITE_SLVERR;
-            slave_err = 1;
+          if(!((local_slave_addr_tx.awaddr inside {[axi4_slave_agent_cfg_h.min_address :axi4_slave_agent_cfg_h.max_address]}) && (end_wrap_addr inside{[axi4_slave_agent_cfg_h.min_address : axi4_slave_agent_cfg_h.max_address]}))) begin
+            if(slaveId==axi4_globals_pkg::NO_OF_SLAVES) begin 
+              struct_write_packet.bresp = WRITE_DECERR;
+            end 
+            else begin
+              struct_write_packet.bresp = WRITE_SLVERR;
+            end 
+              slave_err = 1;
           end 
         end
 
@@ -332,6 +338,9 @@ task axi4_slave_driver_proxy::axi4_write_task();
         bid_local = local_slave_addr_tx.awid;
         if(axi4_slave_agent_cfg_h.read_data_mode == SLAVE_MEM_MODE || axi4_slave_agent_cfg_h.read_data_mode == SLAVE_ERR_RESP_MODE) begin 
           if(!((local_slave_addr_tx.awaddr inside {[axi4_slave_agent_cfg_h.min_address :axi4_slave_agent_cfg_h.max_address]}) )) begin
+            if(slaveId == axi4_globals_pkg::NO_OF_SLAVES)
+              struct_write_packet.bresp = WRITE_DECERR;
+            else 
             struct_write_packet.bresp = WRITE_SLVERR;
             slave_err = 1;
           end 
@@ -669,6 +678,9 @@ struct_read_packet.rid = read_pkt.arid;
       end
         
       if((read_pkt.araddr+((2**(read_pkt.arsize))))> axi4_slave_agent_cfg_h.max_address) begin
+        if(slaveId == axi4_globals_pkg::NO_OF_SLAVES)
+          struct_read_packet.rresp[0]=READ_DECERR;
+        else 
         struct_read_packet.rresp[0] = READ_SLVERR;
       end
       else 
@@ -709,8 +721,12 @@ struct_read_packet.rid = read_pkt.arid;
              `uvm_info("SLAVE DRIVER PROXY",$sformatf("SLAVE WRAP READ THE DATA EXISTS READ FROM %0d AND READ DATA IS %0d",addr,struct_read_packet.rdata[0][8*k+7 -: 8]),UVM_DEBUG)
 
           end 
-          else begin 
-            struct_read_packet.rresp[0] = READ_SLVERR;
+          else begin
+                if(slaveId == axi4_globals_pkg::NO_OF_SLAVES)
+                  struct_read_packet.rresp[0]=READ_DECERR;
+                else 
+                  struct_read_packet.rresp[0] = READ_SLVERR;
+
             	`uvm_info("SLAVE DRIVER PROXY",$sformatf("SLAVE WRAP READ THE DATA DOESNT EXIST READ FROM %0d",addr),UVM_DEBUG)
             struct_read_packet.rdata[0][k*k+7 -:8] = '0;
             addr++;
@@ -748,7 +764,11 @@ struct_read_packet.rid = read_pkt.arid;
         for(int strb=0;strb<((2**read_pkt.arsize)-amount);strb++) begin
           if(k_t < end_addr)  begin
            if(k_t >axi4_slave_agent_cfg_h.max_address && k_t < axi4_slave_agent_cfg_h.min_address)
-            struct_read_packet.rresp[0] = READ_SLVERR; 
+             if(slaveId == axi4_globals_pkg::NO_OF_SLAVES)
+               struct_read_packet.rresp[0]=READ_DECERR;
+             else 
+              struct_read_packet.rresp[0] = READ_SLVERR;
+
            k = k_t % (DATA_WIDTH/8);
            if(axi4_slave_mem_h.is_slave_addr_exists(k_t))begin  
              axi4_slave_mem_h.mem_read(k_t,struct_read_packet.rdata[0][8*k+7 -: 8]);

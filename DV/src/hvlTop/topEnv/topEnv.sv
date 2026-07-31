@@ -74,7 +74,7 @@ function void topEnv::build_phase(uvm_phase phase);
   end 
   
   // Create peripheral environments (array)
-  peripheralEnvHandle = new[axi4_globals_pkg::NO_OF_SLAVES]; 
+  peripheralEnvHandle = new[axi4_globals_pkg::NO_OF_SLAVES+1]; 
   topEnvVirtualSequencerHandle.peripheralEnvVirtualSequencerHandle = new[axi4_globals_pkg::NO_OF_SLAVES];
   
   foreach(peripheralEnvHandle[i]) begin 

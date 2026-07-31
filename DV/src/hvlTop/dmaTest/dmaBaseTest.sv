@@ -77,7 +77,7 @@ endfunction
 function void dmaBaseTest::setupAxi4MasterAgentConfig();
   bit [63:0]local_min_address;
   bit [63:0]local_max_address;
-  topEnvConfigHandle.peripheralEnvConfigHandle.axi4MasterAgentConfigHandle = new[axi4_globals_pkg::NO_OF_SLAVES];
+  topEnvConfigHandle.peripheralEnvConfigHandle.axi4MasterAgentConfigHandle = new[axi4_globals_pkg::NO_OF_SLAVES+1];
   foreach(topEnvConfigHandle.peripheralEnvConfigHandle.axi4MasterAgentConfigHandle[i])begin
     topEnvConfigHandle.peripheralEnvConfigHandle.axi4MasterAgentConfigHandle[i]=
     axi4_master_agent_config::type_id::create($sformatf("axi4_master_agent_cfg_h[%0d]",i));
@@ -93,7 +93,7 @@ function void dmaBaseTest::setupAxi4MasterAgentConfig();
     
   end
 
-  for(int i =0; i<axi4_globals_pkg::NO_OF_SLAVES;i++) begin
+  for(int i =0; i<=axi4_globals_pkg::NO_OF_SLAVES;i++) begin
     if(i == 0) begin  
       topEnvConfigHandle.peripheralEnvConfigHandle.axi4MasterAgentConfigHandle[i].master_min_addr_range(i,0);
       local_min_address = topEnvConfigHandle.peripheralEnvConfigHandle.axi4MasterAgentConfigHandle[i].master_min_addr_range_array[i];
@@ -101,16 +101,24 @@ function void dmaBaseTest::setupAxi4MasterAgentConfig();
       local_max_address = topEnvConfigHandle.peripheralEnvConfigHandle.axi4MasterAgentConfigHandle[i].master_max_addr_range_array[i];
     end
     else begin
-      topEnvConfigHandle.peripheralEnvConfigHandle.axi4MasterAgentConfigHandle[i].master_min_addr_range(i,local_max_address + SLAVE_MEMORY_GAP);
-      local_min_address = topEnvConfigHandle.peripheralEnvConfigHandle.axi4MasterAgentConfigHandle[i].master_min_addr_range_array[i];
-      topEnvConfigHandle.peripheralEnvConfigHandle.axi4MasterAgentConfigHandle[i].master_max_addr_range(i,local_max_address+ 2**(SLAVE_MEMORY_SIZE)-1 + SLAVE_MEMORY_GAP);
-      local_max_address = topEnvConfigHandle.peripheralEnvConfigHandle.axi4MasterAgentConfigHandle[i].master_max_addr_range_array[i];
+      if(i==axi4_globals_pkg::NO_OF_SLAVES) begin 
+        topEnvConfigHandle.peripheralEnvConfigHandle.axi4MasterAgentConfigHandle[i].master_min_addr_range(i,local_max_address + SLAVE_MEMORY_GAP);
+        local_min_address = topEnvConfigHandle.peripheralEnvConfigHandle.axi4MasterAgentConfigHandle[i].master_min_addr_range_array[i];
+        topEnvConfigHandle.peripheralEnvConfigHandle.axi4MasterAgentConfigHandle[i].master_max_addr_range(i, local_max_address + SLAVE_MEMORY_GAP);
+        local_max_address = topEnvConfigHandle.peripheralEnvConfigHandle.axi4MasterAgentConfigHandle[i].master_max_addr_range_array[i];
+      end 
+      else begin 
+        topEnvConfigHandle.peripheralEnvConfigHandle.axi4MasterAgentConfigHandle[i].master_min_addr_range(i,local_max_address + SLAVE_MEMORY_GAP);
+        local_min_address = topEnvConfigHandle.peripheralEnvConfigHandle.axi4MasterAgentConfigHandle[i].master_min_addr_range_array[i];
+        topEnvConfigHandle.peripheralEnvConfigHandle.axi4MasterAgentConfigHandle[i].master_max_addr_range(i,local_max_address+ 2**(SLAVE_MEMORY_SIZE)-1 + SLAVE_MEMORY_GAP);
+        local_max_address = topEnvConfigHandle.peripheralEnvConfigHandle.axi4MasterAgentConfigHandle[i].master_max_addr_range_array[i];
+      end 
     end
   end
 endfunction
 
 function void dmaBaseTest::setupAxi4SlaveAgentConfig();
-  topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle= new[axi4_globals_pkg::NO_OF_SLAVES];
+  topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle= new[axi4_globals_pkg::NO_OF_SLAVES+1];
   foreach(topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i])begin
     topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i] =
     axi4_slave_agent_config::type_id::create($sformatf("axi4_slave_agent_cfg_h[%0d]",i));
@@ -140,7 +148,7 @@ function void dmaBaseTest::setupAxi4SlaveAgentConfig();
 endfunction
 
 function void dmaBaseTest::setupTriggerSlaveAgentConfig();
-  topEnvConfigHandle.peripheralEnvConfigHandle.triggerSlaveAgentConfigHandle = new[axi4_globals_pkg::NO_OF_SLAVES];
+  topEnvConfigHandle.peripheralEnvConfigHandle.triggerSlaveAgentConfigHandle = new[axi4_globals_pkg::NO_OF_SLAVES+1];
   foreach(topEnvConfigHandle.peripheralEnvConfigHandle.triggerSlaveAgentConfigHandle[i]) begin 
     topEnvConfigHandle.peripheralEnvConfigHandle.triggerSlaveAgentConfigHandle[i]= triggerSlaveAgentConfig :: type_id :: create($sformatf("triggerSlaveAgentConfigHandle[%0d]",i));
     topEnvConfigHandle.peripheralEnvConfigHandle.triggerSlaveAgentConfigHandle[i].is_active =UVM_PASSIVE;
@@ -155,7 +163,7 @@ function void dmaBaseTest::setupTriggerSlaveAgentConfig();
 endfunction 
 
 function void dmaBaseTest::setupTriggerMasterAgentConfig();
-  topEnvConfigHandle.peripheralEnvConfigHandle.triggerMasterAgentConfigHandle = new[axi4_globals_pkg::NO_OF_SLAVES];
+  topEnvConfigHandle.peripheralEnvConfigHandle.triggerMasterAgentConfigHandle = new[axi4_globals_pkg::NO_OF_SLAVES+1];
   foreach(topEnvConfigHandle.peripheralEnvConfigHandle.triggerMasterAgentConfigHandle[i]) begin 
     topEnvConfigHandle.peripheralEnvConfigHandle.triggerMasterAgentConfigHandle[i]= triggerMasterAgentConfig :: type_id :: create($sformatf("triggerMasterAgentConfigHandle[%0d]",i));
     topEnvConfigHandle.peripheralEnvConfigHandle.triggerMasterAgentConfigHandle[i].is_active =UVM_ACTIVE;
