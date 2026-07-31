@@ -44,11 +44,11 @@ interface AxiInterconnect(
   input logic aclk,
   input logic aresetn,
   axi4_if axiMasterInterface[NO_OF_MASTERS],
-  axi4_if axiSlaveInterface[NO_OF_SLAVES]
+  axi4_if axiSlaveInterface[NO_OF_SLAVES+1]
 );
 
-logic[NO_OF_MASTERS-1:0]masterWriteReq[NO_OF_SLAVES];
-logic[NO_OF_MASTERS-1:0]masterReadReq[NO_OF_SLAVES];
+logic[NO_OF_MASTERS-1:0]masterWriteReq[NO_OF_SLAVES+1];
+logic[NO_OF_MASTERS-1:0]masterReadReq[NO_OF_SLAVES+1];
   // ============================================================================
   // 1. Master Signal Collection (Unpacking)
   // ============================================================================
@@ -117,20 +117,20 @@ logic[NO_OF_MASTERS-1:0]masterReadReq[NO_OF_SLAVES];
   // ============================================================================
   // 2. Slave Signal Collection (Unpacking)
   // ============================================================================
-  logic slave_awready[NO_OF_SLAVES];
-  logic slave_wready[NO_OF_SLAVES];
-  logic [ID_WIDTH-1:0] slave_bid[NO_OF_SLAVES];
-  logic [1:0]          slave_bresp[NO_OF_SLAVES];
-  logic                slave_bvalid[NO_OF_SLAVES];
-  logic slave_arready[NO_OF_SLAVES];
-  logic [ID_WIDTH-1:0]   slave_rid[NO_OF_SLAVES];
-  logic [DATA_WIDTH-1:0] slave_rdata[NO_OF_SLAVES];
-  logic [1:0]            slave_rresp[NO_OF_SLAVES];
-  logic                  slave_rlast[NO_OF_SLAVES];
-  logic                  slave_rvalid[NO_OF_SLAVES];
+  logic slave_awready[NO_OF_SLAVES+1];
+  logic slave_wready[NO_OF_SLAVES+1];
+  logic [ID_WIDTH-1:0] slave_bid[NO_OF_SLAVES+1];
+  logic [1:0]          slave_bresp[NO_OF_SLAVES+1];
+  logic                slave_bvalid[NO_OF_SLAVES+1];
+  logic slave_arready[NO_OF_SLAVES+1];
+  logic [ID_WIDTH-1:0]   slave_rid[NO_OF_SLAVES+1];
+  logic [DATA_WIDTH-1:0] slave_rdata[NO_OF_SLAVES+1];
+  logic [1:0]            slave_rresp[NO_OF_SLAVES+1];
+  logic                  slave_rlast[NO_OF_SLAVES+1];
+  logic                  slave_rvalid[NO_OF_SLAVES+1];
 
   generate
-    for (genvar s = 0; s < NO_OF_SLAVES; s++) begin : slave_signal_collect
+    for (genvar s = 0; s < (NO_OF_SLAVES+1); s++) begin : slave_signal_collect
       always_comb begin
         slave_awready[s] = axiSlaveInterface[s].awready;
         slave_wready[s]  = axiSlaveInterface[s].wready;
@@ -150,7 +150,7 @@ logic[NO_OF_MASTERS-1:0]masterReadReq[NO_OF_SLAVES];
   // ============================================================================
   // 3. Range-Based Address Decoder
   // ============================================================================
-  function automatic logic [$clog2(NO_OF_SLAVES):0] decode_address(logic [ADDR_WIDTH-1:0] addr);
+  function automatic logic [($clog2(NO_OF_SLAVES+1)-1):0] decode_address(logic [ADDR_WIDTH-1:0] addr);
     // Fixed Range for Slave 0: 0 to 4095 (0x000 to 0xFFF)
     if (addr > 32'h0000_0000 && addr <= 32'd 4096) return 0;
     
@@ -160,7 +160,7 @@ logic[NO_OF_MASTERS-1:0]masterReadReq[NO_OF_SLAVES];
         return i;
      end 
     end
-    return -1; // Invalid
+    return NO_OF_SLAVES; // Invalid 00 01 10 11  4 
   endfunction
   
   function automatic int slaveOwner(int slaveId,int writeRead);
@@ -221,16 +221,16 @@ logic[NO_OF_MASTERS-1:0]masterReadReq[NO_OF_SLAVES];
   // ============================================================================
   typedef enum bit [1:0] {IDLE, ADDR_PHASE, DATA_PHASE} state_t;
   
-  state_t wr_state[NO_OF_SLAVES];
-  int wr_owner[NO_OF_SLAVES];
-  int wr_last_served[NO_OF_SLAVES];
+  state_t wr_state[NO_OF_SLAVES+1];
+  int wr_owner[NO_OF_SLAVES+1];
+  int wr_last_served[NO_OF_SLAVES+1];
 
-  state_t rd_state[NO_OF_SLAVES];
-  int rd_owner[NO_OF_SLAVES];
-  int rd_last_served[NO_OF_SLAVES];
+  state_t rd_state[NO_OF_SLAVES+1];
+  int rd_owner[NO_OF_SLAVES+1];
+  int rd_last_served[NO_OF_SLAVES+1];
 
   generate
-    for (genvar s = 0; s < NO_OF_SLAVES; s++) begin : arbitration_logic
+    for (genvar s = 0; s < (NO_OF_SLAVES+1); s++) begin : arbitration_logic
       
       // --- Write Channel State Machine ---
       always_ff @(posedge aclk or negedge aresetn) begin
@@ -308,7 +308,7 @@ logic[NO_OF_MASTERS-1:0]masterReadReq[NO_OF_SLAVES];
   // 5. Muxing: Master to Slave (Forward Path)
   // ============================================================================
   generate
-    for (genvar s = 0; s < NO_OF_SLAVES; s++) begin : m2s_routing
+    for (genvar s = 0; s < (NO_OF_SLAVES+1); s++) begin : m2s_routing
       always_comb begin
         // Default (Idle)
         axiSlaveInterface[s].awvalid = 1'b0;
@@ -366,7 +366,7 @@ logic[NO_OF_MASTERS-1:0]masterReadReq[NO_OF_SLAVES];
         axiMasterInterface[m].arready = 1'b0;
         axiMasterInterface[m].rvalid  = 1'b0;
 
-        for (int s = 0; s < NO_OF_SLAVES; s++) begin
+        for (int s = 0; s < (NO_OF_SLAVES+1); s++) begin
           // Write Handshakes
           if (wr_state[s] != IDLE && wr_owner[s] == m) begin
             axiMasterInterface[m].awready = (wr_state[s] == ADDR_PHASE) ? slave_awready[s] : 1'b0;

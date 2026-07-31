@@ -20,6 +20,7 @@ class topCoverage extends uvm_subscriber#(axi4_slave_tx);
   uvm_tlm_analysis_fifo#(interruptSlaveTx) coverageConfigUnitInterruptPathAnalysisExport;
 
   topEnvConfig topEnvConfigHandle;
+  
   covergroup cg with function sample(apb_master_tx apbTx=null,axi4_slave_tx writeAddrTx=null,axi4_slave_tx writeDataTx=null,axi4_slave_tx writeRespTx=null,axi4_slave_tx readAddrTx=null,axi4_slave_tx readDataTx=null,triggerSlaveTx triggerTx=null,interruptSlaveTx interruptTx=null);
     coverpoint apbTx.paddr iff(apbTx != null){
       bins targetCh0 = {['h 100: 'h 1ff]}with (((item)%4==0 ));
@@ -112,7 +113,7 @@ class topCoverage extends uvm_subscriber#(axi4_slave_tx);
 
       bins legalThirdRegval = {[0:$]} with ((!(|item[31:11]) )&&(!(|item[7:4])));
 
-      bins legalFourthRegval = {[0:$]} with ((!(|item[31:30]) )&& (!(|item[17:15])) && (!(|item[8])) && (!(|item[3])));
+      bins legalFourthRegval ={[0:'h ffffffff]} with ((!(|item[31:30]) )&& (!(|item[17:15])) && (!(|item[8])) && (!(|item[3])));
 
 
       bins allLegalVal ={[0:$]}; //5 to 11 ,13,14,15,16,18,19,23,24,29,30,32,34
