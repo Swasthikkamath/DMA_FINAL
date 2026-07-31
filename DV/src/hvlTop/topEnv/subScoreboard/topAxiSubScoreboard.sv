@@ -342,6 +342,24 @@
         `uvm_error("TOP_SCOREBOARD",$sformatf("ARBIT:EXPECTED CHANNEL IS %d GOT CHANNEL IS %d ",arbitChannel,raddr_tx.arid))
       //  end 
       peripheralUnitAxi4SlavePathReadDataAnalysisExport[slave_id].get(rdata_tx);
+      if(slave_id == axi4_globals_pkg::NO_OF_SLAVES) begin
+        int selectedInterface;
+        sharedResource ::dmaChannelRegHandle[arbitChannel].CH_ERRINFO.ERRINFO.AXIRDRESPERR =1;
+        sharedResource ::dmaChannelRegHandle[arbitChannel].CH_STATUS.STAT_ERR =1; //come out of arbitration
+        if(sharedResource ::dmaChannelRegHandle[arbitChannel].CH_INTREN.INTREN_ERR ==1) begin
+          sharedResource ::raiseError(arbitChannel, "CONFIG ERROR");
+        end
+        sharedResource::commandStatusPerChannel[arbitChannel].readDone=1;
+        for(int i=0;i<(axi4_globals_pkg :: NO_OF_SLAVES);i++) begin
+          if(sharedResource::initialSrcAddress[arbitChannel]>= sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].min_address && sharedResource::initialSrcAddress[arbitChannel]<sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].max_address) begin
+            selectedInterface=i;
+            break;
+          end
+        end
+
+        sharedResource::prioritySrcPerChannel[selectedInterface][arbitChannel].commandDone =1; //exiting the arbitChannel
+        continue;
+      end  
       if((raddr_tx.araddr inside {sharedResource::topEnvConfigHandle.addressIfLinking[sharedResource::channelRequestingLink]}) && headerRead ==0) begin
         header = rdata_tx.rdata[0];
         headerRead =1;
@@ -673,8 +691,25 @@
       int expectedAddr;
       trigReqEnum  triggerType;
       peripheralUnitAxi4MasterPathWriteResponseAnalysisExport[master_id].get(respTx);
-
       arbitChannel = checkArbit(master_id,0,1);
+      if(master_id == axi4_globals_pkg::NO_OF_SLAVES) begin
+        int selectedInterface;
+        sharedResource ::dmaChannelRegHandle[arbitChannel].CH_ERRINFO.ERRINFO.AXIRDRESPERR =1;
+        sharedResource ::dmaChannelRegHandle[arbitChannel].CH_STATUS.STAT_ERR =1; //come out of arbitration
+        if(sharedResource ::dmaChannelRegHandle[arbitChannel].CH_INTREN.INTREN_ERR ==1) begin
+          sharedResource ::raiseError(arbitChannel, "CONFIG ERROR");
+        end
+        for(int i=0;i<(axi4_globals_pkg :: NO_OF_SLAVES);i++) begin
+          if(sharedResource::initialDesAddress[arbitChannel]>= sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].min_address && sharedResource::initialDesAddress[arbitChannel]<sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].max_address) begin
+            selectedInterface=i;
+            break;
+          end
+        end
+
+        sharedResource::priorityDesPerChannel[selectedInterface][arbitChannel].commandDone =1; //exiting the arbitChannel
+        continue;
+      end 
+ 
       sharedResource::waitForResp[arbitChannel]=0;
       sharedResource::managerWriteAccess=0;
       //should implement internal trigger logic here  

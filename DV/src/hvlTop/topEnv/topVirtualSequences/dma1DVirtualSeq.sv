@@ -2,8 +2,8 @@
 class dma1DVirtualSeq extends topVirtualBaseSeq;
   `uvm_object_utils(dma1DVirtualSeq)
   configUnitInterruptSlaveOnlyVirtualSequence configUnitInterruptSlaveOnlyVirtualSequenceHandle;
-  peripheralTriggerMasterOnlyVirtualSequence  peripheralTriggerMasterOnlyVirtualSequenceHandle[axi4_globals_pkg::NO_OF_SLAVES];
-  peripheralAxiSlaveOnlyVirtualSequence peripheralAxiSlaveVirtualSequenceHandle[axi4_globals_pkg::NO_OF_SLAVES];
+  peripheralTriggerMasterOnlyVirtualSequence  peripheralTriggerMasterOnlyVirtualSequenceHandle[axi4_globals_pkg::NO_OF_SLAVES+1];
+  peripheralAxiSlaveOnlyVirtualSequence peripheralAxiSlaveVirtualSequenceHandle[axi4_globals_pkg::NO_OF_SLAVES+1];
   CH_STATUS_FIELD temp;
   CH_ERRINFO_FIELD err;  
   int executedCommand[dmaGlobalPkg::NUM_CHANNELS];
@@ -34,7 +34,7 @@ task dma1DVirtualSeq::body();
    int i;
   process toKillWhenInterrupt;
   super.body();
-  for (int j = 0; j < axi4_globals_pkg::NO_OF_SLAVES; j++) begin
+  for (int j = 0; j < axi4_globals_pkg::NO_OF_SLAVES+1; j++) begin
     peripheralAxiSlaveVirtualSequenceHandle[j] =peripheralAxiSlaveOnlyVirtualSequence::type_id::create($sformatf("peripheralAxiSlaveVirtualSequenceHandle[%0d]", j));
    peripheralTriggerMasterOnlyVirtualSequenceHandle[j] =  peripheralTriggerMasterOnlyVirtualSequence :: type_id :: create($sformatf("peripheralTriggerMasterVirtualSequenceHandle[%0d]", j));
    peripheralTriggerMasterOnlyVirtualSequenceHandle[j].reqType = this.reqType;
