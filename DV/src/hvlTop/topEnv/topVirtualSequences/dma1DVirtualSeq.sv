@@ -196,7 +196,7 @@ end
                
   
     begin :axislave
-      for(int i=0;i<axi4_globals_pkg::NO_OF_SLAVES;i++) begin
+      for(int i=0;i<axi4_globals_pkg::NO_OF_SLAVES+1;i++) begin
         automatic int j = i;
         fork
           peripheralAxiSlaveVirtualSequenceHandle[j].start(p_sequencer.peripheralEnvVirtualSequencerHandle[j]);
@@ -204,7 +204,7 @@ end
       end
     end
     begin :hwtrigger
-      for(int i=0;i<axi4_globals_pkg::NO_OF_SLAVES;i++) begin
+      for(int i=0;i<axi4_globals_pkg::NO_OF_SLAVES+1;i++) begin
         automatic int j = i;
         fork
           peripheralTriggerMasterOnlyVirtualSequenceHandle[j].start(p_sequencer.peripheralEnvVirtualSequencerHandle[j]); 
