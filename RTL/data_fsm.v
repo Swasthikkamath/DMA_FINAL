@@ -720,7 +720,7 @@ end
                 end
                 
                 RD_R:
-                    if ((RRESP == 2 || RRESP == 3) && RVALID)
+                    if ((RRESP == 2 || RRESP == 3) && RVALID && RREADY)
                         rd_next_st = RD_ERROR_ST;
                     else if (RVALID && RREADY && RLAST) begin    // diFFERENT FROM V1
                     
