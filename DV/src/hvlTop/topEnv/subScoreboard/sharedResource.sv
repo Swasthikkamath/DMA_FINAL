@@ -14,6 +14,8 @@ class sharedResource extends uvm_object;
   //Description : Declaring a handle for topEnvConfig
   static topEnvConfig topEnvConfigHandle;
 
+  //Variable: readCounter
+  static int readCounter[dmaGlobalPkg::NUM_CHANNELS];
   //Variable: dmaInfotHandle
   //Type : dmaInfo
   //Description : Declaring a handle for dmaInfo

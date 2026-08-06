@@ -90,6 +90,7 @@
       bit[axi4_globals_pkg ::DATA_WIDTH-1:0]expectedCompr;
       peripheralUnitAxi4MasterPathWriteAddressAnalysisExport[master_id].get(addressTx);
       arbitChannel =  checkArbit(master_id,0);
+      sharedResource::commandStatusPerChannel[arbitChannel].readDone=0;
       if(arbitChannel != addressTx.awid)begin 
         `uvm_error("TOP_SCOREBOARD",$sformatf("LOCAL WRITE CHANNEL GRANT GIVEN TO %d GOT ID IS %d pending write count is %d",arbitChannel,addressTx.awid,sharedResource::numberOfWriteReq[arbitChannel]))
       end 
@@ -579,7 +580,15 @@
           end 
 
           for(int index =0 ; index < (raddr_tx.arlen);index++) begin //<3  0 1 2
-            if(!sharedResource::pauseChannel[arbitChannel] && !sharedResource::stopChannel[arbitChannel])begin 
+            if(!sharedResource::pauseChannel[arbitChannel] && !sharedResource::stopChannel[arbitChannel])begin
+              sharedResource::readCounter[arbitChannel]++;
+              $display("the read counter is %d",sharedResource::readCounter[arbitChannel]);
+              if(((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP)&&sharedResource::readCounter[arbitChannel]==sharedResource::initialDesXsize[arbitChannel]) || ((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_FILL) &&(sharedResource::readCounter[arbitChannel]==(sharedResource::initialSrcXsize[arbitChannel] <= sharedResource::initialDesXsize[arbitChannel]?sharedResource::initialSrcXsize[arbitChannel] : sharedResource::initialDesXsize[arbitChannel]))))begin 
+                  sharedResource::commandStatusPerChannel[arbitChannel].readDone=1;
+                  sharedResource::readCounter[arbitChannel]=0;
+
+              end 
+
               // expectedAddr =sharedResource::expectedReadAddr[arbitChannel].pop_front();
               sharedResource::numberOfReadReq[arbitChannel] = sharedResource::numberOfReadReq[arbitChannel]-1;
               //sharedResource::dmaChannelRegHandle[arbitChannel].CH_SRCADDR = expectedAddr;
@@ -645,6 +654,16 @@
             sharedResource::numberOfReadReq[arbitChannel] = sharedResource::numberOfReadReq[arbitChannel]-1;
             //expectedAddr =sharedResource::expectedReadAddr[arbitChannel].pop_front();
             sharedResource::dmaChannelRegHandle[arbitChannel].CH_SRCADDR = expectedAddr;
+            sharedResource::readCounter[arbitChannel]++;
+            $display("the read counter out is %d",sharedResource::readCounter[arbitChannel]);
+
+            if(((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP)&&sharedResource::readCounter[arbitChannel]==sharedResource::initialDesXsize[arbitChannel]) || ((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_FILL) &&(sharedResource::readCounter[arbitChannel]==(sharedResource::initialSrcXsize[arbitChannel] <= sharedResource::initialDesXsize[arbitChannel]?sharedResource::initialSrcXsize[arbitChannel] : sharedResource::initialDesXsize[arbitChannel]))))begin 
+               sharedResource::commandStatusPerChannel[arbitChannel].readDone=1;
+              $display("READ DONE ASSERTED WHEN COUNTER IS %d",sharedResource::readCounter[arbitChannel]);
+               sharedResource::readCounter[arbitChannel]=0;
+
+            end 
+
             for(int i=0,j=0;i<(2**(raddr_tx.arsize));i++) begin
               j = expectedAddr %((axi4_globals_pkg::DATA_WIDTH)/8);
               sharedResource::peripheralMem.mem_read(expectedAddr++,readData[8*j +:8]);
@@ -908,7 +927,7 @@
       bit firstPri;
       int maxPri;
       for(int i=0;i<NUM_CHANNELS;i++) begin 
-        if(sharedResource::dmaChannelRegHandle[i].CH_CMD.ENABLECMD==0 ||(sharedResource::priorityDesPerChannel[slaveId][i].commandDone==1) || (sharedResource::priorityDesPerChannel[slaveId][i].commandStart==0))
+        if(sharedResource::dmaChannelRegHandle[i].CH_CMD.ENABLECMD==0 ||(sharedResource::priorityDesPerChannel[slaveId][i].commandDone==1) || (sharedResource::priorityDesPerChannel[slaveId][i].commandStart==0)||sharedResource::commandStatusPerChannel[i].readDone==0)
           continue;
         if(firstPri==0) begin 
           maxPri = sharedResource::dmaChannelRegHandle[i].CH_CTRL.CHPRIO; //qos pri 
@@ -919,7 +938,7 @@
       end 
 
       for(int i=0;i<NUM_CHANNELS;i++) begin
-        if(sharedResource::dmaChannelRegHandle[i].CH_CMD.ENABLECMD==0 || (sharedResource::priorityDesPerChannel[slaveId][i].commandDone==1) || (sharedResource::priorityDesPerChannel[slaveId][i].commandStart==0)) //srcxsize==0 desxsize>0 fill
+        if(sharedResource::dmaChannelRegHandle[i].CH_CMD.ENABLECMD==0 || (sharedResource::priorityDesPerChannel[slaveId][i].commandDone==1) || (sharedResource::priorityDesPerChannel[slaveId][i].commandStart==0)||sharedResource::commandStatusPerChannel[i].readDone==0) //srcxsize==0 desxsize>0 fill
           continue;
         if(sharedResource::dmaChannelRegHandle[i].CH_CTRL.CHPRIO ==maxPri)begin
           flagForSamePri =1;
@@ -930,7 +949,7 @@
       //use priority stack with thd commanddone flag to check whom to give ownership
       if(flagForSamePri ==1 && queueForSamePri.size()==1)begin 
         for(int i=0;i <dmaGlobalPkg :: NUM_CHANNELS; i++) begin
-          if(sharedResource::priorityDesPerChannel[slaveId][i].commandStart==0 || (sharedResource::priorityDesPerChannel[slaveId][i].commandDone==1)) begin         
+          if(sharedResource::priorityDesPerChannel[slaveId][i].commandStart==0 || (sharedResource::priorityDesPerChannel[slaveId][i].commandDone==1)||sharedResource::commandStatusPerChannel[i].readDone==0) begin         
             continue;
           end 
           else begin 
@@ -965,7 +984,7 @@
       bit firstPri;
       int maxPri;
       for(int i=0;i<NUM_CHANNELS;i++) begin
-        if(sharedResource::dmaChannelRegHandle[i].CH_CMD.ENABLECMD==0 ||  sharedResource::commandStatusPerChannel[i].readDone==1 || sharedResource::prioritySrcPerChannel[slaveId][i].commandStart==0 || (sharedResource::prioritySrcPerChannel[slaveId][i].commandDone==1) )
+      if(sharedResource::dmaChannelRegHandle[i].CH_CMD.ENABLECMD==0 ||   sharedResource::prioritySrcPerChannel[slaveId][i].commandStart==0 || (sharedResource::prioritySrcPerChannel[slaveId][i].commandDone==1) )
           continue;
         if(firstPri==0) begin
           maxPri = sharedResource::dmaChannelRegHandle[i].CH_CTRL.CHPRIO;
@@ -976,7 +995,7 @@
       end
 
       for(int i=0;i<NUM_CHANNELS;i++) begin
-        if(sharedResource::dmaChannelRegHandle[i].CH_CMD.ENABLECMD==0 ||  sharedResource::commandStatusPerChannel[i].readDone==1 || sharedResource::prioritySrcPerChannel[slaveId][i].commandStart==0 || (sharedResource::prioritySrcPerChannel[slaveId][i].commandDone==1))
+        if(sharedResource::dmaChannelRegHandle[i].CH_CMD.ENABLECMD==0 ||  sharedResource::prioritySrcPerChannel[slaveId][i].commandStart==0 || (sharedResource::prioritySrcPerChannel[slaveId][i].commandDone==1))
           continue;
         if(sharedResource::dmaChannelRegHandle[i].CH_CTRL.CHPRIO ==maxPri)begin
           flagForSamePri =1;
