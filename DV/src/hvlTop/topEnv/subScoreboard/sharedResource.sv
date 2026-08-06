@@ -192,6 +192,8 @@ class sharedResource extends uvm_object;
 
   typedef struct packed{
    bit readDone;
+    int readCount;
+   int count;
   }commandStatus;
 
   static  bit managerWriteAccess;
