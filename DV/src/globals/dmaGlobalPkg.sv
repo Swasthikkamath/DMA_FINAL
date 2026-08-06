@@ -4,7 +4,7 @@
 package dmaGlobalPkg;
 import axi4_globals_pkg :: *;
 parameter noOfRegInChannel =32;
-parameter NUM_CHANNELS = 1;
+parameter NUM_CHANNELS = 2;
 parameter M1_ENABLED =1;
 parameter HAS_2D = 1;
 parameter DATA_WIDTH_CFG = $clog2((axi4_globals_pkg :: DATA_WIDTH)/8);

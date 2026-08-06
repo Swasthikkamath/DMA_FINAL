@@ -191,6 +191,7 @@ localparam WR_IDLE = 2'd0;
 localparam WR_AW   = 2'd1;
 localparam WR_W    = 2'd2;
 localparam WR_B    = 2'd3;
+localparam WR_WAIT    = 3'd4;
 
 
 reg [1:0]   rd_grant;
@@ -205,7 +206,7 @@ reg [3:0] rd_max_qos;
 reg [2:0] rd_mask;
 
 
-reg [1:0] wr_state,wr_state_next;
+reg [2:0] wr_state,wr_state_next;
 reg [1:0] wr_last_grant;
 
 reg [3:0] wr_max_qos;
@@ -660,11 +661,13 @@ else
 
         WR_B: begin
             if (BVALID) begin
-                wr_state_next = WR_IDLE;
+                wr_state_next = WR_WAIT;
             end
             else
                 wr_state_next = WR_B;
         end
+        
+        WR_WAIT:  wr_state_next = WR_IDLE;
         
         default : wr_state_next = WR_IDLE;
 

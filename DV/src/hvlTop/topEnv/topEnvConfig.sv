@@ -40,10 +40,10 @@ class topEnvConfig extends uvm_object;
    
     bit m1_enabled;
 
-    constraint settingNumCommandRestrict{ foreach(numberOfCommandPerChannel[i]) {
-         numberOfCommandPerChannel[i] inside{[0:8]};            
+/*    constraint settingNumCommandRestrict{ foreach(numberOfCommandPerChannel[i]) {
+         numberOfCommandPerChannel[i]==1;            
           }
-        }
+        }*/
 
   extern function new(string name = "topEnvConfig");
 

@@ -277,7 +277,7 @@ interface axi4_slave_driver_bfm(input                     aclk    ,
     // Ready can be HIGH even before we start to check 
     // based on wait_cycles variable
     // Can make arready to zero 
-     axiSlaveCb.arready <= 0;
+     axiSlaveCb.arready <= 1;
 
     while(axiSlaveCb.arvalid === 0) begin
       @(axiSlaveCb);

@@ -1,9 +1,8 @@
 `ifndef INTERRUPTSLAVEDRIVERBFM_INCLUDED
 `define INTERRUPTSLAVEDRIVERBFM_INCLUDED
 `timescale 1ns/1ps
-
-interface interruptSlaveDriverBfm(input bit irq,input bit clk);
-import interruptGlobalPkg :: *;
+  import interruptGlobalPkg :: *;
+interface interruptSlaveDriverBfm(input bit[NUM_CHANNELS-1:0] irq,input bit clk);
 
 clocking interruptSlaveCb @(posedge clk); 
  default input #1 output #1;

@@ -669,7 +669,7 @@
               end
             end
 
-            sharedResource::channelQueue[arbitChannel].push_back(expectedData);    
+            sharedResource::channelQueue[arbitChannel].push_back(expectedData);   
             if(sharedResource::numberOfReadReq[arbitChannel]==0) begin
               `uvm_error("TOP_SCOREBOARD","CHANNEL DONE ASSERTED")
               sharedResource:: prioritySrcPerChannel[slave_id][arbitChannel].commandStart=0;

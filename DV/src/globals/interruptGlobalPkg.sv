@@ -3,7 +3,7 @@
 
 package interruptGlobalPkg;
  
-parameter int NUM_CHANNELS=1;
+parameter int NUM_CHANNELS=2;
 typedef struct {
   bit[NUM_CHANNELS-1:0] irq;
 }interruptStructPacket;
