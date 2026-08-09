@@ -91,19 +91,23 @@
       peripheralUnitAxi4MasterPathWriteAddressAnalysisExport[master_id].get(addressTx);
       arbitChannel =  checkArbit(master_id,0);
       if(sharedResource::commandStatusPerChannel[arbitChannel].readDone==1 && sharedResource::commandStatusPerChannel[arbitChannel].count>1)begin 
-        sharedResource::commandStatusPerChannel[arbitChannel].readCount = sharedResource::commandStatusPerChannel[arbitChannel].readCount - (addressTx.awlen+1);
-        if(sharedResource::commandStatusPerChannel[arbitChannel].readCount ==0) begin 
+        sharedResource::commandStatusPerChannel[arbitChannel].readCounter[0] = sharedResource::commandStatusPerChannel[arbitChannel].readCounter[0] - (addressTx.awlen+1);
+
+        if(sharedResource::commandStatusPerChannel[arbitChannel].readCounter[0] ==0) begin 
+          void'(sharedResource::commandStatusPerChannel[arbitChannel].readCounter.pop_front());
            sharedResource::commandStatusPerChannel[arbitChannel].count--;
         end 
       end 
       else begin
-
-        $error($time,"arbit got is %d so read done is made zero",arbitChannel);
-        if(sharedResource::commandStatusPerChannel[arbitChannel].readCount ==0) begin 
+        sharedResource::commandStatusPerChannel[arbitChannel].readCounter[0] = sharedResource::commandStatusPerChannel[arbitChannel].readCounter[0] - (addressTx.awlen+1);
+        $display("POPPING CHANNEL %d remaining is %d count is %d read done is %d %d",arbitChannel,sharedResource::commandStatusPerChannel[arbitChannel].readCounter[0],sharedResource::commandStatusPerChannel[arbitChannel].count,sharedResource::commandStatusPerChannel[0].readDone,sharedResource::commandStatusPerChannel[1].readDone);
+        if(sharedResource::commandStatusPerChannel[arbitChannel].readCounter[0] ==0) begin
+           void'(sharedResource::commandStatusPerChannel[arbitChannel].readCounter.pop_front());
            sharedResource::commandStatusPerChannel[arbitChannel].count--;
           sharedResource::commandStatusPerChannel[arbitChannel].readDone=0;
+          $display("COUNT ZERO SO READ IS MADE ZERO FOR CHANNEL %d",arbitChannel);
+          
         end 
-
       end 
       //if(arbitChannel != addressTx.awid)begin 
         `uvm_error("TOP_SCOREBOARD",$sformatf("LOCAL WRITE CHANNEL GRANT GIVEN TO %d GOT ID IS %d pending write count is %d",arbitChannel,addressTx.awid,sharedResource::numberOfWriteReq[arbitChannel]))
@@ -366,7 +370,7 @@
         if(sharedResource ::dmaChannelRegHandle[arbitChannel].CH_INTREN.INTREN_ERR ==1) begin
           sharedResource ::raiseError(arbitChannel, "BUS ERROR");
         end
-        sharedResource::commandStatusPerChannel[arbitChannel].readDone=1;
+        //sharedResource::commandStatusPerChannel[arbitChannel].readDone=1;
         for(int i=0;i<(axi4_globals_pkg :: NO_OF_SLAVES);i++) begin
           if(sharedResource::initialSrcAddress[arbitChannel]>= sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].min_address && sharedResource::initialSrcAddress[arbitChannel]<sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].max_address) begin
             selectedInterface=i;
@@ -597,14 +601,6 @@
             if(!sharedResource::pauseChannel[arbitChannel] && !sharedResource::stopChannel[arbitChannel])begin
               sharedResource::readCounter[arbitChannel]++;
               $display("the read counter is %d",sharedResource::readCounter[arbitChannel]);
-              if(((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP)&&sharedResource::readCounter[arbitChannel]==sharedResource::initialDesXsize[arbitChannel]) || ((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_FILL) &&(sharedResource::readCounter[arbitChannel]==(sharedResource::initialSrcXsize[arbitChannel] <= sharedResource::initialDesXsize[arbitChannel]?sharedResource::initialSrcXsize[arbitChannel] : sharedResource::initialDesXsize[arbitChannel]))))begin 
-                  sharedResource::commandStatusPerChannel[arbitChannel].readDone=1;
-                  sharedResource::commandStatusPerChannel[arbitChannel].readCount = sharedResource::readCounter[arbitChannel];
-                  sharedResource::readCounter[arbitChannel]=0;
-                  
-                  sharedResource::commandStatusPerChannel[arbitChannel].count++;
-                $display("COUNT IS %D WHEN ARBIT CHAN IS %d",sharedResource::commandStatusPerChannel[arbitChannel].count,arbitChannel);
-              end 
 
               // expectedAddr =sharedResource::expectedReadAddr[arbitChannel].pop_front();
               sharedResource::numberOfReadReq[arbitChannel] = sharedResource::numberOfReadReq[arbitChannel]-1;
@@ -676,12 +672,10 @@
 
             if(((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP)&&sharedResource::readCounter[arbitChannel]==sharedResource::initialDesXsize[arbitChannel]) || ((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_FILL) &&(sharedResource::readCounter[arbitChannel]==(sharedResource::initialSrcXsize[arbitChannel] <= sharedResource::initialDesXsize[arbitChannel]?sharedResource::initialSrcXsize[arbitChannel] : sharedResource::initialDesXsize[arbitChannel]))))begin 
                sharedResource::commandStatusPerChannel[arbitChannel].readDone=1;
-               sharedResource::commandStatusPerChannel[arbitChannel].readCount = sharedResource::readCounter[arbitChannel];
-
-              $display("READ DONE ASSERTED WHEN COUNTER IS %d",sharedResource::readCounter[arbitChannel]);
+              $display("READ DONE IS MADE 1 FOR CHANNEL %d",arbitChannel);
                sharedResource::readCounter[arbitChannel]=0;
+               sharedResource::commandStatusPerChannel[arbitChannel].readCounter.push_back(sharedResource::initialDesXsize[arbitChannel]);
                sharedResource::commandStatusPerChannel[arbitChannel].count++;
-               $display("COUNT IS %D WHEN ARBIT CHAN IS %d",sharedResource::commandStatusPerChannel[arbitChannel].count,arbitChannel);
             end 
 
             for(int i=0,j=0;i<(2**(raddr_tx.arsize));i++) begin

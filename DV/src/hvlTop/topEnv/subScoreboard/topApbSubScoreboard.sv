@@ -153,8 +153,8 @@ task topApbSubScoreboard :: handleApbTransaction();
               sharedResource ::numberOfReadReq[selectedChannel] = sharedResource ::determineNumberOfReads(selectedChannel);
               sharedResource ::numberOfWriteReq[selectedChannel] = sharedResource ::determineNumberOfWrites(selectedChannel);
               if((sharedResource::dmaChannelRegHandle[selectedChannel].CH_CTRL.XTYPE==X_FILL || sharedResource::dmaChannelRegHandle[selectedChannel].CH_CTRL.YTYPE==Y_FILL) && sharedResource::numberOfReadReq[selectedChannel]==0) begin 
-                sharedResource::commandStatusPerChannel[selectedChannel].readDone=1;
-                sharedResource::commandStatusPerChannel[selectedChannel].readCount = sharedResource ::initialDesXsize[selectedChannel];
+                //sharedResource::commandStatusPerChannel[selectedChannel].readDone=1;
+                sharedResource::commandStatusPerChannel[selectedChannel].readCounter.push_back(sharedResource ::initialDesXsize[selectedChannel]);
                 sharedResource::commandStatusPerChannel[selectedChannel].count = sharedResource ::initialDesYsize[selectedChannel];
               end 
 	      sharedResource ::setUp1DAddress(selectedChannel);

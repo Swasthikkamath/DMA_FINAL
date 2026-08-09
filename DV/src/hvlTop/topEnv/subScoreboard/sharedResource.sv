@@ -190,9 +190,9 @@ class sharedResource extends uvm_object;
     bit commandDone;
   }channelPriority;
 
-  typedef struct packed{
+  typedef struct {
    bit readDone;
-    int readCount;
+   int readCounter[$];
    int count;
   }commandStatus;
 
