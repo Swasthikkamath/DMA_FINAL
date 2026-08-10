@@ -711,7 +711,7 @@
               sharedResource:: prioritySrcPerChannel[slave_id][arbitChannel].commandStart=0;
               sharedResource::prioritySrcPerChannel[slave_id][arbitChannel].commandDone=1;
             end
-            `uvm_info("TOP_SCOREBOARd",$sformatf("PUSHING THE DATA INTO CHANNEL FIFO THE DATA IS %0h AND CHANNEL IS %0d",expectedData,arbitChannel),UVM_HIGH)
+            //`uvm_info("TOP_SCOREBOARd",$sformatf("PUSHING THE DATA INTO CHANNEL FIFO THE DATA IS %0h AND CHANNEL IS %0d",expectedData,arbitChannel),UVM_HIGH)
           end 
         end    
       end 
