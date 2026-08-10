@@ -705,6 +705,9 @@
             sharedResource::channelQueue[arbitChannel].push_back(expectedData);   
             if(sharedResource::numberOfReadReq[arbitChannel]==0) begin
               `uvm_error("TOP_SCOREBOARD","CHANNEL DONE ASSERTED")
+              if(sharedResource::numberOfWriteReq[arbitChannel]==0) begin 
+                sharedResource::dmaChannelRegHandle[arbitChannel].CH_CMD.ENABLECMD=0;
+              end 
               sharedResource:: prioritySrcPerChannel[slave_id][arbitChannel].commandStart=0;
               sharedResource::prioritySrcPerChannel[slave_id][arbitChannel].commandDone=1;
             end
@@ -752,6 +755,7 @@
       sharedResource::managerWriteAccess=0;
       //should implement internal trigger logic here  
       if( (sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDREN != 1 || sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDR ==0) && sharedResource::numberOfWriteReq[arbitChannel]==0) begin
+        if(sharedResource::numberOfReadReq[arbitChannel]==0)
         sharedResource::dmaChannelRegHandle[arbitChannel].CH_CMD.ENABLECMD=0;
       end
       else if(sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDREN == 1 && sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDR >0 && sharedResource::numberOfWriteReq[arbitChannel]==0) begin
@@ -759,7 +763,7 @@
         sharedResource::commandStatusPerChannel[arbitChannel].readDone=0;
       end
 
-      if(sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.USETRIGOUT==1 && sharedResource::numberOfWriteReq[arbitChannel]==0) begin
+      if(sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.USETRIGOUT==1 && sharedResource::numberOfWriteReq[arbitChannel]==0 && sharedResource::numberOfReadReq[arbitChannel]==0) begin
         sharedResource::dmaChannelRegHandle[arbitChannel].CH_STATUS.STAT_TRIGOUTACKWAIT=1;
         if(sharedResource::dmaChannelRegHandle[arbitChannel].CH_INTREN.INTREN_TRIGOUTACKWAIT) begin
           sharedResource::dmaChannelRegHandle[arbitChannel].CH_STATUS.INTR_TRIGOUTACKWAIT=1;
@@ -772,7 +776,7 @@
           sharedResource ::dmaChannelRegHandle[arbitChannel].CH_STATUS.STAT_RESUMEWAIT =1;
       end 
       if(sharedResource ::dmaChannelRegHandle[arbitChannel].CH_CTRL.USETRIGOUT==0 && sharedResource::numberOfWriteReq[arbitChannel]==0)begin
-        if(sharedResource::numberOfWriteReq[arbitChannel] ==0) begin
+        if(sharedResource::numberOfWriteReq[arbitChannel] ==0 && sharedResource::numberOfReadReq[arbitChannel]==0) begin
           if(sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.DONETYPE==1) begin 
             sharedResource::dmaChannelRegHandle[arbitChannel].CH_STATUS.STAT_DONE=1;
             if(sharedResource::dmaChannelRegHandle[arbitChannel].CH_INTREN.INTREN_DONE ==1) begin
@@ -785,12 +789,14 @@
       if(sharedResource ::dmaChannelRegHandle[arbitChannel].CH_CTRL.USETRIGOUT==0 && sharedResource::numberOfWriteReq[arbitChannel]==0) begin 
         if(sharedResource ::dmaChannelRegHandle[arbitChannel].CH_CMD.DISABLECMD==1) begin
           `uvm_info("TOP_SCOREBOARD",$sformatf("The command in channel[%0d] has been disabled",arbitChannel),UVM_HIGH)
-          sharedResource ::disableChannel[arbitChannel] = 1;
-          sharedResource ::dmaChannelRegHandle[arbitChannel].CH_CMD.ENABLECMD=0;
-          sharedResource ::dmaChannelRegHandle[arbitChannel].CH_STATUS.STAT_DISABLED=1;
-          if(sharedResource::dmaChannelRegHandle[arbitChannel].CH_INTREN.INTREN_DISABLED) begin
-            sharedResource::dmaChannelRegHandle[arbitChannel].CH_STATUS.INTR_DISABLED=1;
-          end
+          if(sharedResource::numberOfReadReq[arbitChannel]==0) begin 
+            sharedResource ::disableChannel[arbitChannel] = 1;
+            sharedResource ::dmaChannelRegHandle[arbitChannel].CH_CMD.ENABLECMD=0;
+            sharedResource ::dmaChannelRegHandle[arbitChannel].CH_STATUS.STAT_DISABLED=1;
+            if(sharedResource::dmaChannelRegHandle[arbitChannel].CH_INTREN.INTREN_DISABLED) begin
+              sharedResource::dmaChannelRegHandle[arbitChannel].CH_STATUS.INTR_DISABLED=1;
+            end
+          end 
         end
         sharedResource::commandDone[sharedResource ::dmaChannelRegHandle[arbitChannel].CH_SRCTRIGINCFG.SRCTRIGINSEL] = 1;
         sharedResource::commandDone[sharedResource ::dmaChannelRegHandle[arbitChannel].CH_DESTRIGINCFG.DESTRIGINSEL] = 1;
@@ -801,7 +807,7 @@
       end 
 
 
-      if(sharedResource ::dmaChannelRegHandle[arbitChannel].CH_CTRL.USETRIGOUT==0 && sharedResource::numberOfWriteReq[arbitChannel]==0)begin 
+      if(sharedResource ::dmaChannelRegHandle[arbitChannel].CH_CTRL.USETRIGOUT==0 && sharedResource::numberOfWriteReq[arbitChannel]==0 && sharedResource::numberOfReadReq[arbitChannel]==0)begin 
         // if no trigout use this to reload the register for auto reload
         if(sharedResource::disableChannel[arbitChannel]==1 || sharedResource::stopChannel[arbitChannel]==1) begin 
           continue;
@@ -998,8 +1004,10 @@
       bit firstPri;
       int maxPri;
       for(int i=0;i<NUM_CHANNELS;i++) begin
-      if(sharedResource::dmaChannelRegHandle[i].CH_CMD.ENABLECMD==0 ||   sharedResource::prioritySrcPerChannel[slaveId][i].commandStart==0 || (sharedResource::prioritySrcPerChannel[slaveId][i].commandDone==1) )
+        if(sharedResource::dmaChannelRegHandle[i].CH_CMD.ENABLECMD==0 ||   sharedResource::prioritySrcPerChannel[slaveId][i].commandStart==0 || (sharedResource::prioritySrcPerChannel[slaveId][i].commandDone==1) ) begin 
+          $display("CHNANEL %d is continue because enable is %d start is %d done is %d",i,sharedResource::dmaChannelRegHandle[i].CH_CMD.ENABLECMD,sharedResource::prioritySrcPerChannel[slaveId][i].commandStart,sharedResource::prioritySrcPerChannel[slaveId][i].commandDone);
           continue;
+        end 
         if(firstPri==0) begin
           maxPri = sharedResource::dmaChannelRegHandle[i].CH_CTRL.CHPRIO;
         end

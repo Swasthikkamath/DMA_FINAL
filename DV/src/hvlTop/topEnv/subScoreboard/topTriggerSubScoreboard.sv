@@ -231,7 +231,7 @@ task topTriggerSubScoreboard :: handleTriggerOut();
          end
         end
 
-        if((sharedResource::numberOfWriteReq[channel]==0)&&(sharedResource ::dmaChannelRegHandle[channel].CH_CMD.PAUSECMD==1 || (sharedResource ::dmaChannelRegHandle[channel].CH_STATUS.STAT_DONE && sharedResource ::dmaChannelRegHandle[channel].CH_CTRL.DONEPAUSEEN))) begin 
+        if((sharedResource::numberOfWriteReq[channel]==0)&& sharedResource::numberOfReadReq[channel]==0&&(sharedResource ::dmaChannelRegHandle[channel].CH_CMD.PAUSECMD==1 || (sharedResource ::dmaChannelRegHandle[channel].CH_STATUS.STAT_DONE && sharedResource ::dmaChannelRegHandle[channel].CH_CTRL.DONEPAUSEEN))) begin 
           `uvm_info("TOP_SCOREBOARD",$sformatf("The command in channel[%0d] has been paused",channel),UVM_HIGH)
           sharedResource ::pauseChannel[channel] =1;
           sharedResource ::dmaChannelRegHandle[channel].CH_STATUS.STAT_PAUSED=1;
