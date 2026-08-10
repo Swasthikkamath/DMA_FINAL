@@ -600,7 +600,16 @@
           for(int index =0 ; index < (raddr_tx.arlen);index++) begin //<3  0 1 2
             if(!sharedResource::pauseChannel[arbitChannel] && !sharedResource::stopChannel[arbitChannel])begin
               sharedResource::readCounter[arbitChannel]++;
-              $display("the read counter is %d",sharedResource::readCounter[arbitChannel]);
+              $display("the read counter is %d,max is %d,xtype is %d",sharedResource::readCounter[arbitChannel],sharedResource::dmaChannelRegHandle[arbitChannel].CH_DESTRANSCFG.DESMAXBURSTLEN,sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE);
+              $display("BROTHER IS %D",((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP)&&(sharedResource::readCounter[arbitChannel] > sharedResource::dmaChannelRegHandle[arbitChannel].CH_DESTRANSCFG.DESMAXBURSTLEN)));
+              if(((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP)&&sharedResource::readCounter[arbitChannel]==sharedResource::initialDesXsize[arbitChannel]) || ((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_FILL) &&(sharedResource::readCounter[arbitChannel]==(sharedResource::initialSrcXsize[arbitChannel] <= sharedResource::initialDesXsize[arbitChannel]?sharedResource::initialSrcXsize[arbitChannel] : sharedResource::initialDesXsize[arbitChannel]))) || ((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP)&&(sharedResource::readCounter[arbitChannel] > sharedResource::dmaChannelRegHandle[arbitChannel].CH_DESTRANSCFG.DESMAXBURSTLEN)) || (sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.YTYPE == Y_FILL && sharedResource::numberOfReadReq[arbitChannel]==0 &&sharedResource::numberOfWriteReq[arbitChannel]!=0))begin 
+                 sharedResource::commandStatusPerChannel[arbitChannel].readDone=1;
+                 $display("READ DONE IS MADE 1 FOR CHANNEL %d",arbitChannel);
+                 sharedResource::readCounter[arbitChannel]=0;
+                 sharedResource::commandStatusPerChannel[arbitChannel].readCounter.push_back(sharedResource::readCounter[arbitChannel]);
+                 sharedResource::commandStatusPerChannel[arbitChannel].count++;
+              end 
+
 
               // expectedAddr =sharedResource::expectedReadAddr[arbitChannel].pop_front();
               sharedResource::numberOfReadReq[arbitChannel] = sharedResource::numberOfReadReq[arbitChannel]-1;
@@ -668,9 +677,9 @@
             //expectedAddr =sharedResource::expectedReadAddr[arbitChannel].pop_front();
             sharedResource::dmaChannelRegHandle[arbitChannel].CH_SRCADDR = expectedAddr;
             sharedResource::readCounter[arbitChannel]++;
-            $display("the read counter out is %d",sharedResource::readCounter[arbitChannel]);
-
-            if(((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP)&&sharedResource::readCounter[arbitChannel]==sharedResource::initialDesXsize[arbitChannel]) || ((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_FILL) &&(sharedResource::readCounter[arbitChannel]==(sharedResource::initialSrcXsize[arbitChannel] <= sharedResource::initialDesXsize[arbitChannel]?sharedResource::initialSrcXsize[arbitChannel] : sharedResource::initialDesXsize[arbitChannel]))) || ((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP)&&sharedResource::readCounter[arbitChannel]>=sharedResource::dmaChannelRegHandle[arbitChannel].CH_DESTRANSCFG.DESMAXBURSTLEN))begin 
+            $display("the read counter out is %d max len is %d,xtype =%d",sharedResource::readCounter[arbitChannel],sharedResource::dmaChannelRegHandle[arbitChannel].CH_DESTRANSCFG.DESMAXBURSTLEN,sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE);
+            $display("BROTHER IS %D",((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP)&&(sharedResource::readCounter[arbitChannel] > sharedResource::dmaChannelRegHandle[arbitChannel].CH_DESTRANSCFG.DESMAXBURSTLEN)));
+            if(((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP)&&sharedResource::readCounter[arbitChannel]==sharedResource::initialDesXsize[arbitChannel]) || ((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_FILL) &&(sharedResource::readCounter[arbitChannel]==(sharedResource::initialSrcXsize[arbitChannel] <= sharedResource::initialDesXsize[arbitChannel]?sharedResource::initialSrcXsize[arbitChannel] : sharedResource::initialDesXsize[arbitChannel]))) || ((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP)&&(sharedResource::readCounter[arbitChannel] > sharedResource::dmaChannelRegHandle[arbitChannel].CH_DESTRANSCFG.DESMAXBURSTLEN)) || (sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.YTYPE == Y_FILL && sharedResource::numberOfReadReq[arbitChannel]==0 &&sharedResource::numberOfWriteReq[arbitChannel]!=0))begin 
                sharedResource::commandStatusPerChannel[arbitChannel].readDone=1;
               $display("READ DONE IS MADE 1 FOR CHANNEL %d",arbitChannel);
                sharedResource::readCounter[arbitChannel]=0;
