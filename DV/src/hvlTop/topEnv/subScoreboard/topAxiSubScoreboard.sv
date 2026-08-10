@@ -670,11 +670,11 @@
             sharedResource::readCounter[arbitChannel]++;
             $display("the read counter out is %d",sharedResource::readCounter[arbitChannel]);
 
-            if(((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP)&&sharedResource::readCounter[arbitChannel]==sharedResource::initialDesXsize[arbitChannel]) || ((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_FILL) &&(sharedResource::readCounter[arbitChannel]==(sharedResource::initialSrcXsize[arbitChannel] <= sharedResource::initialDesXsize[arbitChannel]?sharedResource::initialSrcXsize[arbitChannel] : sharedResource::initialDesXsize[arbitChannel]))))begin 
+            if(((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP)&&sharedResource::readCounter[arbitChannel]==sharedResource::initialDesXsize[arbitChannel]) || ((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_FILL) &&(sharedResource::readCounter[arbitChannel]==(sharedResource::initialSrcXsize[arbitChannel] <= sharedResource::initialDesXsize[arbitChannel]?sharedResource::initialSrcXsize[arbitChannel] : sharedResource::initialDesXsize[arbitChannel]))) || ((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP)&&sharedResource::readCounter[arbitChannel]>=sharedResource::dmaChannelRegHandle[arbitChannel].CH_DESTRANSCFG.DESMAXBURSTLEN))begin 
                sharedResource::commandStatusPerChannel[arbitChannel].readDone=1;
               $display("READ DONE IS MADE 1 FOR CHANNEL %d",arbitChannel);
                sharedResource::readCounter[arbitChannel]=0;
-               sharedResource::commandStatusPerChannel[arbitChannel].readCounter.push_back(sharedResource::initialDesXsize[arbitChannel]);
+               sharedResource::commandStatusPerChannel[arbitChannel].readCounter.push_back(sharedResource::readCounter[arbitChannel]);
                sharedResource::commandStatusPerChannel[arbitChannel].count++;
             end 
 
