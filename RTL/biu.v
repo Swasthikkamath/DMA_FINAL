@@ -192,6 +192,7 @@ localparam WR_AW   = 2'd1;
 localparam WR_W    = 2'd2;
 localparam WR_B    = 2'd3;
 localparam WR_WAIT    = 3'd4;
+  localparam WR_WAIT1 = 3'd5;
 
 
 reg [1:0]   rd_grant;
@@ -667,7 +668,8 @@ else
                 wr_state_next = WR_B;
         end
         
-        WR_WAIT:  wr_state_next = WR_IDLE;
+        WR_WAIT:  wr_state_next = WR_WAIT1;
+          WR_WAIT1:  wr_state_next = WR_IDLE;
         
         default : wr_state_next = WR_IDLE;
 

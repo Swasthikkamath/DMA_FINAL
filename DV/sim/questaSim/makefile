@@ -114,7 +114,7 @@ override test_folder = $(test)
 endif
 
 simulate:
-	mkdir $(test_folder)
+		mkdir $(test_folder)
 
 	# Use -novopt for no optimization - Makes the simulation slower
 	# vsim -pli finesim.so -coverage top
@@ -136,6 +136,12 @@ simulate:
 
 	# For checking and reporting simulation errors
 	make simulate_war_err
+	grep -rn "WRITE DATA MATCHES DATA IS" regression_summary.log >> 1.txt
+	grep -rn "ERROR IN THE RDATA AT START ADDR" regression_summary.log >> 3.txt
+	grep -rn "WRITE DATA DOESNT MATCH WITH EXPECTED FIFO DATA" regression_summary.log >> 2.txt
+	grep -rn "PUSHING" regression_summary.log >> 4.txt
+
+
 
 	## TODO: 
 	## # For coverage report in text format 
@@ -157,6 +163,8 @@ simulate:
 
 clean_simulate:
 	rm -rf dma*
+	rm -rf work/ regression_summary.log *.txt simulation_output.vcd 
+
 
 clean_compile:
 	rm -rf work/ *_compile.log transcript waveform.wlf work test_names_trace.txt  vsim_stacktrace.vstf  vsim.wlf
