@@ -1797,7 +1797,7 @@ src_trigack_type <= (src_trigin_type == 2'b10 /*&& (src_trig_req_type == 0||src_
                 end
             endcase
             
-            if((rd_state == RD_R&& RLAST && !(case3 && y_type ==0))||(rd_state == RD_WRAP_FILL && fill_count == 0)||(ycase2))
+            if((rd_state == RD_R && !(case3 && y_type ==0))||(rd_state == RD_WRAP_FILL && fill_count == 0)||(ycase2))
                 wr_start <= 1;
                 if(/*(wr_state == W_DONE_ST || rd_state == RD_WAIT) &&*/ src_x_left == 0 && src_y_left == 0 && des_x_left == 0 && des_y_left == 0 /*&& DONE_temp*/ )
                     wr_start <= 0;
