@@ -956,7 +956,7 @@
       bit firstPri;
       int maxPri;
       for(int i=0;i<NUM_CHANNELS;i++) begin 
-        if(sharedResource::dmaChannelRegHandle[i].CH_CMD.ENABLECMD==0 ||(sharedResource::priorityDesPerChannel[slaveId][i].commandDone==1) || (sharedResource::priorityDesPerChannel[slaveId][i].commandStart==0)||sharedResource::commandStatusPerChannel[i].readDone==0)
+        if(sharedResource::dmaChannelRegHandle[i].CH_CMD.ENABLECMD==0 ||(sharedResource::priorityDesPerChannel[slaveId][i].commandDone==1) || (sharedResource::priorityDesPerChannel[slaveId][i].commandStart==0)||sharedResource::commandStatusPerChannel[i].readDone==0 || sharedResource::pauseChannel[i]==1 || sharedResource::stopChannel[i]==1)
           continue;
         if(firstPri==0) begin 
           maxPri = sharedResource::dmaChannelRegHandle[i].CH_CTRL.CHPRIO; //qos pri 
@@ -967,7 +967,7 @@
       end 
 
       for(int i=0;i<NUM_CHANNELS;i++) begin
-        if(sharedResource::dmaChannelRegHandle[i].CH_CMD.ENABLECMD==0 || (sharedResource::priorityDesPerChannel[slaveId][i].commandDone==1) || (sharedResource::priorityDesPerChannel[slaveId][i].commandStart==0)||sharedResource::commandStatusPerChannel[i].readDone==0) //srcxsize==0 desxsize>0 fill
+        if(sharedResource::dmaChannelRegHandle[i].CH_CMD.ENABLECMD==0 || (sharedResource::priorityDesPerChannel[slaveId][i].commandDone==1) || (sharedResource::priorityDesPerChannel[slaveId][i].commandStart==0)||sharedResource::commandStatusPerChannel[i].readDone==0||sharedResource::pauseChannel[i]==1 || sharedResource::stopChannel[i]==1) //srcxsize==0 desxsize>0 fill
           continue;
         if(sharedResource::dmaChannelRegHandle[i].CH_CTRL.CHPRIO ==maxPri)begin
           flagForSamePri =1;
@@ -978,7 +978,7 @@
       //use priority stack with thd commanddone flag to check whom to give ownership
       if(flagForSamePri ==1 && queueForSamePri.size()==1)begin 
         for(int i=0;i <dmaGlobalPkg :: NUM_CHANNELS; i++) begin
-          if(sharedResource::priorityDesPerChannel[slaveId][i].commandStart==0 || (sharedResource::priorityDesPerChannel[slaveId][i].commandDone==1)||sharedResource::commandStatusPerChannel[i].readDone==0) begin         
+          if(sharedResource::priorityDesPerChannel[slaveId][i].commandStart==0 || (sharedResource::priorityDesPerChannel[slaveId][i].commandDone==1)||sharedResource::commandStatusPerChannel[i].readDone==0||sharedResource::pauseChannel[i]==1 || sharedResource::stopChannel[i]==1) begin         
             continue;
           end 
           else begin 
@@ -1013,7 +1013,7 @@
       bit firstPri;
       int maxPri;
       for(int i=0;i<NUM_CHANNELS;i++) begin
-        if(sharedResource::dmaChannelRegHandle[i].CH_CMD.ENABLECMD==0 ||   sharedResource::prioritySrcPerChannel[slaveId][i].commandStart==0 || (sharedResource::prioritySrcPerChannel[slaveId][i].commandDone==1) ) begin 
+        if(sharedResource::dmaChannelRegHandle[i].CH_CMD.ENABLECMD==0 ||   sharedResource::prioritySrcPerChannel[slaveId][i].commandStart==0 || (sharedResource::prioritySrcPerChannel[slaveId][i].commandDone==1)||sharedResource::pauseChannel[i]==1 || sharedResource::stopChannel[i]==1 ) begin 
           $display("CHNANEL %d is continue because enable is %d start is %d done is %d",i,sharedResource::dmaChannelRegHandle[i].CH_CMD.ENABLECMD,sharedResource::prioritySrcPerChannel[slaveId][i].commandStart,sharedResource::prioritySrcPerChannel[slaveId][i].commandDone);
           continue;
         end 
@@ -1026,7 +1026,7 @@
       end
 
       for(int i=0;i<NUM_CHANNELS;i++) begin
-        if(sharedResource::dmaChannelRegHandle[i].CH_CMD.ENABLECMD==0 ||  sharedResource::prioritySrcPerChannel[slaveId][i].commandStart==0 || (sharedResource::prioritySrcPerChannel[slaveId][i].commandDone==1))
+        if(sharedResource::dmaChannelRegHandle[i].CH_CMD.ENABLECMD==0 ||  sharedResource::prioritySrcPerChannel[slaveId][i].commandStart==0 || (sharedResource::prioritySrcPerChannel[slaveId][i].commandDone==1)||sharedResource::pauseChannel[i]==1 || sharedResource::stopChannel[i]==1)
           continue;
         if(sharedResource::dmaChannelRegHandle[i].CH_CTRL.CHPRIO ==maxPri)begin
           flagForSamePri =1;
@@ -1042,7 +1042,7 @@
 
       if(flagForSamePri==1 && queueForSamePri.size()==1)begin 
         for(int i=0;i <dmaGlobalPkg :: NUM_CHANNELS; i++) begin
-          if(sharedResource::dmaChannelRegHandle[i].CH_CMD.ENABLECMD==0 || sharedResource::prioritySrcPerChannel[slaveId][i].commandStart==0 || (sharedResource::prioritySrcPerChannel[slaveId][i].commandDone==1) || sharedResource::prioritySrcPerChannel[slaveId][i].axiAccessed == 1 ) begin
+          if(sharedResource::dmaChannelRegHandle[i].CH_CMD.ENABLECMD==0 || sharedResource::prioritySrcPerChannel[slaveId][i].commandStart==0 || (sharedResource::prioritySrcPerChannel[slaveId][i].commandDone==1) || sharedResource::prioritySrcPerChannel[slaveId][i].axiAccessed == 1 ||sharedResource::pauseChannel[i]==1 || sharedResource::stopChannel[i]==1) begin
             continue;
           end
           else begin
