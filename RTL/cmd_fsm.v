@@ -368,7 +368,7 @@ end
                     ARVALID <= 1; 
                     ARQOS <= ch_prio;         
                     if (count == 0) begin
-                        ARADDR <= {next_cmd_addr[29:0],2'b00};
+                        ARADDR <= {2'b00,next_cmd_addr[29:0]};
                         ARLEN <= 0;
                          ARBURST <= 1;
                     end

@@ -107,7 +107,7 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
   topEnvConfigHandle.allChannelConfig[0][0].CH_CMD.DISABLECMD = 0;
   topEnvConfigHandle.allChannelConfig[0][0].CH_CMD.ENABLECMD = 1;
   topEnvConfigHandle.allChannelConfig[0][0].CH_LINKADDR.LINKADDREN =1;
-  topEnvConfigHandle.allChannelConfig[0][0].CH_LINKADDR.LINKADDR = 3000;
+  topEnvConfigHandle.allChannelConfig[0][0].CH_LINKADDR.LINKADDR = 'd5000;
 
   
   topEnvConfigHandle.allChannelConfig[0][1].CH_CTRL.YTYPE=Y_CONTINUE;
@@ -234,11 +234,12 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
   topEnvConfigHandle.allChannelConfig[1][0].CH_CMD.DISABLECMD = 0;
   topEnvConfigHandle.allChannelConfig[1][0].CH_CMD.ENABLECMD = 1;
   topEnvConfigHandle.allChannelConfig[1][0].CH_LINKADDR.LINKADDREN =0;
-  topEnvConfigHandle.allChannelConfig[1][0].CH_LINKADDR.LINKADDR = 3000;
+  topEnvConfigHandle.allChannelConfig[1][0].CH_LINKADDR.LINKADDR = 5000;
   topEnvConfigHandle.allChannelConfig[0][1].CH_LINKADDR.LINKADDR = 000;
 
   // same way you can update the needed fields for confguring the respective channels as per req
   dump_config_to_file();
+  topEnvConfigHandle.addressIfLinking[0][1] = 5000;
   setUpCommand();
 
 endfunction
