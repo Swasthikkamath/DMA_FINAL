@@ -10,6 +10,7 @@ clocking interruptSlaveCb @(posedge clk);
 endclocking 
 
 task waitForIrq(inout interruptStructPacket packetStruct);
+ @(interruptSlaveCb); //TO GIVE ENOUGH TIME FOR SETTLING OF VALUE
  do begin
    @(interruptSlaveCb);
  end while((|interruptSlaveCb.irq)!=1);

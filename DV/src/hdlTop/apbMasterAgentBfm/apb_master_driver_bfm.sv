@@ -184,6 +184,7 @@ interface apb_master_driver_bfm (input  bit   pclk,
     state = IDLE;
     masterCb.penable <= 1'b0;
     masterCb.psel <= 'b0;
+    @(masterCb);
     `uvm_info("APB_DRIVER_DEBUG", $sformatf("drive_apb_access state = %0s and state = %0d",state.name(), state), UVM_DEBUG);
   endtask : detect_wait_state
 

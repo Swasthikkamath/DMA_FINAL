@@ -81,7 +81,7 @@ module apb_slave #( parameter DATA_WIDTH = 32,
             else 
             begin
                 if( ((((cfg_addr%'h100 == 'h10)||(cfg_addr%'h100 == 'h18)||(cfg_addr%'h100 == 'h20))  && enable_cmd_to_apb[ch_no]) || cfg_addr%'h100 == 'h04)) begin
-					if(((cfg_addr%'h100 == 'h04)&&count == 6)||((cfg_addr%'h100 == 'h10)&&count == 1) ||((cfg_addr%'h100 == 'h18)&&count == 1)||((cfg_addr%'h100 == 'h20)&&count == 1))
+					if(((cfg_addr%'h100 == 'h04)&&count == 2)||((cfg_addr%'h100 == 'h10)&&count == 1) ||((cfg_addr%'h100 == 'h18)&&count == 1)||((cfg_addr%'h100 == 'h20)&&count == 1))
 						PREADY =1;
 					else 
 						PREADY =0;
