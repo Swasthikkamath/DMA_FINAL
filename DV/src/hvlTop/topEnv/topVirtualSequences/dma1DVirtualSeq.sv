@@ -118,70 +118,71 @@ end
             end
             else begin
               if(temp.STAT_TRIGOUTACKWAIT) begin
-                topEnvConfigHandle.regBlockHandle.CH_TRIGOUTCFG_inst[0].read(status,triggerOutType);
+                topEnvConfigHandle.regBlockHandle.CH_TRIGOUTCFG_inst[j].read(status,triggerOutType);
                 if(triggerOutType.TRIGOUTTYPE ==0) begin
-                  topEnvConfigHandle.allChannelConfig[i][0].CH_CMD.SWTRIGOUTACK=1;
-                  topEnvConfigHandle.regBlockHandle.CH_CMD_inst[j].write(status,.value(topEnvConfigHandle.allChannelConfig[i][0].CH_CMD));
+                  topEnvConfigHandle.allChannelConfig[j][executedCommand[j]].CH_CMD.SWTRIGOUTACK=1;
+                  topEnvConfigHandle.regBlockHandle.CH_CMD_inst[j].write(status,.value(topEnvConfigHandle.allChannelConfig[j][executedCommand[j]].CH_CMD));
                 end 
               end 
   
               if(temp.STAT_SRCTRIGINWAIT) begin //srctriginwait destrigin wait
-                topEnvConfigHandle.regBlockHandle.CH_SRCTRIGINCFG_inst[0].read(status,triggerType);
+                topEnvConfigHandle.regBlockHandle.CH_SRCTRIGINCFG_inst[j].read(status,triggerType);
                 if(triggerType.SRCTRIGINTYPE == 0) begin
-                  topEnvConfigHandle.allChannelConfig[i][0].CH_CMD.SRCSWTRIGINTYPE=reqType; //req type          
-                  topEnvConfigHandle.allChannelConfig[i][0].CH_CMD.SRCSWTRIGINREQ=1; 
+                  topEnvConfigHandle.allChannelConfig[j][executedCommand[j]].CH_CMD.SRCSWTRIGINTYPE=reqType; //req type          
+                  topEnvConfigHandle.allChannelConfig[j][executedCommand[j]].CH_CMD.SRCSWTRIGINREQ=1; 
                   topEnvConfigHandle.regBlockHandle.CH_CMD_inst[j].write(status,.value(topEnvConfigHandle.allChannelConfig[i][0].CH_CMD));  
                 end
               end
               if(temp.STAT_DESTRIGINWAIT==1) begin //destriginwait
-                topEnvConfigHandle.regBlockHandle.CH_DESTRIGINCFG_inst[0].read(status, triggerType);
+                topEnvConfigHandle.regBlockHandle.CH_DESTRIGINCFG_inst[j].read(status, triggerType);
                 if(triggerType.SRCTRIGINTYPE == 0) begin
                    
-                  topEnvConfigHandle.allChannelConfig[i][0].CH_CMD.DESSWTRIGINTYPE=reqType;
-                  topEnvConfigHandle.allChannelConfig[i][0].CH_CMD.DESSWTRIGINREQ=1;
+                  topEnvConfigHandle.allChannelConfig[j][executedCommand[j]].CH_CMD.DESSWTRIGINTYPE=reqType;
+                  topEnvConfigHandle.allChannelConfig[j][executedCommand[j]].CH_CMD.DESSWTRIGINREQ=1;
                   topEnvConfigHandle.regBlockHandle.CH_CMD_inst[j].write(status,.value(topEnvConfigHandle.allChannelConfig[i][0].CH_CMD)); 
                 end                    
               end
               if(temp.STAT_DONE==1)begin //STAT_DONE
+                topEnvConfigHandle.regBlockHandle.CH_STATUS_inst[j].write(status,.value('h10000));
                 executedCommand[j]++; 
               end
               if(temp.STAT_STOPPED == 1) begin 
-                topEnvConfigHandle.regBlockHandle.CH_CMD_inst[j].write(status,.value(topEnvConfigHandle.allChannelConfig[i][0].CH_CMD)); 
+                topEnvConfigHandle.regBlockHandle.CH_CMD_inst[j].write(status,.value(topEnvConfigHandle.allChannelConfig[j][executedCommand[j]].CH_CMD)); 
               end    
               if(temp.STAT_PAUSED == 1 && !temp.STAT_DONE)begin 
            
-                topEnvConfigHandle.allChannelConfig[i][0].CH_WRKREGPTR =1;
-                topEnvConfigHandle.regBlockHandle.CH_WRKREGPTR_inst[j].write(status,.value(topEnvConfigHandle.allChannelConfig[i][0].CH_WRKREGPTR));
+                topEnvConfigHandle.allChannelConfig[j][executedCommand[j]].CH_WRKREGPTR =1;
+                topEnvConfigHandle.regBlockHandle.CH_WRKREGPTR_inst[j].write(status,.value(topEnvConfigHandle.allChannelConfig[j][executedCommand[j]].CH_WRKREGPTR));
                 topEnvConfigHandle.regBlockHandle.CH_WRKREGVAL_inst[j].read(status,.value(srcAddr));
 
-                topEnvConfigHandle.allChannelConfig[i][0].CH_WRKREGPTR =3;
-                topEnvConfigHandle.regBlockHandle.CH_WRKREGPTR_inst[j].write(status,.value(topEnvConfigHandle.allChannelConfig[i][0].CH_WRKREGPTR));
+                topEnvConfigHandle.allChannelConfig[j][executedCommand[j]].CH_WRKREGPTR =3;
+                topEnvConfigHandle.regBlockHandle.CH_WRKREGPTR_inst[j].write(status,.value(topEnvConfigHandle.allChannelConfig[j][executedCommand[j]].CH_WRKREGPTR));
                 topEnvConfigHandle.regBlockHandle.CH_WRKREGVAL_inst[j].read(status,.value(desAddr));
  
-                topEnvConfigHandle.allChannelConfig[i][0].CH_WRKREGPTR =5;
-                topEnvConfigHandle.regBlockHandle.CH_WRKREGPTR_inst[j].write(status,.value(topEnvConfigHandle.allChannelConfig[i][0].CH_WRKREGPTR));
+                topEnvConfigHandle.allChannelConfig[j][executedCommand[j]].CH_WRKREGPTR =5;
+                topEnvConfigHandle.regBlockHandle.CH_WRKREGPTR_inst[j].write(status,.value(topEnvConfigHandle.allChannelConfig[j][executedCommand[j]].CH_WRKREGPTR));
  
                 topEnvConfigHandle.regBlockHandle.CH_WRKREGVAL_inst[j].read(status,.value(XSIZE.SRCXSIZE));
 
-		topEnvConfigHandle.allChannelConfig[i][0].CH_WRKREGPTR =6;
-                topEnvConfigHandle.regBlockHandle.CH_WRKREGPTR_inst[j].write(status,.value(topEnvConfigHandle.allChannelConfig[i][0].CH_WRKREGPTR));
+	            	topEnvConfigHandle.allChannelConfig[j][executedCommand[j]].CH_WRKREGPTR =6;
+                topEnvConfigHandle.regBlockHandle.CH_WRKREGPTR_inst[j].write(status,.value(topEnvConfigHandle.allChannelConfig[j][executedCommand[j]].CH_WRKREGPTR));
 
                 topEnvConfigHandle.regBlockHandle.CH_WRKREGVAL_inst[j].read(status,.value(XSIZE.DESXSIZE));
                     
-                topEnvConfigHandle.allChannelConfig[i][0].CH_WRKREGPTR =11;
-                topEnvConfigHandle.regBlockHandle.CH_WRKREGPTR_inst[j].write(status,.value(topEnvConfigHandle.allChannelConfig[i][0].CH_WRKREGPTR));
+                topEnvConfigHandle.allChannelConfig[j][executedCommand[j]].CH_WRKREGPTR =11;
+                topEnvConfigHandle.regBlockHandle.CH_WRKREGPTR_inst[j].write(status,.value(topEnvConfigHandle.allChannelConfig[j][executedCommand[j]].CH_WRKREGPTR));
 
                 topEnvConfigHandle.regBlockHandle.CH_WRKREGVAL_inst[j].read(status,.value(YSIZE.SRCYSIZE));
                  
-                topEnvConfigHandle.allChannelConfig[i][0].CH_WRKREGPTR =12;
-                topEnvConfigHandle.regBlockHandle.CH_WRKREGPTR_inst[j].write(status,.value(topEnvConfigHandle.allChannelConfig[i][0].CH_WRKREGPTR)); 
+                topEnvConfigHandle.allChannelConfig[j][executedCommand[j]].CH_WRKREGPTR =12;
+                topEnvConfigHandle.regBlockHandle.CH_WRKREGPTR_inst[j].write(status,.value(topEnvConfigHandle.allChannelConfig[j][executedCommand[j]].CH_WRKREGPTR)); 
                 topEnvConfigHandle.regBlockHandle.CH_WRKREGVAL_inst[j].read(status,.value(YSIZE.DESYSIZE));
                 topEnvConfigHandle.regBlockHandle.CH_SRCADDR_inst[j].read(status,.value(curSrcAddr));
                 topEnvConfigHandle.regBlockHandle.CH_DESADDR_inst[j].read(status,.value(curDesAddr));
                 topEnvConfigHandle.regBlockHandle.CH_XSIZE_inst[j].read(status,.value(curXSIZE));
                 topEnvConfigHandle.regBlockHandle.CH_YSIZE_inst[j].read(status,.value(curYSIZE));
-                topEnvConfigHandle.allChannelConfig[i][0].CH_CMD.RESUMECMD=1;
-                topEnvConfigHandle.regBlockHandle.CH_CMD_inst[j].write(status,.value(topEnvConfigHandle.allChannelConfig[i][0].CH_CMD));
+                topEnvConfigHandle.allChannelConfig[j][executedCommand[j]].CH_CMD.RESUMECMD=1;
+                topEnvConfigHandle.regBlockHandle.CH_CMD_inst[j].write(status,.value(topEnvConfigHandle.allChannelConfig[j][executedCommand[j]].CH_CMD));
                 `uvm_info("MAIN VSEQ",$sformatf("PAUSE HAS OCCURED AND THE INITIAL SRCXSIZE IS %0d DESXSIZE IS %0D INITIAL SRCADDR IS %0d AND INITIAL DESADDR IS %0d",XSIZE.SRCXSIZE,XSIZE.DESXSIZE,srcAddr,desAddr),UVM_HIGH)
                 `uvm_info("MAIN VSEQ",$sformatf("PAUSE HAS OCCURED AND THE CURRENT SRCXSIZE IS %0d DESXSIZE IS %0D CURRENT SRCADDR IS %0d AND CURRENT DESADDR IS %0d",curXSIZE.SRCXSIZE,curXSIZE.DESXSIZE,curSrcAddr,curDesAddr),UVM_HIGH)
 
