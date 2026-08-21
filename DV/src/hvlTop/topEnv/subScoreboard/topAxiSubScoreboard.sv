@@ -438,6 +438,7 @@
         int incrementer;
         bit[31:0] dynArr[];
         int str;
+        bit flag=0;
         sharedResource::disableChannel[arbitChannel]=0;
         if(raddr_tx.arlen+1 != $countones(header)) begin 
           `uvm_error("TOP_SCOREBOARD","THE BURST LEN FOR COMMAND LINKING DOESNT MATCH WITH EXPECTED LENGHT")
@@ -478,7 +479,38 @@
               end 
             end           
             if(count <= raddr_tx.arlen) begin
+        
               peripheralUnitAxi4SlavePathReadDataAnalysisExport[slave_id].get(rdata_tx); 
+            end 
+            if((count == raddr_tx.arlen+1) && flag==0) begin 
+                if($countones(header)>16) begin 
+                   int tempCount;
+                   tempCount = count;
+                  flag=1;
+                   count = $countones(header);
+                  count = count - tempCount-1;
+
+                   if(header[0]==1) begin 
+                    count--;
+                   end 
+                   if(header[1]==1)begin 
+                    count--;
+                   end 
+                   if(header[23]==1)begin 
+                    count--;
+                   end 
+                   if(header[25]==1)begin 
+                    count--;
+                   end
+                   if(header[27]==1)begin 
+                     count--;
+                   end
+                   if(count >0) begin 
+                    count =0;
+                    peripheralUnitAxi4SlavePathReadAddressAnalysisExport[slave_id].get(raddr_tx);
+                    peripheralUnitAxi4SlavePathReadDataAnalysisExport[slave_id].get(rdata_tx);
+                   end 
+             end 
             end 
           end 
         end

@@ -122,11 +122,28 @@ module hdlTop;
   interruptSlaveAgentBfm interruptSlaveAgentBfmHandle(interruptInterfaceHandle);
   interruptMasterAgentBfm interruptMasterAgentBfmHandle(interruptInterfaceHandle);
 
-  initial begin
-        $dumpfile("simulation_output.vcd"); // Name of the VCD file
-        $dumpvars(0, u_dma);       // Dumps all signals in the module
-  end
+initial begin
+  $dumpfile("simulation_output.vcd");
+  $dumpvars(0, u_dma);
+  $dumpvars(0, apbInterfaceHandle);
+  $dumpvars(0, interruptInterfaceHandle);
 
+end
+  genvar gi, gj;
+
+    generate
+          for (gi = 0; gi < axi4_globals_pkg::NO_OF_SLAVES + 3; gi = gi + 1) begin : dump_axi4
+            initial begin $dumpfile("simulation_output.vcd"); $dumpvars(0, axi4InterfaceHandle[gi]);
+              end     
+            end
+        endgenerate
+
+          generate
+                for (gj = 0; gj < axi4_globals_pkg::NO_OF_SLAVES + 1; gj = gj + 1) begin : dump_trigger
+                  initial begin $dumpfile("simulation_output.vcd");$dumpvars(0, triggerInterfaceHandle[gj]);
+                    end     
+                  end
+              endgenerate
 endmodule 
 `endif
 
