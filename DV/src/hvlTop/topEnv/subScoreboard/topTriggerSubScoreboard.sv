@@ -231,6 +231,27 @@ task topTriggerSubScoreboard :: handleTriggerOut();
          end
         end
 
+       if((sharedResource::dmaChannelRegHandle[channel].CH_LINKADDR.LINKADDREN != 1 || sharedResource::dmaChannelRegHandle[channel].CH_LINKADDR.LINKADDR ==0) && sharedResource::numberOfWriteReq[channel]==0) begin
+          if(sharedResource::numberOfReadReq[channel]==0)
+            sharedResource::dmaChannelRegHandle[channel].CH_CMD.ENABLECMD=0;
+          end
+       if(sharedResource::dmaChannelRegHandle[channel].CH_LINKADDR.LINKADDREN == 1 && sharedResource::dmaChannelRegHandle[channel].CH_LINKADDR.LINKADDR >0 && sharedResource::numberOfWriteReq[channel]==0) begin
+        int slave_id;
+        for(int i=0;i<(axi4_globals_pkg :: NO_OF_SLAVES);i++) begin
+          if(sharedResource::dmaChannelRegHandle[channel].CH_SRCADDR>= sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].min_address && sharedResource::dmaChannelRegHandle[channel].CH_SRCADDR<sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].max_address) begin
+            slave_id =i;
+            break;
+          end
+        end
+
+
+        sharedResource::dmaChannelRegHandle[channel].CH_CMD.ENABLECMD=1;
+        sharedResource::prioritySrcPerChannel[slave_id][channel].commandStart=0;
+        sharedResource::prioritySrcPerChannel[slave_id][channel].commandDone=1;
+        sharedResource::commandStatusPerChannel[channel].readDone=0;
+       end
+
+ 
         if((sharedResource::numberOfWriteReq[channel]==0)&& sharedResource::numberOfReadReq[channel]==0&&(sharedResource ::dmaChannelRegHandle[channel].CH_CMD.PAUSECMD==1 || (sharedResource ::dmaChannelRegHandle[channel].CH_STATUS.STAT_DONE && sharedResource ::dmaChannelRegHandle[channel].CH_CTRL.DONEPAUSEEN))) begin 
           `uvm_info("TOP_SCOREBOARD",$sformatf("The command in channel[%0d] has been paused",channel),UVM_HIGH)
           sharedResource ::pauseChannel[channel] =1;
@@ -247,6 +268,8 @@ task topTriggerSubScoreboard :: handleTriggerOut();
             sharedResource::dmaChannelRegHandle[channel].CH_STATUS.INTR_DISABLED=1;
          end
        end
+
+
        sharedResource::triggerOutAccessed[triggerNum]=0;
       
         $display("TRIGGER ACCESSED CHECK AT SRC IS %d",sharedResource::triggerAccessed[0]);

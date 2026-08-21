@@ -18,8 +18,8 @@ endfunction
 function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDesYsizeAndHwTiAndHiTo::build_phase(uvm_phase phase);
   super.build_phase(phase);
   topEnvConfigHandle.numberOfCommandPerChannel.rand_mode(0);
-  topEnvConfigHandle.numberOfCommandPerChannel[0]=2;
-  topEnvConfigHandle.numberOfCommandPerChannel[1]=1;
+  topEnvConfigHandle.numberOfCommandPerChannel[0]=1;
+  topEnvConfigHandle.numberOfCommandPerChannel[1]=2;
   foreach(topEnvConfigHandle.allChannelConfig[i]) begin
     topEnvConfigHandle.allChannelConfig[i] = new[topEnvConfigHandle.numberOfCommandPerChannel[i]];
   end
@@ -106,81 +106,81 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
 
   topEnvConfigHandle.allChannelConfig[0][0].CH_CMD.DISABLECMD = 0;
   topEnvConfigHandle.allChannelConfig[0][0].CH_CMD.ENABLECMD = 1;
-  topEnvConfigHandle.allChannelConfig[0][0].CH_LINKADDR.LINKADDREN =1;
+  topEnvConfigHandle.allChannelConfig[0][0].CH_LINKADDR.LINKADDREN =0;
   topEnvConfigHandle.allChannelConfig[0][0].CH_LINKADDR.LINKADDR = 'd5000;
 
   
-  topEnvConfigHandle.allChannelConfig[0][1].CH_CTRL.YTYPE=Y_CONTINUE;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_CTRL.YTYPE=Y_CONTINUE;
 
   // TRIGGER SRC BLK SIZE
-  topEnvConfigHandle.allChannelConfig[0][1].CH_SRCTRIGINCFG.SRCTRIGINBLKSIZE = 10;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_SRCTRIGINCFG.SRCTRIGINBLKSIZE = 10;
   // TRIGGER SRC MODE
-  topEnvConfigHandle.allChannelConfig[0][1].CH_SRCTRIGINCFG.SRCTRIGINMODE = 0;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_SRCTRIGINCFG.SRCTRIGINMODE = 0;
   // Trigger SRC TYPE  (HW trigger in)
-  topEnvConfigHandle.allChannelConfig[0][1].CH_SRCTRIGINCFG.SRCTRIGINTYPE = 2'b10;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_SRCTRIGINCFG.SRCTRIGINTYPE = 2'b10;
   // TRIGGER SRC SEL
-  topEnvConfigHandle.allChannelConfig[0][1].CH_SRCTRIGINCFG.SRCTRIGINSEL = 0;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_SRCTRIGINCFG.SRCTRIGINSEL = 0;
 
   // TRIGGER DEST BLK SIZE
-  topEnvConfigHandle.allChannelConfig[0][1].CH_DESTRIGINCFG.DESTRIGINBLKSIZE = 10;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_DESTRIGINCFG.DESTRIGINBLKSIZE = 10;
   // TRIGGER DEST MODE
-  topEnvConfigHandle.allChannelConfig[0][1].CH_DESTRIGINCFG.DESTRIGINMODE = 0;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_DESTRIGINCFG.DESTRIGINMODE = 0;
   // Trigger DEST TYPE  (HW trigger in)
-  topEnvConfigHandle.allChannelConfig[0][1].CH_DESTRIGINCFG.DESTRIGINTYPE = 2'b10;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_DESTRIGINCFG.DESTRIGINTYPE = 2'b10;
   // TRIGGER DEST SEL
-  topEnvConfigHandle.allChannelConfig[0][1].CH_DESTRIGINCFG.DESTRIGINSEL = 1;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_DESTRIGINCFG.DESTRIGINSEL = 1;
 
-  topEnvConfigHandle.allChannelConfig[0][1].CH_TMPLTCFG.SRCTMPLTSIZE=0;
-  topEnvConfigHandle.allChannelConfig[0][1].CH_SRCTMPLT='b 100101;
-  topEnvConfigHandle.allChannelConfig[0][1].CH_TMPLTCFG.DESTMPLTSIZE=0;
-  topEnvConfigHandle.allChannelConfig[0][1].CH_DESTMPLT='b 11;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_TMPLTCFG.SRCTMPLTSIZE=0;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_SRCTMPLT='b 100101;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_TMPLTCFG.DESTMPLTSIZE=0;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_DESTMPLT='b 11;
 
   // INTERRUPT CMD
-  topEnvConfigHandle.allChannelConfig[0][1].CH_INTREN = 'h 703;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_INTREN = 'h 703;
 
   // TRIGGER OUT TYPE  (HW trigger out)
-  topEnvConfigHandle.allChannelConfig[0][1].CH_TRIGOUTCFG.TRIGOUTTYPE = 2'b 10;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_TRIGOUTCFG.TRIGOUTTYPE = 2'b 10;
   // TRIGGER OUT SEL
-  topEnvConfigHandle.allChannelConfig[0][1].CH_TRIGOUTCFG.TRIGOUTSEL = 0;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_TRIGOUTCFG.TRIGOUTSEL = 0;
 
   // XTYPE = X_CONTINUE
-  topEnvConfigHandle.allChannelConfig[0][1].CH_CTRL.XTYPE = X_CONTINUE;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_CTRL.XTYPE = X_CONTINUE;
 
-  topEnvConfigHandle.allChannelConfig[0][1].CH_AUTOCFG.CMDRESTARTCNT=0;
-  topEnvConfigHandle.allChannelConfig[0][1].CH_CTRL.DONEPAUSEEN=0;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_AUTOCFG.CMDRESTARTCNT=0;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_CTRL.DONEPAUSEEN=0;
 
   // ENABLE USETRIGOUT / USESRCTRIGIN / USEDESTRIGIN
-  topEnvConfigHandle.allChannelConfig[0][1].CH_CTRL.USETRIGOUT = 1;
-  topEnvConfigHandle.allChannelConfig[0][1].CH_CTRL.USESRCTRIGIN =1;
-  topEnvConfigHandle.allChannelConfig[0][1].CH_CTRL.USEDESTRIGIN=1;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_CTRL.USETRIGOUT = 1;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_CTRL.USESRCTRIGIN =1;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_CTRL.USEDESTRIGIN=1;
 
   // CH_CTRL.TRANSIZE = 2
-  topEnvConfigHandle.allChannelConfig[0][1].CH_CTRL.TRANSIZE = 2;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_CTRL.TRANSIZE = 2;
   topEnvConfigHandle.allChannelConfig[0][1].CH_CTRL.CHPRIO=5;
-  topEnvConfigHandle.allChannelConfig[1][0].CH_CTRL.CHPRIO=7;
-  topEnvConfigHandle.allChannelConfig[0][1].CH_CTRL.DONETYPE=1;
-  topEnvConfigHandle.allChannelConfig[0][1].CH_CTRL.REGRELOADTYPE=5;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_CTRL.CHPRIO=7;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_CTRL.DONETYPE=1;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_CTRL.REGRELOADTYPE=5;
 
   // CH_SRCADDR / CH_DESADDR
-  topEnvConfigHandle.allChannelConfig[0][1].CH_SRCADDR = 'd 700;
-  topEnvConfigHandle.allChannelConfig[0][1].CH_DESADDR = 'd 2400;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_SRCADDR = 'd 700;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_DESADDR = 'd 2400;
 
   // X SIZE  : {DESXSIZE[31:16], SRCXSIZE[15:0]}  -> SRCXSIZE == DESXSIZE
-  topEnvConfigHandle.allChannelConfig[0][1].CH_XSIZE = 'h 000A000A;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_XSIZE = 'h 000A000A;
   // Y SIZE  : {DESYSIZE[31:16], SRCYSIZE[15:0]}  -> SRCYSIZE == DESYSIZE  (2D outer dimension)
-  topEnvConfigHandle.allChannelConfig[0][1].CH_YSIZE = 'h 00050005;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_YSIZE = 'h 00050005;
   // Y ADDRESS STRIDE : {DESYADDRSTRIDE[31:16], SRCYADDRSTRIDE[15:0]}
-  topEnvConfigHandle.allChannelConfig[0][1].CH_YADDRSTRIDE ='h 000A000A;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_YADDRSTRIDE ='h 000A000A;
 
-  topEnvConfigHandle.allChannelConfig[0][1].CH_SRCTRANSCFG.SRCMAXBURSTLEN=10;
-  topEnvConfigHandle.allChannelConfig[0][1].CH_DESTRANSCFG.DESMAXBURSTLEN=6;
-  topEnvConfigHandle.allChannelConfig[0][1].CH_XADDRINC='h 00010001;
-  topEnvConfigHandle.allChannelConfig[0][1].CH_FILLVAL =7;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_SRCTRANSCFG.SRCMAXBURSTLEN=10;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_DESTRANSCFG.DESMAXBURSTLEN=6;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_XADDRINC='h 00010001;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_FILLVAL =7;
 
-  topEnvConfigHandle.allChannelConfig[0][1].CH_CMD.DISABLECMD = 0;
-  topEnvConfigHandle.allChannelConfig[0][1].CH_CMD.ENABLECMD = 1;
-  topEnvConfigHandle.allChannelConfig[0][1].CH_LINKADDR.LINKADDREN =0;
-  topEnvConfigHandle.allChannelConfig[0][1].CH_LINKADDR.LINKADDR = 3000;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_CMD.DISABLECMD = 0;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_CMD.ENABLECMD = 1;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_LINKADDR.LINKADDREN =0;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_LINKADDR.LINKADDR = 3000;
 
 
   
@@ -233,13 +233,13 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
 
   topEnvConfigHandle.allChannelConfig[1][0].CH_CMD.DISABLECMD = 0;
   topEnvConfigHandle.allChannelConfig[1][0].CH_CMD.ENABLECMD = 1;
-  topEnvConfigHandle.allChannelConfig[1][0].CH_LINKADDR.LINKADDREN =0;
-  topEnvConfigHandle.allChannelConfig[1][0].CH_LINKADDR.LINKADDR = 5000;
-  topEnvConfigHandle.allChannelConfig[0][1].CH_LINKADDR.LINKADDR = 000;
+  topEnvConfigHandle.allChannelConfig[1][0].CH_LINKADDR.LINKADDREN =1;;
+  topEnvConfigHandle.allChannelConfig[1][0].CH_LINKADDR.LINKADDR = 3000;
+  //topEnvConfigHandle.allChannelConfig[0][1].CH_LINKADDR.LINKADDR = 000;
 
   // same way you can update the needed fields for confguring the respective channels as per req
   dump_config_to_file();
-  topEnvConfigHandle.addressIfLinking[0][1] = 5000;
+  topEnvConfigHandle.addressIfLinking[1][1] = 3000;
   setUpCommand();
 
 endfunction

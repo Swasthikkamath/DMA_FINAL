@@ -795,12 +795,14 @@
       sharedResource::waitForResp[arbitChannel]=0;
       sharedResource::managerWriteAccess=0;
       //should implement internal trigger logic here  
-      if( (sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDREN != 1 || sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDR ==0) && sharedResource::numberOfWriteReq[arbitChannel]==0) begin
+      if(sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.USETRIGOUT==0 && (sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDREN != 1 || sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDR ==0) && sharedResource::numberOfWriteReq[arbitChannel]==0) begin
         if(sharedResource::numberOfReadReq[arbitChannel]==0)
         sharedResource::dmaChannelRegHandle[arbitChannel].CH_CMD.ENABLECMD=0;
       end
-      else if(sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDREN == 1 && sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDR >0 && sharedResource::numberOfWriteReq[arbitChannel]==0) begin
+      if(sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.USETRIGOUT==0 && sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDREN == 1 && sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDR >0 && sharedResource::numberOfWriteReq[arbitChannel]==0) begin
         sharedResource::dmaChannelRegHandle[arbitChannel].CH_CMD.ENABLECMD=1;
+        sharedResource::prioritySrcPerChannel[master_id][arbitChannel].commandStart=0;
+        sharedResource::prioritySrcPerChannel[master_id][arbitChannel].commandDone=1;
         sharedResource::commandStatusPerChannel[arbitChannel].readDone=0;
       end
 

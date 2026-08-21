@@ -232,11 +232,11 @@ task topApbSubScoreboard :: handleApbTransaction();
           end 
         join
         
-        if(sharedResource ::dmaChannelRegHandle[selectedChannel].CH_STATUS.STAT_DONE==1) begin 
+        /*if(sharedResource ::dmaChannelRegHandle[selectedChannel].CH_STATUS.STAT_DONE==1) begin 
           if(sharedResource ::dmaChannelRegHandle[selectedChannel].CH_LINKADDR.LINKADDREN && sharedResource ::dmaChannelRegHandle[selectedChannel].CH_LINKADDR.LINKADDR >0)begin 
             sharedResource ::channelRequestingLink = selectedChannel;
           end  
-        end   
+          endI/   
                      
         if(sharedResource ::dmaChannelRegHandle[selectedChannel].CH_CMD.STOPCMD==1)begin
           int selectedInterface;
