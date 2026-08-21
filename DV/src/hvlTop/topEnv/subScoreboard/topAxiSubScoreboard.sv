@@ -353,11 +353,11 @@
       int expectedAddr;
       sharedResource::managerReadAccess=0;
       peripheralUnitAxi4SlavePathReadAddressAnalysisExport[slave_id].get(raddr_tx);
-     // if(!raddr_tx.araddr inside {sharedResource::topEnvConfigHandle.addressIfLinking[sharedResource::channelRequestingLink]}) begin 
+     // if(!raddr_tx.araddr inside {sharedResource::topEnvConfigHandle.addressIfLinking[arbitChannel]}) begin 
         arbitChannel = checkArbit(slave_id,1); // here we get what channel becomes the owner base    d on the qos value
       //end 
 
-  //    if((arbitChannel != raddr_tx.arid) && !(raddr_tx.araddr inside {sharedResource::topEnvConfigHandle.addressIfLinking[sharedResource::channelRequestingLink]}))begin 
+  //    if((arbitChannel != raddr_tx.arid) && !(raddr_tx.araddr inside {sharedResource::topEnvConfigHandle.addressIfLinking[arbitChannel]}))begin 
         `uvm_error("TOP_SCOREBOARD",$sformatf("ARBIT:EXPECTED CHANNEL IS %d GOT CHANNEL IS %d ",arbitChannel,raddr_tx.arid))
       //  end 
       peripheralUnitAxi4SlavePathReadDataAnalysisExport[slave_id].get(rdata_tx);
@@ -383,9 +383,9 @@
         sharedResource::prioritySrcPerChannel[selectedInterface][arbitChannel].commandDone =1; //exiting the arbitChannel
         continue;
       end  
-      if((raddr_tx.araddr inside {sharedResource::topEnvConfigHandle.addressIfLinking[sharedResource::channelRequestingLink]}) && headerRead ==0) begin
+      if((raddr_tx.araddr inside {sharedResource::topEnvConfigHandle.addressIfLinking[arbitChannel]}) && headerRead ==0) begin
         header = rdata_tx.rdata[0];
-        headerRead =1;
+        headerRead=1;
 
         `uvm_info("TOP_SCOREBOARD",$sformatf("STARTED COMMAND LINKING FOR CHANNEL %0d",arbitChannel),UVM_HIGH) 
         sharedResource::commandDone[sharedResource ::dmaChannelRegHandle[arbitChannel].CH_SRCTRIGINCFG.SRCTRIGINSEL] = 0;
@@ -416,8 +416,8 @@
             sharedResource::raiseError(arbitChannel,"header bit count is 0");
           end
         end
-        if(sharedResource::dmaChannelRegHandle[sharedResource::channelRequestingLink].CH_LINKADDR.LINKADDREN != 1|| sharedResource::dmaChannelRegHandle[sharedResource::channelRequestingLink].CH_LINKADDR.LINKADDR ==0) begin 
-          `uvm_error("TOP_SCOREBOARD",$sformatf("READING THE LINKED COMMAND INSPITE OF NOT MEETING NECCESSARY CONDITION EN IS %0d AND ADDR IS %0d",sharedResource::dmaChannelRegHandle[sharedResource::channelRequestingLink].CH_LINKADDR.LINKADDREN,sharedResource::dmaChannelRegHandle[sharedResource::channelRequestingLink].CH_LINKADDR.LINKADDR))
+        if(sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDREN != 1|| sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDR ==0) begin 
+          `uvm_error("TOP_SCOREBOARD",$sformatf("READING THE LINKED COMMAND INSPITE OF NOT MEETING NECCESSARY CONDITION EN IS %0d AND ADDR IS %0d",sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDREN,sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDR))
         end
         sharedResource ::triggerSrcTaskCall[arbitChannel]=0;
         sharedResource ::triggerDesTaskCall[arbitChannel]=0;
@@ -434,7 +434,7 @@
         continue;
       end  
 
-      if(headerRead ==1) begin 
+      if(headerRead==1) begin 
         int incrementer;
         bit[31:0] dynArr[];
         int str;
@@ -516,17 +516,17 @@
         end
         for(int i=0;i<32;i++) begin
           if(header[i]==1 && !(i==0 || i==1 || i==23 || i==25 || i==27)) begin
-            sharedResource::dmaChannelRegHandle[sharedResource ::channelRequestingLink][32*i +:32] = dynArr[i];
+            sharedResource::dmaChannelRegHandle[arbitChannel][32*i +:32] = dynArr[i];
           end 
         end
         $display("NEW CONFIG IS %p",sharedResource::dmaChannelRegHandle);
         $display("TRIGG ACC IS %p",sharedResource::triggerAccessed);
-        sharedResource::expectedReadAddr[sharedResource ::channelRequestingLink].delete();
-        sharedResource::expectedWriteAddr[sharedResource ::channelRequestingLink].delete(); 
-        sharedResource::numberOfReadReq[sharedResource::channelRequestingLink] = sharedResource::determineNumberOfReads(sharedResource::channelRequestingLink);
-        sharedResource::numberOfWriteReq[sharedResource::channelRequestingLink] = sharedResource::determineNumberOfWrites(sharedResource::channelRequestingLink);
-        sharedResource::setUp1DAddress(sharedResource::channelRequestingLink);
-        sharedResource :: setUpTrigger(sharedResource::channelRequestingLink); 
+        sharedResource::expectedReadAddr[arbitChannel].delete();
+        sharedResource::expectedWriteAddr[arbitChannel].delete(); 
+        sharedResource::numberOfReadReq[arbitChannel] = sharedResource::determineNumberOfReads(arbitChannel);
+        sharedResource::numberOfWriteReq[arbitChannel] = sharedResource::determineNumberOfWrites(arbitChannel);
+        sharedResource::setUp1DAddress(arbitChannel);
+        sharedResource :: setUpTrigger(arbitChannel); 
 
         headerRead =0;
         header =0;
