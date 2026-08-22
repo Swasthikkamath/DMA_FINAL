@@ -119,7 +119,7 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
   // Trigger SRC TYPE  (HW trigger in)
   topEnvConfigHandle.allChannelConfig[1][1].CH_SRCTRIGINCFG.SRCTRIGINTYPE = 2'b10;
   // TRIGGER SRC SEL
-  topEnvConfigHandle.allChannelConfig[1][1].CH_SRCTRIGINCFG.SRCTRIGINSEL = 0;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_SRCTRIGINCFG.SRCTRIGINSEL = 2;
 
   // TRIGGER DEST BLK SIZE
   topEnvConfigHandle.allChannelConfig[1][1].CH_DESTRIGINCFG.DESTRIGINBLKSIZE = 10;
@@ -128,7 +128,7 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
   // Trigger DEST TYPE  (HW trigger in)
   topEnvConfigHandle.allChannelConfig[1][1].CH_DESTRIGINCFG.DESTRIGINTYPE = 2'b10;
   // TRIGGER DEST SEL
-  topEnvConfigHandle.allChannelConfig[1][1].CH_DESTRIGINCFG.DESTRIGINSEL = 1;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_DESTRIGINCFG.DESTRIGINSEL = 3;
 
   topEnvConfigHandle.allChannelConfig[1][1].CH_TMPLTCFG.SRCTMPLTSIZE=0;
   topEnvConfigHandle.allChannelConfig[1][1].CH_SRCTMPLT='b 100101;
@@ -141,7 +141,7 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
   // TRIGGER OUT TYPE  (HW trigger out)
   topEnvConfigHandle.allChannelConfig[1][1].CH_TRIGOUTCFG.TRIGOUTTYPE = 2'b 10;
   // TRIGGER OUT SEL
-  topEnvConfigHandle.allChannelConfig[1][1].CH_TRIGOUTCFG.TRIGOUTSEL = 0;
+  topEnvConfigHandle.allChannelConfig[1][1].CH_TRIGOUTCFG.TRIGOUTSEL = 2;
 
   // XTYPE = X_CONTINUE
   topEnvConfigHandle.allChannelConfig[1][1].CH_CTRL.XTYPE = X_CONTINUE;

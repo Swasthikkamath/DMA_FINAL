@@ -387,7 +387,7 @@
         header = rdata_tx.rdata[0];
         headerRead=1;
 
-        `uvm_info("TOP_SCOREBOARD",$sformatf("STARTED COMMAND LINKING FOR CHANNEL %0d",arbitChannel),UVM_HIGH) 
+        `uvm_info("TOP_SCOREBOARD",$sformatf("STARTED COMMAND LINKING FOR CHANNEL %0d",arbitChannel),UVM_NONE) 
         sharedResource::commandDone[sharedResource ::dmaChannelRegHandle[arbitChannel].CH_SRCTRIGINCFG.SRCTRIGINSEL] = 0;
         sharedResource::commandDone[sharedResource ::dmaChannelRegHandle[arbitChannel].CH_DESTRIGINCFG.DESTRIGINSEL] =0;
         sharedResource::dmaChannelRegHandle[arbitChannel].CH_STATUS.STAT_DONE=0;
@@ -519,6 +519,10 @@
             sharedResource::dmaChannelRegHandle[arbitChannel][32*i +:32] = dynArr[i];
           end 
         end
+         
+        sharedResource::prioritySrcPerChannel[slave_id][arbitChannel].commandStart=0;
+        sharedResource::prioritySrcPerChannel[slave_id][arbitChannel].commandDone=1;
+        sharedResource::commandStatusPerChannel[arbitChannel].readDone=0;
         $display("NEW CONFIG IS %p",sharedResource::dmaChannelRegHandle);
         $display("TRIGG ACC IS %p",sharedResource::triggerAccessed);
         sharedResource::expectedReadAddr[arbitChannel].delete();

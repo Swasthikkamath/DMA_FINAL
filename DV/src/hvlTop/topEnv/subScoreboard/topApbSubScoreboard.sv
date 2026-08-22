@@ -133,7 +133,7 @@ task topApbSubScoreboard :: handleApbTransaction();
       end
 
       // Check if channel is being enabled
-      if(sharedResource ::dmaChannelRegHandle[selectedChannel].CH_CMD.ENABLECMD == 1) begin
+      if(sharedResource ::dmaChannelRegHandle[selectedChannel].CH_CMD.ENABLECMD == 1 && sharedResource::dmaChannelRegHandle[selectedChannel].CH_STATUS.STAT_DONE==0) begin
         sharedResource ::dmaChannelRegHandle[selectedChannel].CH_STATUS.STAT_STOPPED =0;
         sharedResource ::dmaChannelRegHandle[selectedChannel].CH_STATUS.STAT_DISABLED=0;
         sharedResource ::disableChannel[selectedChannel] = 0;

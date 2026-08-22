@@ -244,13 +244,16 @@ task topTriggerSubScoreboard :: handleTriggerOut();
           end
         end
 
-
+        $displa("STARTED LINK EN FOR ARBIT FOR CHANNEL %d",channel);
         sharedResource::dmaChannelRegHandle[channel].CH_CMD.ENABLECMD=1;
-        sharedResource::prioritySrcPerChannel[slave_id][channel].commandStart=0;
-        sharedResource::prioritySrcPerChannel[slave_id][channel].commandDone=1;
+        sharedResource::prioritySrcPerChannel[slave_id][channel].commandStart=1;
+        sharedResource::prioritySrcPerChannel[slave_id][channel].commandDone=0;
         sharedResource::commandStatusPerChannel[channel].readDone=0;
        end
-
+       else begin 
+          if(sharedResource::numberOfReadReq[channel]==0)
+            sharedResource::dmaChannelRegHandle[channel].CH_CMD.ENABLECMD=0;
+       end 
  
         if((sharedResource::numberOfWriteReq[channel]==0)&& sharedResource::numberOfReadReq[channel]==0&&(sharedResource ::dmaChannelRegHandle[channel].CH_CMD.PAUSECMD==1 || (sharedResource ::dmaChannelRegHandle[channel].CH_STATUS.STAT_DONE && sharedResource ::dmaChannelRegHandle[channel].CH_CTRL.DONEPAUSEEN))) begin 
           `uvm_info("TOP_SCOREBOARD",$sformatf("The command in channel[%0d] has been paused",channel),UVM_HIGH)
