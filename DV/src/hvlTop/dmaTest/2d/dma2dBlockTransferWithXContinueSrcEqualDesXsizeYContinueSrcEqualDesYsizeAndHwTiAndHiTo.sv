@@ -4,7 +4,7 @@
 class dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDesYsizeAndHwTiAndHiTo extends dmaBaseTest;
   `uvm_component_utils(dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDesYsizeAndHwTiAndHiTo);
   dma1DVirtualSeq dma1DVirtualSeqHandle;
-  dmaPollingVirtualSeq pollingSeq;
+  dmaPollingVirtualSeq seq;
   extern function new(string name ="dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDesYsizeAndHwTiAndHiTo",uvm_component parent = null);
   extern virtual function void build_phase(uvm_phase phase);
   extern virtual task run_phase(uvm_phase phase);
@@ -19,7 +19,7 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
   super.build_phase(phase);
   topEnvConfigHandle.numberOfCommandPerChannel.rand_mode(0);
   topEnvConfigHandle.numberOfCommandPerChannel[0]=1;
-  topEnvConfigHandle.numberOfCommandPerChannel[1]=2;
+  topEnvConfigHandle.numberOfCommandPerChannel[1]=1;
   foreach(topEnvConfigHandle.allChannelConfig[i]) begin
     topEnvConfigHandle.allChannelConfig[i] = new[topEnvConfigHandle.numberOfCommandPerChannel[i]];
   end
@@ -44,7 +44,7 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
   // TRIGGER SRC MODE
   topEnvConfigHandle.allChannelConfig[0][0].CH_SRCTRIGINCFG.SRCTRIGINMODE = 0;
   // Trigger SRC TYPE  (HW trigger in)
-  topEnvConfigHandle.allChannelConfig[0][0].CH_SRCTRIGINCFG.SRCTRIGINTYPE = 2'b10;
+  topEnvConfigHandle.allChannelConfig[0][0].CH_SRCTRIGINCFG.SRCTRIGINTYPE = 2'b00;
   // TRIGGER SRC SEL
   topEnvConfigHandle.allChannelConfig[0][0].CH_SRCTRIGINCFG.SRCTRIGINSEL = 0;
 
@@ -53,7 +53,7 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
   // TRIGGER DEST MODE
   topEnvConfigHandle.allChannelConfig[0][0].CH_DESTRIGINCFG.DESTRIGINMODE = 0;
   // Trigger DEST TYPE  (HW trigger in)
-  topEnvConfigHandle.allChannelConfig[0][0].CH_DESTRIGINCFG.DESTRIGINTYPE = 2'b10;
+  topEnvConfigHandle.allChannelConfig[0][0].CH_DESTRIGINCFG.DESTRIGINTYPE = 2'b00;
   // TRIGGER DEST SEL
   topEnvConfigHandle.allChannelConfig[0][0].CH_DESTRIGINCFG.DESTRIGINSEL = 1;
 
@@ -191,13 +191,13 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
 
   topEnvConfigHandle.allChannelConfig[1][0].CH_SRCTRIGINCFG.SRCTRIGINBLKSIZE = 10;
   topEnvConfigHandle.allChannelConfig[1][0].CH_SRCTRIGINCFG.SRCTRIGINMODE = 0;
-  topEnvConfigHandle.allChannelConfig[1][0].CH_SRCTRIGINCFG.SRCTRIGINTYPE = 2'b10;
+  topEnvConfigHandle.allChannelConfig[1][0].CH_SRCTRIGINCFG.SRCTRIGINTYPE = 2'b00;
   topEnvConfigHandle.allChannelConfig[1][0].CH_SRCTRIGINCFG.SRCTRIGINSEL = 2;
 
   topEnvConfigHandle.allChannelConfig[1][0].CH_DESTRIGINCFG.DESTRIGINBLKSIZE = 10;
   topEnvConfigHandle.allChannelConfig[1][0].CH_YADDRSTRIDE ='h 000A000A;
   topEnvConfigHandle.allChannelConfig[1][0].CH_DESTRIGINCFG.DESTRIGINMODE = 0;
-  topEnvConfigHandle.allChannelConfig[1][0].CH_DESTRIGINCFG.DESTRIGINTYPE = 2'b10;
+  topEnvConfigHandle.allChannelConfig[1][0].CH_DESTRIGINCFG.DESTRIGINTYPE = 2'b00;
   topEnvConfigHandle.allChannelConfig[1][0].CH_DESTRIGINCFG.DESTRIGINSEL = 3;
 
   topEnvConfigHandle.allChannelConfig[1][0].CH_TMPLTCFG.SRCTMPLTSIZE=0;
@@ -218,8 +218,8 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
   topEnvConfigHandle.allChannelConfig[1][0].CH_CTRL.TRANSIZE = 2;
   topEnvConfigHandle.allChannelConfig[1][0].CH_CTRL.DONETYPE = 1;
 
-  topEnvConfigHandle.allChannelConfig[1][0].CH_SRCADDR = 'd 900;
-  topEnvConfigHandle.allChannelConfig[1][0].CH_DESADDR = 'd 3400;
+  topEnvConfigHandle.allChannelConfig[1][0].CH_SRCADDR = 'd 5000;
+  topEnvConfigHandle.allChannelConfig[1][0].CH_DESADDR = 'd 8000;
 
   // X SIZE -> SRCXSIZE == DESXSIZE
   topEnvConfigHandle.allChannelConfig[1][0].CH_XSIZE = 'h 000A000A;
@@ -233,7 +233,7 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
 
   topEnvConfigHandle.allChannelConfig[1][0].CH_CMD.DISABLECMD = 0;
   topEnvConfigHandle.allChannelConfig[1][0].CH_CMD.ENABLECMD = 1;
-  topEnvConfigHandle.allChannelConfig[1][0].CH_LINKADDR.LINKADDREN =1;;
+  topEnvConfigHandle.allChannelConfig[1][0].CH_LINKADDR.LINKADDREN =0;
   topEnvConfigHandle.allChannelConfig[1][0].CH_LINKADDR.LINKADDR = 3000;
   //topEnvConfigHandle.allChannelConfig[0][1].CH_LINKADDR.LINKADDR = 000;
 
@@ -248,10 +248,15 @@ task dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDesYsizeAnd
   super.run_phase(phase);
   phase.raise_objection(this);
   `uvm_info(get_type_name(),"Starting dma1DVirtualSequence (2D BLOCK transfer)",UVM_LOW)
-  dma1DVirtualSeqHandle = dma1DVirtualSeq::type_id::create("dma1DVirtualSeqHandle");
+  /*dma1DVirtualSeqHandle = dma1DVirtualSeq::type_id::create("dma1DVirtualSeqHandle");
   dma1DVirtualSeqHandle.topEnvConfigHandle =topEnvConfigHandle;
   dma1DVirtualSeqHandle.reqType = triggerGlobalPkg::BLOCK;
-  dma1DVirtualSeqHandle.start(topEnvHandle.topEnvVirtualSequencerHandle);
+  dma1DVirtualSeqHandle.start(topEnvHandle.topEnvVirtualSequencerHandle);*/
+  seq =dmaPollingVirtualSeq :: type_id :: create("test");
+  seq.reqType = triggerGlobalPkg::BLOCK;
+  seq.topEnvConfigHandle =topEnvConfigHandle;
+  seq.start(topEnvHandle.topEnvVirtualSequencerHandle);
+
   phase.drop_objection(this);
 endtask
 `endif
