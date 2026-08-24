@@ -355,31 +355,26 @@ interface AxiInterconnect #(
   endfunction
 
   // ============================================================================
-  // 4. Per-master transaction binding
+  // 4. Outstanding-transaction tracking
   //
-  // WHY THIS EXISTS
-  // ---------------
-  // The AXI W channel carries no address. The only thing binding a W burst to a
-  // slave is the order of the AW that preceded it. When one physical master port
-  // is time-multiplexed between two DMA channels and a channel is STOPPED
-  // mid-transfer, that ordering guarantee is broken: an AW has been accepted for
-  // slave X, but the W beats that follow belong to a different channel aimed at
-  // slave Y. Nothing in the W beats themselves tells the interconnect this.
+  // TOPOLOGY NOTE
+  // -------------
+  // One physical master port (the DMA interface manager) is time-multiplexed
+  // between DMA channels, and the channel is carried in AWID/ARID - RID/BID come
+  // back tagged the same way. So the channels ARE distinguishable on the wire,
+  // and the master legitimately keeps several transactions outstanding at once,
+  // to different slaves.
   //
-  // Therefore the interconnect binds ONE write transaction per master at a time,
-  // end to end (AW accepted -> ... -> B received), and refuses to accept the
-  // next AW until that binding is resolved. If a channel is stopped, the next
-  // channel's AW is back-pressured (a visible stall) rather than allowed to bind
-  // while stale W beats are still in flight. Stalling is recoverable; routing a
-  // channel's write data into the wrong slave silently corrupts memory.
+  // The interconnect must therefore NEVER gate a new AR/AW on some other
+  // transaction of the same master finishing. Doing so deadlocks: the master
+  // holds RREADY low while it waits to issue its next read, and the
+  // interconnect holds ARREADY low while it waits for the previous read to
+  // drain. Each per-slave FSM independently allows one outstanding transaction
+  // per slave, which is the only limit imposed here.
   //
-  // The same single-binding rule is applied to reads, which additionally removes
-  // any chance of two slaves interleaving read data back to one master.
-  //
-  // A stalled binding is reclaimed after ABORT_TIMEOUT cycles of no progress,
-  // which is what lets a stopped DMA channel free the slave it was using.
-  // Because no mis-routing is possible while stalled, this timeout can safely be
-  // large; it only bounds how long recovery takes.
+  // What still needs ordering is the W channel: it carries no address, so W
+  // bursts must be delivered to slaves in the order their AWs were accepted.
+  // That is what the per-master destination queue below is for.
   // ============================================================================
   typedef enum bit [1:0] {IDLE, ADDR_PHASE, DATA_PHASE} state_t;
 
@@ -393,28 +388,53 @@ interface AxiInterconnect #(
   int     rd_last_served[TOTAL_SLAVES];
   int     rd_stall[TOTAL_SLAVES];
 
-  // Which slave each master's in-flight write/read is bound to (-1 = none).
-  bit w_busy[NO_OF_MASTERS];
-  int w_dest[NO_OF_MASTERS];
-  bit r_busy[NO_OF_MASTERS];
-  int r_dest[NO_OF_MASTERS];
+  // ---- W-channel destination queue, one per master --------------------------
+  localparam int WQ_DEPTH = TOTAL_SLAVES;
 
-  // ----------------------------------------------------------------------------
-  // Forward-path qualification. The state machines and the routing muxes both
-  // read these, so they can never disagree about when a handshake happened.
-  // ----------------------------------------------------------------------------
-  bit aw_fwd [TOTAL_SLAVES]; // AW presented to this slave
-  bit w_fwd  [TOTAL_SLAVES]; // W  presented to this slave
-  bit ar_fwd [TOTAL_SLAVES]; // AR presented to this slave
-  bit b_sel  [TOTAL_SLAVES]; // this slave is its owner's B source
-  bit r_sel  [TOTAL_SLAVES]; // this slave is its owner's R source
+  int wq_mem [NO_OF_MASTERS][WQ_DEPTH];
+  int wq_head[NO_OF_MASTERS];
+  int wq_tail[NO_OF_MASTERS];
+  int wq_cnt [NO_OF_MASTERS];
 
-  bit wr_done [TOTAL_SLAVES]; // write completed this cycle (B accepted)
-  bit rd_done [TOTAL_SLAVES]; // read completed this cycle (RLAST accepted)
-  bit wr_kill [TOTAL_SLAVES]; // write binding abandoned - reclaim
-  bit rd_kill [TOTAL_SLAVES]; // read binding abandoned  - reclaim
+  int wq_dest[NO_OF_MASTERS];   // slave the current W burst belongs to (-1 = none)
 
   always_comb begin
+    for (int m = 0; m < NO_OF_MASTERS; m++) begin
+      wq_dest[m] = (wq_cnt[m] != 0) ? wq_mem[m][wq_head[m]] : -1;
+    end
+  end
+
+  // ---- R-burst lock, one per master -----------------------------------------
+  // Read data from two slaves must not interleave back to one master, so once a
+  // burst starts delivering it keeps the master's R channel until RLAST. The
+  // lock is only taken when a beat actually transfers, so a slave that is
+  // presenting data nobody is consuming cannot wedge the arbiter.
+  int r_lock  [NO_OF_MASTERS];
+  bit r_lock_v[NO_OF_MASTERS];
+  int r_rr    [NO_OF_MASTERS];  // round-robin pointer for picking the next burst
+  int b_rr    [NO_OF_MASTERS];  // round-robin pointer for B responses
+
+  // ----------------------------------------------------------------------------
+  // Forward/backward qualification, shared by the muxes and the state machines.
+  // ----------------------------------------------------------------------------
+  bit aw_fwd [TOTAL_SLAVES];
+  bit w_fwd  [TOTAL_SLAVES];
+  bit ar_fwd [TOTAL_SLAVES];
+  bit b_sel  [TOTAL_SLAVES];
+  bit r_sel  [TOTAL_SLAVES];
+
+  bit wr_done[TOTAL_SLAVES];
+  bit rd_done[TOTAL_SLAVES];
+  bit wr_kill[TOTAL_SLAVES];
+  bit rd_kill[TOTAL_SLAVES];
+
+  always_comb begin
+    int pick;
+    int c;
+
+    pick = -1;
+    c    = 0;
+
     for (int s = 0; s < TOTAL_SLAVES; s++) begin
       aw_fwd[s]  = 1'b0;
       w_fwd[s]   = 1'b0;
@@ -427,48 +447,71 @@ interface AxiInterconnect #(
       rd_kill[s] = 1'b0;
     end
 
+    // ---- address channels ----
+    // Gated only on "this master is still driving an address that decodes to
+    // me". No cross-transaction gating: see the topology note above.
     for (int s = 0; s < TOTAL_SLAVES; s++) begin
-      int wo;
-      int ro;
-      wo = wr_owner[s];
-      ro = rd_owner[s];
+      if (wr_state[s] == ADDR_PHASE && wr_owner[s] >= 0) begin
+        aw_fwd[s] = master_awvalid[wr_owner[s]] &&
+                    (decode_address(master_awaddr[wr_owner[s]]) == s);
+      end
+      if (rd_state[s] == ADDR_PHASE && rd_owner[s] >= 0) begin
+        ar_fwd[s] = master_arvalid[rd_owner[s]] &&
+                    (decode_address(master_araddr[rd_owner[s]]) == s);
+      end
+    end
 
-      // ---- AW ----
-      // Requires the owner's CURRENT address to still decode to this slave, so
-      // a grant left over from a stopped channel cannot capture the next
-      // channel's address. Also requires the owner to have no write already
-      // bound, which is what prevents a second binding forming over stale
-      // W beats.
-      if (wr_state[s] == ADDR_PHASE && wo >= 0) begin
-        aw_fwd[s] = master_awvalid[wo] &&
-                    (decode_address(master_awaddr[wo]) == s) &&
-                    !w_busy[wo];
+    // ---- W channel: strictly to the head of the owner's destination queue ----
+    for (int s = 0; s < TOTAL_SLAVES; s++) begin
+      if (wr_state[s] == DATA_PHASE && wr_owner[s] >= 0) begin
+        w_fwd[s] = master_wvalid[wr_owner[s]] && (wq_dest[wr_owner[s]] == s);
+      end
+    end
+
+    // ---- R channel: one burst at a time per master, round-robin between them --
+    for (int m = 0; m < NO_OF_MASTERS; m++) begin
+      pick = -1;
+
+      if (r_lock_v[m]) begin
+        // Mid-burst: stay with the locked slave.
+        if (rd_state[r_lock[m]] == DATA_PHASE && rd_owner[r_lock[m]] == m &&
+            slave_rvalid[r_lock[m]]) begin
+          pick = r_lock[m];
+        end
+      end else begin
+        for (int k = 0; k < TOTAL_SLAVES; k++) begin
+          c = (r_rr[m] + 1 + k) % TOTAL_SLAVES;
+          if (pick == -1 && rd_state[c] == DATA_PHASE && rd_owner[c] == m &&
+              slave_rvalid[c]) begin
+            pick = c;
+          end
+        end
       end
 
-      // ---- W ---- strictly to the slave this master's write is bound to.
-      if (wr_state[s] == DATA_PHASE && wo >= 0) begin
-        w_fwd[s] = master_wvalid[wo] && w_busy[wo] && (w_dest[wo] == s);
+      if (pick != -1) begin
+        r_sel[pick]   = 1'b1;
+        rd_done[pick] = slave_rlast[pick] && master_rready[m];
       end
+    end
 
-      // ---- B ---- exactly one source slave per master, by binding.
-      if (wr_state[s] == DATA_PHASE && wo >= 0) begin
-        b_sel[s]   = w_busy[wo] && (w_dest[wo] == s) && slave_bvalid[s];
-        wr_done[s] = b_sel[s] && master_bready[wo];
+    // ---- B channel: one response at a time per master, round-robin ------------
+    for (int m = 0; m < NO_OF_MASTERS; m++) begin
+      pick = -1;
+      for (int k = 0; k < TOTAL_SLAVES; k++) begin
+        c = (b_rr[m] + 1 + k) % TOTAL_SLAVES;
+        if (pick == -1 && wr_state[c] == DATA_PHASE && wr_owner[c] == m &&
+            slave_bvalid[c]) begin
+          pick = c;
+        end
       end
-
-      // ---- AR / R ---- same rules as the write side.
-      if (rd_state[s] == ADDR_PHASE && ro >= 0) begin
-        ar_fwd[s] = master_arvalid[ro] &&
-                    (decode_address(master_araddr[ro]) == s) &&
-                    !r_busy[ro];
+      if (pick != -1) begin
+        b_sel[pick]   = 1'b1;
+        wr_done[pick] = master_bready[m];
       end
+    end
 
-      if (rd_state[s] == DATA_PHASE && ro >= 0) begin
-        r_sel[s]   = r_busy[ro] && (r_dest[ro] == s) && slave_rvalid[s];
-        rd_done[s] = r_sel[s] && slave_rlast[s] && master_rready[ro];
-      end
-
-      // ---- abandoned-burst reclaim ----
+    // ---- abandoned-transfer reclaim ----
+    for (int s = 0; s < TOTAL_SLAVES; s++) begin
       wr_kill[s] = (wr_state[s] == DATA_PHASE) && (wr_stall[s] >= ABORT_TIMEOUT);
       rd_kill[s] = (rd_state[s] == DATA_PHASE) && (rd_stall[s] >= ABORT_TIMEOUT);
     end
@@ -494,18 +537,16 @@ interface AxiInterconnect #(
               int best_m;
               best_m      = slaveOwner(s, 1, wr_last_served[s]);
               wr_stall[s] <= 0;
-              // Do not grant to a master that already has a write bound - it
-              // could not be forwarded anyway, and it would only churn.
-              if (best_m != -1 && !w_busy[best_m]) begin
+              if (best_m != -1) begin
                 wr_owner[s] <= best_m;
                 wr_state[s] <= ADDR_PHASE;
               end
             end
 
             ADDR_PHASE: begin
-              // aw_fwd already folds in "owner still driving AND still decoding
-              // to me", so losing it means the request was withdrawn or
-              // re-targeted: release rather than latch the stale grant.
+              // Losing aw_fwd means the request was withdrawn or re-targeted
+              // (a stopped DMA channel does exactly this): release the grant
+              // instead of latching it and capturing the next channel's address.
               if (!aw_fwd[s]) begin
                 wr_state[s] <= IDLE;
                 wr_owner[s] <= -1;
@@ -516,24 +557,19 @@ interface AxiInterconnect #(
             end
 
             DATA_PHASE: begin
-              if (wr_done[s]) begin
-                wr_last_served[s] <= wr_owner[s];
-                wr_state[s]       <= IDLE;
-                wr_owner[s]       <= -1;
-                wr_stall[s]       <= 0;
-              end else if (wr_kill[s]) begin
+              if (wr_done[s] || wr_kill[s]) begin
                 wr_last_served[s] <= wr_owner[s];
                 wr_state[s]       <= IDLE;
                 wr_owner[s]       <= -1;
                 wr_stall[s]       <= 0;
               end else if (w_fwd[s] && slave_wready[s]) begin
-                wr_stall[s] <= 0;              // burst is progressing
+                wr_stall[s] <= 0;                 // burst is progressing
               end else begin
                 wr_stall[s] <= wr_stall[s] + 1;
               end
             end
 
-            default: begin   // unreachable encoding - fail safe to IDLE
+            default: begin
               wr_state[s] <= IDLE;
               wr_owner[s] <= -1;
             end
@@ -556,7 +592,7 @@ interface AxiInterconnect #(
               int best_m;
               best_m      = slaveOwner(s, 0, rd_last_served[s]);
               rd_stall[s] <= 0;
-              if (best_m != -1 && !r_busy[best_m]) begin
+              if (best_m != -1) begin
                 rd_owner[s] <= best_m;
                 rd_state[s] <= ADDR_PHASE;
               end
@@ -573,24 +609,19 @@ interface AxiInterconnect #(
             end
 
             DATA_PHASE: begin
-              if (rd_done[s]) begin
-                rd_last_served[s] <= rd_owner[s];
-                rd_state[s]       <= IDLE;
-                rd_owner[s]       <= -1;
-                rd_stall[s]       <= 0;
-              end else if (rd_kill[s]) begin
+              if (rd_done[s] || rd_kill[s]) begin
                 rd_last_served[s] <= rd_owner[s];
                 rd_state[s]       <= IDLE;
                 rd_owner[s]       <= -1;
                 rd_stall[s]       <= 0;
               end else if (r_sel[s] && master_rready[rd_owner[s]]) begin
-                rd_stall[s] <= 0;              // beats are flowing
+                rd_stall[s] <= 0;                 // beats are flowing
               end else begin
                 rd_stall[s] <= rd_stall[s] + 1;
               end
             end
 
-            default: begin   // unreachable encoding - fail safe to IDLE
+            default: begin
               rd_state[s] <= IDLE;
               rd_owner[s] <= -1;
             end
@@ -603,52 +634,79 @@ interface AxiInterconnect #(
   endgenerate
 
   // ----------------------------------------------------------------------------
-  // Per-master binding registers
+  // Per-master bookkeeping: W destination queue, R burst lock, round-robin ptrs
   // ----------------------------------------------------------------------------
   generate
-    for (genvar m = 0; m < NO_OF_MASTERS; m++) begin : binding_regs
+    for (genvar m = 0; m < NO_OF_MASTERS; m++) begin : master_tracking
       always_ff @(posedge aclk or negedge aresetn) begin
         if (!aresetn) begin
-          w_busy[m] <= 1'b0;
-          w_dest[m] <= -1;
-          r_busy[m] <= 1'b0;
-          r_dest[m] <= -1;
+          wq_head[m]  <= 0;
+          wq_tail[m]  <= 0;
+          wq_cnt[m]   <= 0;
+          r_lock[m]   <= -1;
+          r_lock_v[m] <= 1'b0;
+          r_rr[m]     <= TOTAL_SLAVES - 1;
+          b_rr[m]     <= TOTAL_SLAVES - 1;
+          for (int i = 0; i < WQ_DEPTH; i++) wq_mem[m][i] <= -1;
         end else begin
-          // ---- write binding ----
-          if (!w_busy[m]) begin
-            // A master drives one AW at a time and a grant requires a decode
-            // match, so at most one slave can accept an AW for it per cycle.
-            for (int s = 0; s < TOTAL_SLAVES; s++) begin
-              if (wr_state[s] == ADDR_PHASE && wr_owner[s] == m &&
-                  aw_fwd[s] && slave_awready[s]) begin
-                w_busy[m] <= 1'b1;
-                w_dest[m] <= s;
-              end
-            end
-          end else begin
-            for (int s = 0; s < TOTAL_SLAVES; s++) begin
-              if (w_dest[m] == s && (wr_done[s] || wr_kill[s])) begin
-                w_busy[m] <= 1'b0;
-                w_dest[m] <= -1;
-              end
+          bit did_push;
+          bit did_pop;
+
+          did_push = 1'b0;
+          did_pop  = 1'b0;
+
+          // Push one entry per accepted AW. A master drives a single address at
+          // a time and a grant requires a decode match, so at most one slave can
+          // accept an AW for it in any cycle.
+          for (int s = 0; s < TOTAL_SLAVES; s++) begin
+            if (wr_state[s] == ADDR_PHASE && wr_owner[s] == m &&
+                aw_fwd[s] && slave_awready[s]) begin
+              wq_mem[m][wq_tail[m]] <= s;
+              wq_tail[m]            <= (wq_tail[m] + 1) % WQ_DEPTH;
+              did_push               = 1'b1;
             end
           end
 
-          // ---- read binding ----
-          if (!r_busy[m]) begin
-            for (int s = 0; s < TOTAL_SLAVES; s++) begin
-              if (rd_state[s] == ADDR_PHASE && rd_owner[s] == m &&
-                  ar_fwd[s] && slave_arready[s]) begin
-                r_busy[m] <= 1'b1;
-                r_dest[m] <= s;
+          if (wq_cnt[m] != 0) begin
+            int hs;
+            hs = wq_mem[m][wq_head[m]];
+            // Pop on WLAST, or when the head slave gave up on the burst.
+            if ((w_fwd[hs] && slave_wready[hs] && master_wlast[m]) ||
+                wr_kill[hs] ||
+                (wr_state[hs] != DATA_PHASE) || (wr_owner[hs] != m)) begin
+              wq_head[m] <= (wq_head[m] + 1) % WQ_DEPTH;
+              did_pop     = 1'b1;
+            end
+          end
+
+          if (did_push && !did_pop)      wq_cnt[m] <= wq_cnt[m] + 1;
+          else if (!did_push && did_pop) wq_cnt[m] <= wq_cnt[m] - 1;
+
+          // ---- R burst lock ----
+          for (int s = 0; s < TOTAL_SLAVES; s++) begin
+            if (r_sel[s] && rd_owner[s] == m && master_rready[m]) begin
+              if (slave_rlast[s]) begin
+                r_lock_v[m] <= 1'b0;      // burst finished, free to re-arbitrate
+                r_lock[m]   <= -1;
+                r_rr[m]     <= s;
+              end else begin
+                r_lock_v[m] <= 1'b1;      // mid-burst, hold this slave
+                r_lock[m]   <= s;
               end
             end
-          end else begin
-            for (int s = 0; s < TOTAL_SLAVES; s++) begin
-              if (r_dest[m] == s && (rd_done[s] || rd_kill[s])) begin
-                r_busy[m] <= 1'b0;
-                r_dest[m] <= -1;
-              end
+          end
+          // A locked slave that gets reclaimed must release the lock.
+          if (r_lock_v[m] && (rd_kill[r_lock[m]] ||
+                              rd_state[r_lock[m]] != DATA_PHASE ||
+                              rd_owner[r_lock[m]] != m)) begin
+            r_lock_v[m] <= 1'b0;
+            r_lock[m]   <= -1;
+          end
+
+          // ---- B round-robin ----
+          for (int s = 0; s < TOTAL_SLAVES; s++) begin
+            if (b_sel[s] && wr_owner[s] == m && master_bready[m]) begin
+              b_rr[m] <= s;
             end
           end
         end
@@ -658,9 +716,6 @@ interface AxiInterconnect #(
 
   // ============================================================================
   // 5. Muxing: Master to Slave (Forward Path)
-  //
-  // Every field is assigned unconditionally, so an idle slave port is driven to
-  // a defined value instead of latching whatever the previous owner left there.
   // ============================================================================
   generate
     for (genvar s = 0; s < TOTAL_SLAVES; s++) begin : m2s_routing
@@ -698,7 +753,6 @@ interface AxiInterconnect #(
         axiSlaveInterface[s].arvalid = 1'b0;
         axiSlaveInterface[s].rready  = 1'b0;
 
-        // ---- Write address channel ----
         if (wr_state[s] == ADDR_PHASE && wo >= 0) begin
           axiSlaveInterface[s].awid    = master_awid[wo];
           axiSlaveInterface[s].awaddr  = master_awaddr[wo];
@@ -712,16 +766,16 @@ interface AxiInterconnect #(
           axiSlaveInterface[s].awvalid = aw_fwd[s];
         end
 
-        // ---- Write data / response ----
-        if (wr_state[s] == DATA_PHASE && wo >= 0 && w_busy[wo] && (w_dest[wo] == s)) begin
-          axiSlaveInterface[s].wdata  = master_wdata[wo];
-          axiSlaveInterface[s].wstrb  = master_wstrb[wo];
-          axiSlaveInterface[s].wlast  = master_wlast[wo];
-          axiSlaveInterface[s].wvalid = w_fwd[s];
-          axiSlaveInterface[s].bready = master_bready[wo];
+        if (wr_state[s] == DATA_PHASE && wo >= 0) begin
+          if (wq_dest[wo] == s) begin
+            axiSlaveInterface[s].wdata  = master_wdata[wo];
+            axiSlaveInterface[s].wstrb  = master_wstrb[wo];
+            axiSlaveInterface[s].wlast  = master_wlast[wo];
+            axiSlaveInterface[s].wvalid = w_fwd[s];
+          end
+          axiSlaveInterface[s].bready = b_sel[s] && master_bready[wo];
         end
 
-        // ---- Read address channel ----
         if (rd_state[s] == ADDR_PHASE && ro >= 0) begin
           axiSlaveInterface[s].arid    = master_arid[ro];
           axiSlaveInterface[s].araddr  = master_araddr[ro];
@@ -735,9 +789,8 @@ interface AxiInterconnect #(
           axiSlaveInterface[s].arvalid = ar_fwd[s];
         end
 
-        // ---- Read data ----
-        if (rd_state[s] == DATA_PHASE && ro >= 0 && r_busy[ro] && (r_dest[ro] == s)) begin
-          axiSlaveInterface[s].rready = master_rready[ro];
+        if (rd_state[s] == DATA_PHASE && ro >= 0) begin
+          axiSlaveInterface[s].rready = r_sel[s] && master_rready[ro];
         end
       end
     end
@@ -746,11 +799,11 @@ interface AxiInterconnect #(
   // ============================================================================
   // 6. Muxing: Slave to Master (Backward Path)
   //
-  // Each master takes each response from exactly one slave, chosen by its
-  // binding. The previous version looped over every slave with no arbitration,
-  // so the highest slave index silently overwrote every lower one - which is how
-  // a stale slave ended up handing its read data to the master instead of the
-  // slave that was actually addressed.
+  // Each master takes each response from exactly one arbitrated slave. The
+  // original code looped over every slave with no arbitration, letting the
+  // highest index silently overwrite every lower one - which is how a stale
+  // slave handed its read data (RID and all) to the master instead of the slave
+  // that was actually addressed.
   // ============================================================================
   generate
     for (genvar m = 0; m < NO_OF_MASTERS; m++) begin : s2m_routing
@@ -768,26 +821,20 @@ interface AxiInterconnect #(
         axiMasterInterface[m].rvalid  = 1'b0;
 
         for (int s = 0; s < TOTAL_SLAVES; s++) begin
-          // AWREADY: the one slave in ADDR_PHASE whose decode matches.
           if (wr_state[s] == ADDR_PHASE && wr_owner[s] == m && aw_fwd[s]) begin
             axiMasterInterface[m].awready = slave_awready[s];
           end
-          // WREADY: strictly this master's bound write destination.
-          if (wr_state[s] == DATA_PHASE && wr_owner[s] == m &&
-              w_busy[m] && (w_dest[m] == s)) begin
+          if (wr_state[s] == DATA_PHASE && wr_owner[s] == m && wq_dest[m] == s) begin
             axiMasterInterface[m].wready = slave_wready[s];
           end
-          // B: exactly one source slave.
           if (b_sel[s] && wr_owner[s] == m) begin
             axiMasterInterface[m].bid    = slave_bid[s];
             axiMasterInterface[m].bresp  = slave_bresp[s];
             axiMasterInterface[m].bvalid = 1'b1;
           end
-          // ARREADY: the one slave in ADDR_PHASE whose decode matches.
           if (rd_state[s] == ADDR_PHASE && rd_owner[s] == m && ar_fwd[s]) begin
             axiMasterInterface[m].arready = slave_arready[s];
           end
-          // R: exactly one source slave.
           if (r_sel[s] && rd_owner[s] == m) begin
             axiMasterInterface[m].rid    = slave_rid[s];
             axiMasterInterface[m].rdata  = slave_rdata[s];

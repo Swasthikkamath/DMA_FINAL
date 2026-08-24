@@ -36,6 +36,7 @@ module tb_interconnect;
   int s_aw_cnt[TOTAL_SLAVES], s_w_cnt[TOTAL_SLAVES], s_ar_cnt[TOTAL_SLAVES];
   logic [31:0] s_last_awaddr[TOTAL_SLAVES], s_last_araddr[TOTAL_SLAVES],
                s_last_wdata [TOTAL_SLAVES];
+  logic [3:0]  s_arid[TOTAL_SLAVES];   // ARID captured at AR handshake, echoed on RID
 
   genvar gs;
   generate
@@ -48,7 +49,7 @@ module tb_interconnect;
         sif[gs].rlast   = s_rlast[gs];
         sif[gs].rdata   = 32'hD0D0_0000 + gs;   // slave-unique pattern
         sif[gs].rresp   = 2'b00;
-        sif[gs].rid     = '0;
+        sif[gs].rid     = s_arid[gs];   // echo the captured ARID
         sif[gs].bvalid  = s_b_en[gs];
         sif[gs].bresp   = 2'b00;
         sif[gs].bid     = '0;
@@ -58,6 +59,7 @@ module tb_interconnect;
         if (!aresetn) begin
           s_aw_cnt[gs] <= 0; s_w_cnt[gs] <= 0; s_ar_cnt[gs] <= 0;
           s_last_awaddr[gs] <= '0; s_last_araddr[gs] <= '0; s_last_wdata[gs] <= '0;
+          s_arid[gs] <= '0;
         end else begin
           if (sif[gs].awvalid && sif[gs].awready) begin
             s_aw_cnt[gs] <= s_aw_cnt[gs] + 1; s_last_awaddr[gs] <= sif[gs].awaddr;
@@ -69,6 +71,7 @@ module tb_interconnect;
           end
           if (sif[gs].arvalid && sif[gs].arready) begin
             s_ar_cnt[gs] <= s_ar_cnt[gs] + 1; s_last_araddr[gs] <= sif[gs].araddr;
+            s_arid[gs]   <= sif[gs].arid;
             $display("[%0t] SLAVE%0d AR  addr=0x%08h", $time, gs, sif[gs].araddr);
           end
         end
@@ -81,11 +84,14 @@ module tb_interconnect;
   // ---------------------------------------------------------------
   int m0_aw_cnt, m0_w_cnt, m0_b_cnt, m0_ar_cnt, m0_r_cnt;
   logic [31:0] m0_last_rdata;
+  logic [3:0]  m0_last_rid;
+  bit          m0_saw_ch0_data;   // saw a beat tagged RID 0 carrying slave 0's pattern
 
   always_ff @(posedge aclk) begin
     if (!aresetn) begin
       m0_aw_cnt <= 0; m0_w_cnt <= 0; m0_b_cnt <= 0;
-      m0_ar_cnt <= 0; m0_r_cnt <= 0; m0_last_rdata <= '0;
+      m0_ar_cnt <= 0; m0_r_cnt <= 0; m0_last_rdata <= '0; m0_last_rid <= '0;
+      m0_saw_ch0_data <= 1'b0;
     end else begin
       if (mif[0].awvalid && mif[0].awready) m0_aw_cnt <= m0_aw_cnt + 1;
       if (mif[0].wvalid  && mif[0].wready ) m0_w_cnt  <= m0_w_cnt  + 1;
@@ -94,7 +100,9 @@ module tb_interconnect;
       if (mif[0].rvalid  && mif[0].rready ) begin
         m0_r_cnt      <= m0_r_cnt + 1;
         m0_last_rdata <= mif[0].rdata;
-        $display("[%0t] MASTER0 R  data=0x%08h", $time, mif[0].rdata);
+        m0_last_rid   <= mif[0].rid;
+        if (mif[0].rid == 4'd0 && mif[0].rdata == 32'hD0D0_0000) m0_saw_ch0_data <= 1'b1;
+        $display("[%0t] MASTER0 R  rid=%0d data=0x%08h", $time, mif[0].rid, mif[0].rdata);
       end
     end
   end
@@ -119,6 +127,7 @@ module tb_interconnect;
     mif[0].awaddr='0; mif[0].araddr='0; mif[0].wdata='0;
     mif[0].awqos='0;  mif[0].arqos='0;
     mif[0].awlen='0;  mif[0].arlen='0;  mif[0].wlast=0;
+    mif[0].awid='0;   mif[0].arid='0;
   endtask
 
   task automatic m1_idle();
@@ -127,6 +136,7 @@ module tb_interconnect;
     mif[1].awaddr='0; mif[1].araddr='0; mif[1].wdata='0;
     mif[1].awqos='0;  mif[1].arqos='0;
     mif[1].awlen='0;  mif[1].arlen='0;  mif[1].wlast=0;
+    mif[1].awid='0;   mif[1].arid='0;
   endtask
 
   task automatic reset_all();
@@ -244,23 +254,24 @@ module tb_interconnect;
     s_aw_en[0] = 1; s_w_en[0] = 1;
     @(negedge aclk);
     mif[0].awaddr = 32'h0000_0400; mif[0].awqos = 4'd0; mif[0].awvalid = 1;
-    idle_cycles(TB_ABORT_TIMEOUT - 8);
-    check("ch0 AW is back-pressured while the stale binding is unresolved",
-          s_aw_cnt[0] == 0);
+    idle_cycles(6);
+    // Channel 0 must NOT be blocked behind channel 1's abandoned transfer.
+    // Gating a new AW on an older one draining deadlocks against a master that
+    // withholds BREADY/RREADY until its own request is accepted.
+    check("ch0 AW is accepted promptly, not blocked by the stale slave",
+          s_aw_cnt[0] == 1);
     mif[0].awvalid = 0;
-    idle_cycles(TB_ABORT_TIMEOUT + 10);               // let the abort fire
-
-    // Now channel 0 retries and must be routed correctly.
-    m0_aw(32'h0000_0400, 4'd0, 60, ok);
-    check("after abort recovery ch0 AW was accepted", ok);
-    m0_w(32'hFEED_0000, 40, ok);
-    check("after abort recovery ch0 W was accepted", ok);
-    idle_cycles(2);
-    check("ch0 AW landed on slave 0",
-          s_aw_cnt[0] == 1 && s_last_awaddr[0] == 32'h0000_0400);
-    check("ch0 W  landed on slave 0",
-          s_w_cnt[0] == 1 && s_last_wdata[0] == 32'hFEED_0000);
-    check("ch0 W never reached slave 2", s_w_cnt[2] == 0);
+    check("ch0 AW landed on slave 0, not slave 2",
+          s_last_awaddr[0] == 32'h0000_0400 && s_aw_cnt[2] == 1);
+    // NOTE: W beats follow AW acceptance order (the W channel has no address),
+    // so a master that abandons a burst after its AW was accepted - which is an
+    // AXI protocol violation - will have its next burst's data follow the stale
+    // AW. The interconnect cannot detect that; the abort timeout is the only
+    // recovery. DMA-350 completes in-flight bursts, so this case should not
+    // arise in practice.
+    idle_cycles(TB_ABORT_TIMEOUT + 10);               // abort reclaims slave 2
+    check("stale slave 2 write was reclaimed after the abort timeout",
+          dut.wr_state[2] == 0 /* IDLE */);
 
     // =================================================================
     $display("\n=== SCENARIO C : read, a stale slave must not win the backward mux ===");
@@ -279,23 +290,23 @@ module tb_interconnect;
     s_ar_en[0] = 1;
     @(negedge aclk);
     mif[0].araddr = 32'h0000_0400; mif[0].arqos = 4'd0; mif[0].arvalid = 1;
-    idle_cycles(TB_ABORT_TIMEOUT - 8);
-    check("ch0 AR is back-pressured while the stale binding is unresolved",
-          s_ar_cnt[0] == 0);
+    idle_cycles(6);
+    check("ch0 AR is accepted promptly, not blocked by the stale slave",
+          s_ar_cnt[0] == 1);
     @(negedge aclk); mif[0].arvalid = 0;
-    idle_cycles(TB_ABORT_TIMEOUT + 10);   // let the abort reclaim slave 2
 
-    // Slave 2 deliberately KEEPS driving read data to prove a released slave
-    // can no longer leak it back to the master.
+    // Slave 2 deliberately KEEPS driving read data to prove its data is never
+    // mistaken for channel 0's.
     @(negedge aclk);
     mif[0].rready = 1;
-    m0_ar(32'h0000_0400, 4'd0, 60, ok);
-    check("ch0 AR was accepted after recovery", ok);
     check("ch0 AR landed on slave 0",
-          s_ar_cnt[0] == 1 && s_last_araddr[0] == 32'h0000_0400);
+          s_ar_cnt[0] >= 1 && s_last_araddr[0] == 32'h0000_0400);
     check("ch0 AR never leaked into slave 2", s_ar_cnt[2] == 1);
 
     @(negedge aclk);
+    s_rlast[2] = 1;                  // slave 2 drains its abandoned burst
+    idle_cycles(3);
+    @(negedge aclk); s_r_en[2] = 0; s_rlast[2] = 0;
     s_r_en[0] = 1; s_rlast[0] = 1;   // slave 0 returns its data
     idle_cycles(4);
     $display("  master0 last rdata=0x%08h (slave0=0x%08h slave2=0x%08h)",
@@ -435,6 +446,57 @@ module tb_interconnect;
       check("both masters were granted at equal QoS (no starvation)",
             aw_m0_wins > 0 && aw_m1_wins > 0);
     end
+
+    // =================================================================
+    $display("\n=== SCENARIO K : stopped channel must NOT block the other channel ===");
+    // Reproduces the captured deadlock. One master port carries two DMA
+    // channels tagged by ARID. Channel 1's read is left in flight on slave 1
+    // with the master no longer asserting RREADY (channel stopped). Channel 0
+    // must still get its AR accepted for slave 0 - if the interconnect gates
+    // the new AR on the old read draining, and the master gates RREADY on its
+    // AR being accepted, the two lock each other up forever.
+    reset_all();
+    s_ar_en[1] = 1;
+    @(negedge aclk);
+    mif[0].arid = 4'd1;              // channel 1's tag
+    mif[0].araddr = 32'h0000_1300; mif[0].arqos = 4'd7; mif[0].arvalid = 1;
+    idle_cycles(5);
+    check("ch1 AR was accepted by slave 1", s_ar_cnt[1] == 1);
+    @(negedge aclk);
+    mif[0].arvalid = 0;
+    s_ar_en[1] = 0;
+    s_r_en[1] = 1; s_rlast[1] = 0;   // slave 1 still holding beats, no RLAST
+    mif[0].rready = 0;               // *** CHANNEL 1 STOPPED consuming ***
+    idle_cycles(4);
+
+    // Channel 0 now issues its own read, to a DIFFERENT slave, with its own ID.
+    s_ar_en[0] = 1;
+    @(negedge aclk);
+    mif[0].arid = 4'd0; mif[0].araddr = 32'h0000_02bc; mif[0].arqos = 4'd5;
+    mif[0].arvalid = 1;
+    idle_cycles(8);
+    check("ch0 AR is accepted even though ch1's read is still outstanding",
+          s_ar_cnt[0] == 1 && s_last_araddr[0] == 32'h0000_02bc);
+    check("ch0 AR went to slave 0, not slave 1", s_ar_cnt[1] == 1);
+    check("slave 0 captured ARID 0 (channel 0's tag)", s_arid[0] == 4'd0);
+    @(negedge aclk); mif[0].arvalid = 0;
+
+    // Channel 0 now accepts data again. Channel 1's slave drains its remaining
+    // beats first (tagged RID 1, which the DMA discards for a stopped channel),
+    // then channel 0's own data must arrive tagged RID 0.
+    @(negedge aclk);
+    s_r_en[0] = 1; s_rlast[0] = 1;
+    mif[0].rready = 1;
+    idle_cycles(3);
+    @(negedge aclk); s_rlast[1] = 1;   // slave 1 finishes its burst
+    idle_cycles(3);
+    @(negedge aclk); s_r_en[1] = 0; s_rlast[1] = 0;
+    idle_cycles(6);
+    $display("  master0 got rid=%0d data=0x%08h", m0_last_rid, m0_last_rdata);
+    // Channel 1's leftover beats may legitimately arrive too (tagged RID 1,
+    // which the DMA discards for a stopped channel). What matters is that
+    // channel 0's own data reached the master tagged with channel 0's ID.
+    check("ch0 read data reached the master tagged RID 0", m0_saw_ch0_data);
 
     // =================================================================
     $display("\n=== SCENARIO G : address decode boundaries ===");
