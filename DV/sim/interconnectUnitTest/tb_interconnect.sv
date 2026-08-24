@@ -272,6 +272,7 @@ module tb_interconnect;
 
   bit ok;
   int rid1_at_switch;
+  int beats_left_at_switch;
 
   // ---------------------------------------------------------------
   initial begin
@@ -376,8 +377,8 @@ module tb_interconnect;
 
     check("ch0's read data was delivered tagged RID 0",
           m0_saw_ch0_data);
-    check("slave 2's abandoned burst was drained, leaving it free",
-          dut.rd_state[2] == 0 /* IDLE */);
+    check("interconnect never acknowledges the stopped channel's slave",
+          sif[2].rready == 1'b0);
 
     // =================================================================
     $display("\n=== SCENARIO D : baseline, a normal write then a normal read ===");
@@ -634,7 +635,8 @@ module tb_interconnect;
           s_ar_cnt[0] == 1 && s_last_araddr[0] == 32'h0000_02bc);
     check("ch0 AR did not go to slave 1", s_ar_cnt[1] == 1);
     @(negedge aclk); mif[0].arvalid = 0;
-    rid1_at_switch = m0_beats_rid1;   // ch1 beats delivered up to the stop
+    rid1_at_switch = m0_beats_rid1;         // ch1 beats delivered up to the stop
+    beats_left_at_switch = s_beats_left[1]; // ch1 beats still sitting in the slave
 
     // DMA resumes draining; both bursts must complete fully.
     @(negedge aclk); mif[0].rready = 1;
@@ -645,8 +647,10 @@ module tb_interconnect;
     check("ch0's 10-beat burst was delivered in full", m0_beats_rid0 == 10);
     check("no stopped-channel beats reached the master after the switch",
           m0_beats_rid1 == rid1_at_switch);
-    check("slave 1's burst was still drained to completion, not left wedged",
-          dut.rd_state[1] == 0 /* IDLE */ && !s_bursting[1]);
+    check("interconnect never acknowledges the stopped channel's slave",
+          sif[1].rready == 1'b0);
+    check("no further beats were consumed from the stopped slave",
+          s_beats_left[1] == beats_left_at_switch);
     s_burst_len[0] = 0; s_burst_len[1] = 0;
 
     // =================================================================

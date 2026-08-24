@@ -564,14 +564,6 @@ interface AxiInterconnect #(
       end
     end
 
-    // ---- discarded transfers complete when the interconnect drains them ----
-    for (int s = 0; s < TOTAL_SLAVES; s++) begin
-      if (rd_discard[s] && rd_state[s] == DATA_PHASE)
-        rd_done[s] = slave_rvalid[s] && slave_rlast[s];   // RREADY forced high
-      if (wr_discard[s] && wr_state[s] == DATA_PHASE)
-        wr_done[s] = slave_bvalid[s];                     // BREADY forced high
-    end
-
     // ---- abandoned-transfer reclaim ----
     for (int s = 0; s < TOTAL_SLAVES; s++) begin
       wr_kill[s] = (ABORT_TIMEOUT != 0) &&
@@ -884,8 +876,7 @@ interface AxiInterconnect #(
             axiSlaveInterface[s].wlast  = master_wlast[wo];
             axiSlaveInterface[s].wvalid = w_fwd[s];
           end
-          axiSlaveInterface[s].bready = wr_discard[s] ? 1'b1
-                                                       : (b_sel[s] && master_bready[wo]);
+          axiSlaveInterface[s].bready = b_sel[s] && master_bready[wo];
         end
 
         if (rd_state[s] == ADDR_PHASE && ro >= 0) begin
@@ -902,10 +893,11 @@ interface AxiInterconnect #(
         end
 
         if (rd_state[s] == DATA_PHASE && ro >= 0) begin
-          // A stopped channel's burst is drained by the interconnect itself so
-          // the slave can finish; the beats are simply not forwarded.
-          axiSlaveInterface[s].rready = rd_discard[s] ? 1'b1
-                                                      : (r_sel[s] && master_rready[ro]);
+          // Never handshake on behalf of the master. A stopped channel's slave
+          // port is left un-acknowledged: r_sel[s] is already 0 for it, so
+          // RREADY stays low and the TB's slave agent never observes a beat
+          // that the DMA did not actually take.
+          axiSlaveInterface[s].rready = r_sel[s] && master_rready[ro];
         end
       end
     end
@@ -971,6 +963,15 @@ interface AxiInterconnect #(
   // read it off a waveform.
   // ============================================================================
 `ifdef AXI_IC_DEBUG
+  bit rd_discard_q[TOTAL_SLAVES];
+  bit wr_discard_q[TOTAL_SLAVES];
+  always_ff @(posedge aclk) begin
+    for (int i = 0; i < TOTAL_SLAVES; i++) begin
+      rd_discard_q[i] <= rd_discard[i];
+      wr_discard_q[i] <= wr_discard[i];
+    end
+  end
+
   generate
     for (genvar s = 0; s < TOTAL_SLAVES; s++) begin : ic_trace_slave
       always_ff @(posedge aclk) begin
@@ -990,18 +991,15 @@ interface AxiInterconnect #(
           if (b_sel[s] && slave_bvalid[s] && master_bready[wr_owner[s]])
             $display("[%0t] IC B   slave=%0d -> master=%0d bid=%0d resp=%0d",
                      $time, s, wr_owner[s], slave_bid[s], slave_bresp[s]);
-          // Beats drained and thrown away because the owning channel was
-          // stopped: handshaked on the slave side, never forwarded to the
-          // master. These are the handshakes the interconnect performs itself.
-          if (rd_discard[s] && slave_rvalid[s])
-            $display("[%0t] IC DROP R slave=%0d (stopped ch id=%0d) data=0x%08h last=%0b",
-                     $time, s, rd_id[s], slave_rdata[s], slave_rlast[s]);
-          if (wr_discard[s] && slave_bvalid[s])
-            $display("[%0t] IC DROP B slave=%0d (stopped ch id=%0d)",
+          // A stopped channel's transfer is quarantined, not drained: its
+          // data is never forwarded to the master and the interconnect never
+          // acknowledges it, so the TB's slave agent sees no phantom beats.
+          if (rd_discard[s] && !rd_discard_q[s])
+            $display("[%0t] IC STOPPED read slave=%0d (ch id=%0d): data no longer routed",
+                     $time, s, rd_id[s]);
+          if (wr_discard[s] && !wr_discard_q[s])
+            $display("[%0t] IC STOPPED write slave=%0d (ch id=%0d): response no longer routed",
                      $time, s, wr_id[s]);
-          if (rd_discard[s] && slave_rvalid[s] && slave_rlast[s])
-            $display("[%0t] IC DRAINED read slave=%0d, slave is free again",
-                     $time, s);
           if (wr_kill[s])
             $display("[%0t] IC ABORT write slave=%0d (master=%0d) reclaimed on timeout",
                      $time, s, wr_owner[s]);
