@@ -93,7 +93,7 @@ module hdlTop;
     .trig_out_req(trigOutReq),
     .trig_out_ack(trigOutAck)
   );
-  AxiInterconnect inter(pclk,present_n,axi4InterfaceHandle[(NO_OF_SLAVES+1):(NO_OF_SLAVES+2)],axi4InterfaceHandle[0:(NO_OF_SLAVES)]);
+  AxiInterconnect inter(pclk,preset_n,axi4InterfaceHandle[(NO_OF_SLAVES+1):(NO_OF_SLAVES+2)],axi4InterfaceHandle[0:(NO_OF_SLAVES)]);
   generate
     for(genvar i=0;i<(axi4_globals_pkg::NO_OF_SLAVES +1);i++) begin 
       axi4_master_agent_bfm #(i) axi4MasterAgentBfm(axi4InterfaceHandle[i]);
