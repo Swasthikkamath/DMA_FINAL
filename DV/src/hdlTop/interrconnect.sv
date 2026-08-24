@@ -70,7 +70,13 @@ import AxiGlobalPackage::*;
 
 import AxiGlobalPackage::*;
  
-interface AxiInterconnect(
+interface AxiInterconnect #(
+  // Cycles a slave may sit in DATA_PHASE with no progress before the
+  // interconnect concludes the master abandoned the burst (DMA channel stop)
+  // and reclaims the slave. No mis-routing is possible while stalled, so this
+  // only bounds how long recovery takes; it is safe to make it large.
+  parameter int ABORT_TIMEOUT = 1024
+)(
 
   input logic aclk,
 
@@ -92,9 +98,6 @@ interface AxiInterconnect(
 
   localparam int DEFAULT_SLAVE = NO_OF_SLAVES;
  
-logic[NO_OF_MASTERS-1:0]masterWriteReq[TOTAL_SLAVES];
-
-logic[NO_OF_MASTERS-1:0]masterReadReq[TOTAL_SLAVES];
 
   // ============================================================================
 
@@ -284,515 +287,517 @@ logic[NO_OF_MASTERS-1:0]masterReadReq[TOTAL_SLAVES];
 
   endgenerate
  
-  // ============================================================================
 
+  // ============================================================================
   // 3. Range-Based Address Decoder
-
-  // Returns DEFAULT_SLAVE (== NO_OF_SLAVES) for any address that does not
-
-  // fall inside a real slave's range, instead of -1.
-
+  //
+  // Every slave owns one uniform 2**SLAVE_MEMORY_SIZE window:
+  //   slave i  ->  [ i*2**SLAVE_MEMORY_SIZE , (i+1)*2**SLAVE_MEMORY_SIZE )
+  // Anything outside the mapped region goes to DEFAULT_SLAVE.
+  //
+  // The previous special case for slave 0 ("addr > 0 && addr <= 4096") had two
+  // defects: address 0x0 fell through to DEFAULT_SLAVE, and 0x1000 matched both
+  // slave 0 and slave 1 (the loop below claims it for slave 1). Both are fixed
+  // by giving every slave the same uniform window.
   // ============================================================================
-
-  function automatic logic [$clog2(TOTAL_SLAVES):0] decode_address(logic [ADDR_WIDTH-1:0] addr);
-
-    // Fixed Range for Slave 0: 0 to 4095 (0x000 to 0xFFF)
-
-    if (addr > 32'h0000_0000 && addr <= 32'd 4096) return 0;
-
-    // Default dynamic logic for other slaves
-
-    for (int i = 1; i < NO_OF_SLAVES; i++) begin
-
-      if (addr >= (i * (1 << SLAVE_MEMORY_SIZE)) && addr < ((i+1) * (1 << SLAVE_MEMORY_SIZE)))begin 
-
+  function automatic int decode_address(logic [ADDR_WIDTH-1:0] addr);
+    for (int i = 0; i < NO_OF_SLAVES; i++) begin
+      if (addr >= (i * (1 << SLAVE_MEMORY_SIZE)) &&
+          addr <  ((i + 1) * (1 << SLAVE_MEMORY_SIZE))) begin
         return i;
+      end
+    end
+    return DEFAULT_SLAVE; // Out of range -> route to the default (decode-error) slave
+  endfunction
 
-     end 
+  // ----------------------------------------------------------------------------
+  // Arbitration helper: highest-QoS master currently targeting slaveId.
+  //
+  // Ties break round-robin starting just after lastServed, so two masters at
+  // equal QoS cannot starve each other. (Previously the lowest index always won
+  // and wr_last_served/rd_last_served were written but never read.)
+  //
+  // The function is pure now - it no longer writes the module-level
+  // masterWriteReq/masterReadReq scratch arrays, which were being driven
+  // concurrently from every per-slave always_ff block.
+  // ----------------------------------------------------------------------------
+  function automatic int slaveOwner(int slaveId, int writeRead, int lastServed);
+    int  best;
+    int  bestQos;
+    int  cand;
+    int  candQos;
+    bit  candReq;
 
+    best    = -1;
+    bestQos = -1;
+
+    for (int k = 0; k < NO_OF_MASTERS; k++) begin
+      // Scan starting just after whoever was served last on this slave.
+      cand = (lastServed + 1 + k) % NO_OF_MASTERS;
+
+      if (writeRead == 1) begin
+        candReq = master_awvalid[cand] && (decode_address(master_awaddr[cand]) == slaveId);
+        candQos = int'(master_awqos[cand]);
+      end else begin
+        candReq = master_arvalid[cand] && (decode_address(master_araddr[cand]) == slaveId);
+        candQos = int'(master_arqos[cand]);
+      end
+
+      // Strictly-greater keeps the earliest candidate in round-robin order on a
+      // QoS tie, which is what makes the round-robin fair.
+      if (candReq && (candQos > bestQos)) begin
+        bestQos = candQos;
+        best    = cand;
+      end
     end
 
-    return DEFAULT_SLAVE; // Out of range -> route to the default (decode-error) slave
-
+    return best;
   endfunction
 
-  function automatic int slaveOwner(int slaveId,int writeRead);
-
-    int masterWithMaxQos=-1;
-
-    int maxQos;
-
-    bit firstMaster;
-
-    if(writeRead==1) begin 
-
-      for(int m=0;m<NO_OF_MASTERS;m++) begin 
-
-        if(master_awvalid[m] && decode_address(master_awaddr[m]) == slaveId) begin 
-
-          masterWriteReq[slaveId][m] = 1;
-
-        end
-
-        else begin 
-
-          masterWriteReq[slaveId][m] = 0;
-
-        end  
-
-      end   
-
-      for(int m=0;m<NO_OF_MASTERS;m++) begin
-
-        if(masterWriteReq[slaveId][m] == 1 && firstMaster==0) begin 
-
-          maxQos = master_awqos[m];
-
-          masterWithMaxQos = m;
-
-          firstMaster=1;
-
-        end 
-
-        else if(masterWriteReq[slaveId][m] == 1) begin
-
-          if(maxQos < master_awqos[m]) begin 
-
-            maxQos = master_awqos[m];
-
-            masterWithMaxQos = m;
-
-          end 
-
-        end 
-
-      end 
-
-      return masterWithMaxQos;
-
-    end 
-
-    else if(writeRead == 0) begin 
-
-      for(int m=0;m<NO_OF_MASTERS;m++) begin
-
-        if(master_arvalid[m] && decode_address(master_araddr[m]) == slaveId) begin
-
-          masterReadReq[slaveId][m] = 1;
-
-        end
-
-        else begin
-
-          masterReadReq[slaveId][m] = 0;
-
-        end
-
-      end
-
-      for(int m=0;m<NO_OF_MASTERS;m++) begin
-
-        if(masterReadReq[slaveId][m] == 1 && firstMaster==0) begin
-
-          maxQos = master_arqos[m];
-
-          masterWithMaxQos = m;
-
-          firstMaster=1;
-
-        end
-
-        else if(masterReadReq[slaveId][m] == 1) begin
-
-          if(maxQos < master_arqos[m]) begin
-
-            maxQos = master_arqos[m];
-
-            masterWithMaxQos = m;
-
-          end
-
-        end
-
-      end
-
-      return masterWithMaxQos;
-
-    end 
-
-  endfunction
- 
   // ============================================================================
-
-  // 4. Sticky Arbitration (Write and Read)
-
-  // Extended to TOTAL_SLAVES so slave index DEFAULT_SLAVE gets the same
-
-  // arbitration/state-machine treatment as every real slave.
-
+  // 4. Per-master transaction binding
+  //
+  // WHY THIS EXISTS
+  // ---------------
+  // The AXI W channel carries no address. The only thing binding a W burst to a
+  // slave is the order of the AW that preceded it. When one physical master port
+  // is time-multiplexed between two DMA channels and a channel is STOPPED
+  // mid-transfer, that ordering guarantee is broken: an AW has been accepted for
+  // slave X, but the W beats that follow belong to a different channel aimed at
+  // slave Y. Nothing in the W beats themselves tells the interconnect this.
+  //
+  // Therefore the interconnect binds ONE write transaction per master at a time,
+  // end to end (AW accepted -> ... -> B received), and refuses to accept the
+  // next AW until that binding is resolved. If a channel is stopped, the next
+  // channel's AW is back-pressured (a visible stall) rather than allowed to bind
+  // while stale W beats are still in flight. Stalling is recoverable; routing a
+  // channel's write data into the wrong slave silently corrupts memory.
+  //
+  // The same single-binding rule is applied to reads, which additionally removes
+  // any chance of two slaves interleaving read data back to one master.
+  //
+  // A stalled binding is reclaimed after ABORT_TIMEOUT cycles of no progress,
+  // which is what lets a stopped DMA channel free the slave it was using.
+  // Because no mis-routing is possible while stalled, this timeout can safely be
+  // large; it only bounds how long recovery takes.
   // ============================================================================
-
   typedef enum bit [1:0] {IDLE, ADDR_PHASE, DATA_PHASE} state_t;
 
   state_t wr_state[TOTAL_SLAVES];
+  int     wr_owner[TOTAL_SLAVES];
+  int     wr_last_served[TOTAL_SLAVES];
+  int     wr_stall[TOTAL_SLAVES];
 
-  int wr_owner[TOTAL_SLAVES];
-
-  int wr_last_served[TOTAL_SLAVES];
- 
   state_t rd_state[TOTAL_SLAVES];
+  int     rd_owner[TOTAL_SLAVES];
+  int     rd_last_served[TOTAL_SLAVES];
+  int     rd_stall[TOTAL_SLAVES];
 
-  int rd_owner[TOTAL_SLAVES];
+  // Which slave each master's in-flight write/read is bound to (-1 = none).
+  bit w_busy[NO_OF_MASTERS];
+  int w_dest[NO_OF_MASTERS];
+  bit r_busy[NO_OF_MASTERS];
+  int r_dest[NO_OF_MASTERS];
 
-  int rd_last_served[TOTAL_SLAVES];
- 
+  // ----------------------------------------------------------------------------
+  // Forward-path qualification. The state machines and the routing muxes both
+  // read these, so they can never disagree about when a handshake happened.
+  // ----------------------------------------------------------------------------
+  bit aw_fwd [TOTAL_SLAVES]; // AW presented to this slave
+  bit w_fwd  [TOTAL_SLAVES]; // W  presented to this slave
+  bit ar_fwd [TOTAL_SLAVES]; // AR presented to this slave
+  bit b_sel  [TOTAL_SLAVES]; // this slave is its owner's B source
+  bit r_sel  [TOTAL_SLAVES]; // this slave is its owner's R source
+
+  bit wr_done [TOTAL_SLAVES]; // write completed this cycle (B accepted)
+  bit rd_done [TOTAL_SLAVES]; // read completed this cycle (RLAST accepted)
+  bit wr_kill [TOTAL_SLAVES]; // write binding abandoned - reclaim
+  bit rd_kill [TOTAL_SLAVES]; // read binding abandoned  - reclaim
+
+  always_comb begin
+    for (int s = 0; s < TOTAL_SLAVES; s++) begin
+      aw_fwd[s]  = 1'b0;
+      w_fwd[s]   = 1'b0;
+      ar_fwd[s]  = 1'b0;
+      b_sel[s]   = 1'b0;
+      r_sel[s]   = 1'b0;
+      wr_done[s] = 1'b0;
+      rd_done[s] = 1'b0;
+      wr_kill[s] = 1'b0;
+      rd_kill[s] = 1'b0;
+    end
+
+    for (int s = 0; s < TOTAL_SLAVES; s++) begin
+      int wo;
+      int ro;
+      wo = wr_owner[s];
+      ro = rd_owner[s];
+
+      // ---- AW ----
+      // Requires the owner's CURRENT address to still decode to this slave, so
+      // a grant left over from a stopped channel cannot capture the next
+      // channel's address. Also requires the owner to have no write already
+      // bound, which is what prevents a second binding forming over stale
+      // W beats.
+      if (wr_state[s] == ADDR_PHASE && wo >= 0) begin
+        aw_fwd[s] = master_awvalid[wo] &&
+                    (decode_address(master_awaddr[wo]) == s) &&
+                    !w_busy[wo];
+      end
+
+      // ---- W ---- strictly to the slave this master's write is bound to.
+      if (wr_state[s] == DATA_PHASE && wo >= 0) begin
+        w_fwd[s] = master_wvalid[wo] && w_busy[wo] && (w_dest[wo] == s);
+      end
+
+      // ---- B ---- exactly one source slave per master, by binding.
+      if (wr_state[s] == DATA_PHASE && wo >= 0) begin
+        b_sel[s]   = w_busy[wo] && (w_dest[wo] == s) && slave_bvalid[s];
+        wr_done[s] = b_sel[s] && master_bready[wo];
+      end
+
+      // ---- AR / R ---- same rules as the write side.
+      if (rd_state[s] == ADDR_PHASE && ro >= 0) begin
+        ar_fwd[s] = master_arvalid[ro] &&
+                    (decode_address(master_araddr[ro]) == s) &&
+                    !r_busy[ro];
+      end
+
+      if (rd_state[s] == DATA_PHASE && ro >= 0) begin
+        r_sel[s]   = r_busy[ro] && (r_dest[ro] == s) && slave_rvalid[s];
+        rd_done[s] = r_sel[s] && slave_rlast[s] && master_rready[ro];
+      end
+
+      // ---- abandoned-burst reclaim ----
+      wr_kill[s] = (wr_state[s] == DATA_PHASE) && (wr_stall[s] >= ABORT_TIMEOUT);
+      rd_kill[s] = (rd_state[s] == DATA_PHASE) && (rd_stall[s] >= ABORT_TIMEOUT);
+    end
+  end
+
+  // ----------------------------------------------------------------------------
+  // Per-slave arbitration state machines
+  // ----------------------------------------------------------------------------
   generate
-
     for (genvar s = 0; s < TOTAL_SLAVES; s++) begin : arbitration_logic
 
-      // --- Write Channel State Machine ---
-
+      // --- Write Channel ---
       always_ff @(posedge aclk or negedge aresetn) begin
-
         if (!aresetn) begin
-
-          wr_state[s] <= IDLE;
-
-          wr_owner[s] <= 'b x;
-
-          wr_last_served[s] <= 'bx ;
-
+          wr_state[s]       <= IDLE;
+          wr_owner[s]       <= -1;
+          wr_last_served[s] <= NO_OF_MASTERS - 1;
+          wr_stall[s]       <= 0;
         end else begin
-
           case (wr_state[s])
 
             IDLE: begin
-
-              // Look for highest QoS master targeting this slave
-
-              int best_m ;
-
-              logic [QOS_WIDTH-1:0] max_qos;
- 
-              best_m =-1;
-
-              max_qos =0;
-
-              best_m = slaveOwner(s,1);
-
-              if (best_m != -1) begin
-
+              int best_m;
+              best_m      = slaveOwner(s, 1, wr_last_served[s]);
+              wr_stall[s] <= 0;
+              // Do not grant to a master that already has a write bound - it
+              // could not be forwarded anyway, and it would only churn.
+              if (best_m != -1 && !w_busy[best_m]) begin
                 wr_owner[s] <= best_m;
-
                 wr_state[s] <= ADDR_PHASE;
-
               end
-
             end
 
             ADDR_PHASE: begin
-
-              // If the owning master's request was withdrawn, or its address
-              // no longer decodes to this slave (e.g. the DMA internal
-              // arbiter switched channels on this same shared master port
-              // before this slave's AWREADY ever arrived), release the
-              // stale grant instead of latching it forever. Without this,
-              // a later unrelated request from the same master index gets
-              // silently absorbed by this slave's leftover ADDR_PHASE.
-              if (!master_awvalid[wr_owner[s]] || decode_address(master_awaddr[wr_owner[s]]) != s)
+              // aw_fwd already folds in "owner still driving AND still decoding
+              // to me", so losing it means the request was withdrawn or
+              // re-targeted: release rather than latch the stale grant.
+              if (!aw_fwd[s]) begin
                 wr_state[s] <= IDLE;
-              else if (slave_awready[s])
+                wr_owner[s] <= -1;
+              end else if (slave_awready[s]) begin
                 wr_state[s] <= DATA_PHASE;
-
+                wr_stall[s] <= 0;
+              end
             end
 
             DATA_PHASE: begin
-
-              if (slave_bvalid[s] && master_bready[wr_owner[s]]) begin
-
+              if (wr_done[s]) begin
                 wr_last_served[s] <= wr_owner[s];
-
-                wr_state[s] <= IDLE;
-
+                wr_state[s]       <= IDLE;
+                wr_owner[s]       <= -1;
+                wr_stall[s]       <= 0;
+              end else if (wr_kill[s]) begin
+                wr_last_served[s] <= wr_owner[s];
+                wr_state[s]       <= IDLE;
+                wr_owner[s]       <= -1;
+                wr_stall[s]       <= 0;
+              end else if (w_fwd[s] && slave_wready[s]) begin
+                wr_stall[s] <= 0;              // burst is progressing
+              end else begin
+                wr_stall[s] <= wr_stall[s] + 1;
               end
+            end
 
+            default: begin   // unreachable encoding - fail safe to IDLE
+              wr_state[s] <= IDLE;
+              wr_owner[s] <= -1;
             end
 
           endcase
-
         end
-
       end
- 
-      // --- Read Channel State Machine ---
 
+      // --- Read Channel ---
       always_ff @(posedge aclk or negedge aresetn) begin
-
         if (!aresetn) begin
-
-          rd_state[s] <= IDLE;
-
-          rd_owner[s] <= 0;
-
-          rd_last_served[s] <= 0;
-
+          rd_state[s]       <= IDLE;
+          rd_owner[s]       <= -1;
+          rd_last_served[s] <= NO_OF_MASTERS - 1;
+          rd_stall[s]       <= 0;
         end else begin
-
           case (rd_state[s])
 
             IDLE: begin
-
-              int best_m ;
-
-              logic [QOS_WIDTH-1:0] max_qos;
- 
-              best_m =-1;
-
-              max_qos =0;
-
-              best_m = slaveOwner(s,0);
-
-              if (best_m != -1) begin
-
+              int best_m;
+              best_m      = slaveOwner(s, 0, rd_last_served[s]);
+              rd_stall[s] <= 0;
+              if (best_m != -1 && !r_busy[best_m]) begin
                 rd_owner[s] <= best_m;
-
                 rd_state[s] <= ADDR_PHASE;
-
               end
-
             end
 
             ADDR_PHASE: begin
-
-              // Same stale-grant release as the write FSM above, for the
-              // read channel.
-              if (!master_arvalid[rd_owner[s]] || decode_address(master_araddr[rd_owner[s]]) != s)
+              if (!ar_fwd[s]) begin
                 rd_state[s] <= IDLE;
-              else if (slave_arready[s])
+                rd_owner[s] <= -1;
+              end else if (slave_arready[s]) begin
                 rd_state[s] <= DATA_PHASE;
-
+                rd_stall[s] <= 0;
+              end
             end
 
             DATA_PHASE: begin
-
-              if (slave_rvalid[s] && slave_rlast[s] && master_rready[rd_owner[s]]) begin
-
+              if (rd_done[s]) begin
                 rd_last_served[s] <= rd_owner[s];
-
-                rd_state[s] <= IDLE;
-
+                rd_state[s]       <= IDLE;
+                rd_owner[s]       <= -1;
+                rd_stall[s]       <= 0;
+              end else if (rd_kill[s]) begin
+                rd_last_served[s] <= rd_owner[s];
+                rd_state[s]       <= IDLE;
+                rd_owner[s]       <= -1;
+                rd_stall[s]       <= 0;
+              end else if (r_sel[s] && master_rready[rd_owner[s]]) begin
+                rd_stall[s] <= 0;              // beats are flowing
+              end else begin
+                rd_stall[s] <= rd_stall[s] + 1;
               end
+            end
 
+            default: begin   // unreachable encoding - fail safe to IDLE
+              rd_state[s] <= IDLE;
+              rd_owner[s] <= -1;
             end
 
           endcase
-
         end
-
       end
 
     end
-
   endgenerate
- 
-  // ============================================================================
 
+  // ----------------------------------------------------------------------------
+  // Per-master binding registers
+  // ----------------------------------------------------------------------------
+  generate
+    for (genvar m = 0; m < NO_OF_MASTERS; m++) begin : binding_regs
+      always_ff @(posedge aclk or negedge aresetn) begin
+        if (!aresetn) begin
+          w_busy[m] <= 1'b0;
+          w_dest[m] <= -1;
+          r_busy[m] <= 1'b0;
+          r_dest[m] <= -1;
+        end else begin
+          // ---- write binding ----
+          if (!w_busy[m]) begin
+            // A master drives one AW at a time and a grant requires a decode
+            // match, so at most one slave can accept an AW for it per cycle.
+            for (int s = 0; s < TOTAL_SLAVES; s++) begin
+              if (wr_state[s] == ADDR_PHASE && wr_owner[s] == m &&
+                  aw_fwd[s] && slave_awready[s]) begin
+                w_busy[m] <= 1'b1;
+                w_dest[m] <= s;
+              end
+            end
+          end else begin
+            for (int s = 0; s < TOTAL_SLAVES; s++) begin
+              if (w_dest[m] == s && (wr_done[s] || wr_kill[s])) begin
+                w_busy[m] <= 1'b0;
+                w_dest[m] <= -1;
+              end
+            end
+          end
+
+          // ---- read binding ----
+          if (!r_busy[m]) begin
+            for (int s = 0; s < TOTAL_SLAVES; s++) begin
+              if (rd_state[s] == ADDR_PHASE && rd_owner[s] == m &&
+                  ar_fwd[s] && slave_arready[s]) begin
+                r_busy[m] <= 1'b1;
+                r_dest[m] <= s;
+              end
+            end
+          end else begin
+            for (int s = 0; s < TOTAL_SLAVES; s++) begin
+              if (r_dest[m] == s && (rd_done[s] || rd_kill[s])) begin
+                r_busy[m] <= 1'b0;
+                r_dest[m] <= -1;
+              end
+            end
+          end
+        end
+      end
+    end
+  endgenerate
+
+  // ============================================================================
   // 5. Muxing: Master to Slave (Forward Path)
-
-  // Loop now covers TOTAL_SLAVES; axiSlaveInterface[DEFAULT_SLAVE] is the
-
-  // reserved port that a default/decode-error slave should be bound to at
-
-  // instantiation time.
-
+  //
+  // Every field is assigned unconditionally, so an idle slave port is driven to
+  // a defined value instead of latching whatever the previous owner left there.
   // ============================================================================
-
   generate
-
     for (genvar s = 0; s < TOTAL_SLAVES; s++) begin : m2s_routing
-
       always_comb begin
+        int wo;
+        int ro;
 
-        // Default (Idle)
+        wo = wr_owner[s];
+        ro = rd_owner[s];
 
+        axiSlaveInterface[s].awid    = '0;
+        axiSlaveInterface[s].awaddr  = '0;
+        axiSlaveInterface[s].awlen   = '0;
+        axiSlaveInterface[s].awsize  = '0;
+        axiSlaveInterface[s].awburst = '0;
+        axiSlaveInterface[s].awlock  = '0;
+        axiSlaveInterface[s].awcache = '0;
+        axiSlaveInterface[s].awprot  = '0;
+        axiSlaveInterface[s].awqos   = '0;
         axiSlaveInterface[s].awvalid = 1'b0;
-
+        axiSlaveInterface[s].wdata   = '0;
+        axiSlaveInterface[s].wstrb   = '0;
+        axiSlaveInterface[s].wlast   = 1'b0;
         axiSlaveInterface[s].wvalid  = 1'b0;
-
+        axiSlaveInterface[s].bready  = 1'b0;
+        axiSlaveInterface[s].arid    = '0;
+        axiSlaveInterface[s].araddr  = '0;
+        axiSlaveInterface[s].arlen   = '0;
+        axiSlaveInterface[s].arsize  = '0;
+        axiSlaveInterface[s].arburst = '0;
+        axiSlaveInterface[s].arlock  = '0;
+        axiSlaveInterface[s].arcache = '0;
+        axiSlaveInterface[s].arprot  = '0;
+        axiSlaveInterface[s].arqos   = '0;
         axiSlaveInterface[s].arvalid = 1'b0;
- 
-        // Write Routing
+        axiSlaveInterface[s].rready  = 1'b0;
 
-        if (wr_state[s] != IDLE) begin
-
-          axiSlaveInterface[s].awid    = master_awid[wr_owner[s]];
-
-          axiSlaveInterface[s].awaddr  = master_awaddr[wr_owner[s]];
-
-          axiSlaveInterface[s].awlen   = master_awlen[wr_owner[s]];
-
-          axiSlaveInterface[s].awsize  = master_awsize[wr_owner[s]];
-
-          axiSlaveInterface[s].awburst = master_awburst[wr_owner[s]];
-
-          axiSlaveInterface[s].awlock  = master_awlock[wr_owner[s]];
-
-          axiSlaveInterface[s].awcache = master_awcache[wr_owner[s]];
-
-          axiSlaveInterface[s].awprot  = master_awprot[wr_owner[s]];
-
-          axiSlaveInterface[s].awqos   = master_awqos[wr_owner[s]];
-
-          // Also re-check the address decode here, not just the FSM state:
-          // guards the same-cycle race where wr_owner[s]'s address has
-          // already moved on to a different slave but the ADDR_PHASE->IDLE
-          // release above hasn't landed yet.
-          axiSlaveInterface[s].awvalid = (wr_state[s] == ADDR_PHASE) && master_awvalid[wr_owner[s]]
-                                        && (decode_address(master_awaddr[wr_owner[s]]) == s);
-
-          axiSlaveInterface[s].wdata   = master_wdata[wr_owner[s]];
-
-          axiSlaveInterface[s].wstrb   = master_wstrb[wr_owner[s]];
-
-          axiSlaveInterface[s].wlast   = master_wlast[wr_owner[s]];
-
-          axiSlaveInterface[s].wvalid  = master_wvalid[wr_owner[s]];
-
-          axiSlaveInterface[s].bready  = master_bready[wr_owner[s]];
-
-        end
- 
-        // Read Routing
-
-        if (rd_state[s] != IDLE) begin 
-
-          axiSlaveInterface[s].arid    = master_arid[rd_owner[s]];
-
-          axiSlaveInterface[s].araddr  = master_araddr[rd_owner[s]];
-
-          axiSlaveInterface[s].arlen   = master_arlen[rd_owner[s]];
-
-          axiSlaveInterface[s].arsize  = master_arsize[rd_owner[s]];
-
-          axiSlaveInterface[s].arburst = master_arburst[rd_owner[s]];
-
-          axiSlaveInterface[s].arlock  = master_arlock[rd_owner[s]];
-
-          axiSlaveInterface[s].arcache = master_arcache[rd_owner[s]];
-
-          axiSlaveInterface[s].arprot  = master_arprot[rd_owner[s]];
-
-          axiSlaveInterface[s].arqos   = master_arqos[rd_owner[s]];
-
-          // Same address re-check as the write side above.
-          axiSlaveInterface[s].arvalid = (rd_state[s] == ADDR_PHASE) && master_arvalid[rd_owner[s]]
-                                        && (decode_address(master_araddr[rd_owner[s]]) == s);
-
-          axiSlaveInterface[s].rready  = master_rready[rd_owner[s]];
-
+        // ---- Write address channel ----
+        if (wr_state[s] == ADDR_PHASE && wo >= 0) begin
+          axiSlaveInterface[s].awid    = master_awid[wo];
+          axiSlaveInterface[s].awaddr  = master_awaddr[wo];
+          axiSlaveInterface[s].awlen   = master_awlen[wo];
+          axiSlaveInterface[s].awsize  = master_awsize[wo];
+          axiSlaveInterface[s].awburst = master_awburst[wo];
+          axiSlaveInterface[s].awlock  = master_awlock[wo];
+          axiSlaveInterface[s].awcache = master_awcache[wo];
+          axiSlaveInterface[s].awprot  = master_awprot[wo];
+          axiSlaveInterface[s].awqos   = master_awqos[wo];
+          axiSlaveInterface[s].awvalid = aw_fwd[s];
         end
 
+        // ---- Write data / response ----
+        if (wr_state[s] == DATA_PHASE && wo >= 0 && w_busy[wo] && (w_dest[wo] == s)) begin
+          axiSlaveInterface[s].wdata  = master_wdata[wo];
+          axiSlaveInterface[s].wstrb  = master_wstrb[wo];
+          axiSlaveInterface[s].wlast  = master_wlast[wo];
+          axiSlaveInterface[s].wvalid = w_fwd[s];
+          axiSlaveInterface[s].bready = master_bready[wo];
+        end
+
+        // ---- Read address channel ----
+        if (rd_state[s] == ADDR_PHASE && ro >= 0) begin
+          axiSlaveInterface[s].arid    = master_arid[ro];
+          axiSlaveInterface[s].araddr  = master_araddr[ro];
+          axiSlaveInterface[s].arlen   = master_arlen[ro];
+          axiSlaveInterface[s].arsize  = master_arsize[ro];
+          axiSlaveInterface[s].arburst = master_arburst[ro];
+          axiSlaveInterface[s].arlock  = master_arlock[ro];
+          axiSlaveInterface[s].arcache = master_arcache[ro];
+          axiSlaveInterface[s].arprot  = master_arprot[ro];
+          axiSlaveInterface[s].arqos   = master_arqos[ro];
+          axiSlaveInterface[s].arvalid = ar_fwd[s];
+        end
+
+        // ---- Read data ----
+        if (rd_state[s] == DATA_PHASE && ro >= 0 && r_busy[ro] && (r_dest[ro] == s)) begin
+          axiSlaveInterface[s].rready = master_rready[ro];
+        end
       end
-
     end
-
   endgenerate
- 
-  // ============================================================================
 
+  // ============================================================================
   // 6. Muxing: Slave to Master (Backward Path)
-
-  // Inner loop now scans TOTAL_SLAVES so a response coming back from the
-
-  // default slave is also routed to whichever master issued the out-of-range
-
-  // transaction.
-
+  //
+  // Each master takes each response from exactly one slave, chosen by its
+  // binding. The previous version looped over every slave with no arbitration,
+  // so the highest slave index silently overwrote every lower one - which is how
+  // a stale slave ended up handing its read data to the master instead of the
+  // slave that was actually addressed.
   // ============================================================================
-
   generate
-
     for (genvar m = 0; m < NO_OF_MASTERS; m++) begin : s2m_routing
-
       always_comb begin
-
         axiMasterInterface[m].awready = 1'b0;
-
         axiMasterInterface[m].wready  = 1'b0;
-
+        axiMasterInterface[m].bid     = '0;
+        axiMasterInterface[m].bresp   = '0;
         axiMasterInterface[m].bvalid  = 1'b0;
-
         axiMasterInterface[m].arready = 1'b0;
-
+        axiMasterInterface[m].rid     = '0;
+        axiMasterInterface[m].rdata   = '0;
+        axiMasterInterface[m].rresp   = '0;
+        axiMasterInterface[m].rlast   = 1'b0;
         axiMasterInterface[m].rvalid  = 1'b0;
- 
+
         for (int s = 0; s < TOTAL_SLAVES; s++) begin
-
-          // Write Handshakes
-
-          // Each signal is only forwarded during the exact phase it is
-
-          // architecturally valid in, not merely whenever wr_state[s]!=IDLE.
-
-          // This stops a stale/previous-owner's wready/bvalid/bid/bresp on
-
-          // this slave port from leaking into the new owner during ADDR_PHASE.
-
-          if (wr_owner[s] == m) begin
-
-            if (wr_state[s] == ADDR_PHASE) begin
-
-              axiMasterInterface[m].awready = slave_awready[s];
-
-            end
-
-            if (wr_state[s] == DATA_PHASE) begin
-
-              axiMasterInterface[m].wready  = slave_wready[s];
-
-              axiMasterInterface[m].bid     = slave_bid[s];
-
-              axiMasterInterface[m].bresp   = slave_bresp[s];
-
-              axiMasterInterface[m].bvalid  = slave_bvalid[s];
-
-            end
-
+          // AWREADY: the one slave in ADDR_PHASE whose decode matches.
+          if (wr_state[s] == ADDR_PHASE && wr_owner[s] == m && aw_fwd[s]) begin
+            axiMasterInterface[m].awready = slave_awready[s];
           end
-
-          // Read Handshakes
-
-          if (rd_owner[s] == m) begin
-
-            if (rd_state[s] == ADDR_PHASE) begin
-
-              axiMasterInterface[m].arready = slave_arready[s];
-
-            end
-
-            if (rd_state[s] == DATA_PHASE) begin
-
-              axiMasterInterface[m].rid     = slave_rid[s];
-
-              axiMasterInterface[m].rdata   = slave_rdata[s];
-
-              axiMasterInterface[m].rresp   = slave_rresp[s];
-
-              axiMasterInterface[m].rlast   = slave_rlast[s];
-
-              axiMasterInterface[m].rvalid  = slave_rvalid[s];
-
-            end
-
+          // WREADY: strictly this master's bound write destination.
+          if (wr_state[s] == DATA_PHASE && wr_owner[s] == m &&
+              w_busy[m] && (w_dest[m] == s)) begin
+            axiMasterInterface[m].wready = slave_wready[s];
           end
-
+          // B: exactly one source slave.
+          if (b_sel[s] && wr_owner[s] == m) begin
+            axiMasterInterface[m].bid    = slave_bid[s];
+            axiMasterInterface[m].bresp  = slave_bresp[s];
+            axiMasterInterface[m].bvalid = 1'b1;
+          end
+          // ARREADY: the one slave in ADDR_PHASE whose decode matches.
+          if (rd_state[s] == ADDR_PHASE && rd_owner[s] == m && ar_fwd[s]) begin
+            axiMasterInterface[m].arready = slave_arready[s];
+          end
+          // R: exactly one source slave.
+          if (r_sel[s] && rd_owner[s] == m) begin
+            axiMasterInterface[m].rid    = slave_rid[s];
+            axiMasterInterface[m].rdata  = slave_rdata[s];
+            axiMasterInterface[m].rresp  = slave_rresp[s];
+            axiMasterInterface[m].rlast  = slave_rlast[s];
+            axiMasterInterface[m].rvalid = 1'b1;
+          end
         end
-
       end
-
     end
-
   endgenerate
- 
+
 endinterface
- 

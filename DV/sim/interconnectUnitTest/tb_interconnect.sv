@@ -1,0 +1,462 @@
+// ---------------------------------------------------------------------------
+// Testbench for AxiInterconnect.
+//
+// Models the real topology: DMA-350 drives ONE interface manager
+// (axiMasterInterface[0]) which is time-multiplexed internally between channel
+// 0 and channel 1.  Channel 1 (high QoS) engages a slave, is STOPPED, and
+// channel 0 must then be routed purely by address decode.
+//
+// Stimulus is driven on negedge; all handshakes are observed by posedge
+// monitors, so checks never race the DUT.
+// ---------------------------------------------------------------------------
+`timescale 1ns/1ps
+
+module tb_interconnect;
+
+  import AxiGlobalPackage::*;
+
+  localparam int TOTAL_SLAVES     = NO_OF_SLAVES + 1;
+  localparam int TB_ABORT_TIMEOUT = 20;   // RTL default is much larger
+
+  logic aclk = 0;
+  logic aresetn = 0;
+  always #5 aclk = ~aclk;
+
+  axi4_if mif[NO_OF_MASTERS](aclk, aresetn);
+  axi4_if sif[TOTAL_SLAVES](aclk, aresetn);
+
+  AxiInterconnect #(.ABORT_TIMEOUT(TB_ABORT_TIMEOUT)) dut(aclk, aresetn, mif, sif);
+
+  // ---------------------------------------------------------------
+  // Slave models
+  // ---------------------------------------------------------------
+  bit s_aw_en[TOTAL_SLAVES], s_w_en[TOTAL_SLAVES], s_ar_en[TOTAL_SLAVES];
+  bit s_r_en [TOTAL_SLAVES], s_rlast[TOTAL_SLAVES], s_b_en[TOTAL_SLAVES];
+
+  int s_aw_cnt[TOTAL_SLAVES], s_w_cnt[TOTAL_SLAVES], s_ar_cnt[TOTAL_SLAVES];
+  logic [31:0] s_last_awaddr[TOTAL_SLAVES], s_last_araddr[TOTAL_SLAVES],
+               s_last_wdata [TOTAL_SLAVES];
+
+  genvar gs;
+  generate
+    for (gs = 0; gs < TOTAL_SLAVES; gs++) begin : slave_model
+      always_comb begin
+        sif[gs].awready = s_aw_en[gs];
+        sif[gs].wready  = s_w_en[gs];
+        sif[gs].arready = s_ar_en[gs];
+        sif[gs].rvalid  = s_r_en[gs];
+        sif[gs].rlast   = s_rlast[gs];
+        sif[gs].rdata   = 32'hD0D0_0000 + gs;   // slave-unique pattern
+        sif[gs].rresp   = 2'b00;
+        sif[gs].rid     = '0;
+        sif[gs].bvalid  = s_b_en[gs];
+        sif[gs].bresp   = 2'b00;
+        sif[gs].bid     = '0;
+      end
+
+      always_ff @(posedge aclk) begin
+        if (!aresetn) begin
+          s_aw_cnt[gs] <= 0; s_w_cnt[gs] <= 0; s_ar_cnt[gs] <= 0;
+          s_last_awaddr[gs] <= '0; s_last_araddr[gs] <= '0; s_last_wdata[gs] <= '0;
+        end else begin
+          if (sif[gs].awvalid && sif[gs].awready) begin
+            s_aw_cnt[gs] <= s_aw_cnt[gs] + 1; s_last_awaddr[gs] <= sif[gs].awaddr;
+            $display("[%0t] SLAVE%0d AW  addr=0x%08h", $time, gs, sif[gs].awaddr);
+          end
+          if (sif[gs].wvalid && sif[gs].wready) begin
+            s_w_cnt[gs] <= s_w_cnt[gs] + 1; s_last_wdata[gs] <= sif[gs].wdata;
+            $display("[%0t] SLAVE%0d W   data=0x%08h", $time, gs, sif[gs].wdata);
+          end
+          if (sif[gs].arvalid && sif[gs].arready) begin
+            s_ar_cnt[gs] <= s_ar_cnt[gs] + 1; s_last_araddr[gs] <= sif[gs].araddr;
+            $display("[%0t] SLAVE%0d AR  addr=0x%08h", $time, gs, sif[gs].araddr);
+          end
+        end
+      end
+    end
+  endgenerate
+
+  // ---------------------------------------------------------------
+  // Master-side monitors (ground truth for what master 0 actually saw)
+  // ---------------------------------------------------------------
+  int m0_aw_cnt, m0_w_cnt, m0_b_cnt, m0_ar_cnt, m0_r_cnt;
+  logic [31:0] m0_last_rdata;
+
+  always_ff @(posedge aclk) begin
+    if (!aresetn) begin
+      m0_aw_cnt <= 0; m0_w_cnt <= 0; m0_b_cnt <= 0;
+      m0_ar_cnt <= 0; m0_r_cnt <= 0; m0_last_rdata <= '0;
+    end else begin
+      if (mif[0].awvalid && mif[0].awready) m0_aw_cnt <= m0_aw_cnt + 1;
+      if (mif[0].wvalid  && mif[0].wready ) m0_w_cnt  <= m0_w_cnt  + 1;
+      if (mif[0].bvalid  && mif[0].bready ) m0_b_cnt  <= m0_b_cnt  + 1;
+      if (mif[0].arvalid && mif[0].arready) m0_ar_cnt <= m0_ar_cnt + 1;
+      if (mif[0].rvalid  && mif[0].rready ) begin
+        m0_r_cnt      <= m0_r_cnt + 1;
+        m0_last_rdata <= mif[0].rdata;
+        $display("[%0t] MASTER0 R  data=0x%08h", $time, mif[0].rdata);
+      end
+    end
+  end
+
+  // Exact per-master grant counters on slave 1, for the fairness scenario.
+  int aw_m0_wins, aw_m1_wins;
+  always_ff @(posedge aclk) begin
+    if (!aresetn) begin
+      aw_m0_wins <= 0; aw_m1_wins <= 0;
+    end else if (sif[1].awvalid && sif[1].awready) begin
+      if (sif[1].awaddr == 32'h0000_1000) aw_m0_wins <= aw_m0_wins + 1;
+      if (sif[1].awaddr == 32'h0000_1080) aw_m1_wins <= aw_m1_wins + 1;
+    end
+  end
+
+  // ---------------------------------------------------------------
+  // Drivers
+  // ---------------------------------------------------------------
+  task automatic m0_idle();
+    mif[0].awvalid=0; mif[0].wvalid=0; mif[0].arvalid=0;
+    mif[0].bready=1;  mif[0].rready=1;
+    mif[0].awaddr='0; mif[0].araddr='0; mif[0].wdata='0;
+    mif[0].awqos='0;  mif[0].arqos='0;
+    mif[0].awlen='0;  mif[0].arlen='0;  mif[0].wlast=0;
+  endtask
+
+  task automatic m1_idle();
+    mif[1].awvalid=0; mif[1].wvalid=0; mif[1].arvalid=0;
+    mif[1].bready=1;  mif[1].rready=1;
+    mif[1].awaddr='0; mif[1].araddr='0; mif[1].wdata='0;
+    mif[1].awqos='0;  mif[1].arqos='0;
+    mif[1].awlen='0;  mif[1].arlen='0;  mif[1].wlast=0;
+  endtask
+
+  task automatic reset_all();
+    aresetn = 0;
+    m0_idle(); m1_idle();
+    for (int s = 0; s < TOTAL_SLAVES; s++) begin
+      s_aw_en[s]=0; s_w_en[s]=0; s_ar_en[s]=0;
+      s_r_en[s]=0;  s_rlast[s]=0; s_b_en[s]=0;
+    end
+    repeat (4) @(negedge aclk);
+    aresetn = 1;
+    repeat (2) @(negedge aclk);
+  endtask
+
+  task automatic idle_cycles(int n);
+    repeat (n) @(negedge aclk);
+  endtask
+
+  // Drive AW until master 0 sees AWREADY, or give up after `limit` cycles.
+  task automatic m0_aw(input logic [31:0] addr, input logic [3:0] qos,
+                       input int limit, output bit ok);
+    int target;
+    target = m0_aw_cnt + 1;
+    ok = 0;
+    @(negedge aclk);
+    mif[0].awaddr = addr; mif[0].awqos = qos; mif[0].awvalid = 1;
+    for (int t = 0; t < limit; t++) begin
+      @(negedge aclk);
+      if (m0_aw_cnt >= target) begin ok = 1; break; end
+    end
+    mif[0].awvalid = 0;
+  endtask
+
+  task automatic m0_ar(input logic [31:0] addr, input logic [3:0] qos,
+                       input int limit, output bit ok);
+    int target;
+    target = m0_ar_cnt + 1;
+    ok = 0;
+    @(negedge aclk);
+    mif[0].araddr = addr; mif[0].arqos = qos; mif[0].arvalid = 1;
+    for (int t = 0; t < limit; t++) begin
+      @(negedge aclk);
+      if (m0_ar_cnt >= target) begin ok = 1; break; end
+    end
+    mif[0].arvalid = 0;
+  endtask
+
+  // Single-beat write burst (WLAST on the only beat).
+  task automatic m0_w(input logic [31:0] data, input int limit, output bit ok);
+    int target;
+    target = m0_w_cnt + 1;
+    ok = 0;
+    @(negedge aclk);
+    mif[0].wdata = data; mif[0].wvalid = 1; mif[0].wlast = 1;
+    for (int t = 0; t < limit; t++) begin
+      @(negedge aclk);
+      if (m0_w_cnt >= target) begin ok = 1; break; end
+    end
+    mif[0].wvalid = 0; mif[0].wlast = 0;
+  endtask
+
+  int errors = 0;
+  task automatic check(string name, bit cond);
+    if (cond) $display("  PASS : %s", name);
+    else begin $display("  FAIL : %s", name); errors++; end
+  endtask
+
+  bit ok;
+
+  // ---------------------------------------------------------------
+  initial begin
+
+    // =================================================================
+    $display("\n=== SCENARIO A : write, channel stopped BEFORE its AW was accepted ===");
+    // This is the reported case: channel 1 has AWVALID up for slave 2, the
+    // slave has not accepted yet, the channel is stopped, and channel 0 must
+    // then be routed purely by address.
+    reset_all();
+    s_aw_en[2] = 0;                                   // slave 2 busy
+    @(negedge aclk);
+    mif[0].awaddr = 32'h0000_2000; mif[0].awqos = 4'd15; mif[0].awvalid = 1;
+    idle_cycles(5);
+    mif[0].awvalid = 0;                               // *** CHANNEL 1 STOPPED ***
+    idle_cycles(3);
+
+    s_aw_en[0] = 1; s_w_en[0] = 1; s_aw_en[2] = 1; s_w_en[2] = 1;
+    m0_aw(32'h0000_0400, 4'd0, 40, ok);
+    check("ch0 AW was accepted", ok);
+    m0_w(32'hC0FF_EE00, 40, ok);
+    check("ch0 W was accepted", ok);
+    idle_cycles(2);
+
+    check("ch0 AW landed on slave 0",
+          s_aw_cnt[0] == 1 && s_last_awaddr[0] == 32'h0000_0400);
+    check("ch0 W  landed on slave 0",
+          s_w_cnt[0] == 1 && s_last_wdata[0] == 32'hC0FF_EE00);
+    check("nothing leaked into slave 2", s_aw_cnt[2] == 0 && s_w_cnt[2] == 0);
+
+    // =================================================================
+    $display("\n=== SCENARIO B : write, channel stopped AFTER its AW was accepted ===");
+    // Slave 2 is left holding an accepted AW whose W beats never arrive.
+    // The interconnect must back-pressure channel 0 rather than bind it over
+    // the top, then reclaim slave 2 once the abort timeout expires.
+    reset_all();
+    s_aw_en[2] = 1; s_w_en[2] = 1;
+    @(negedge aclk);
+    mif[0].awaddr = 32'h0000_2000; mif[0].awqos = 4'd15; mif[0].awvalid = 1;
+    idle_cycles(5);
+    check("ch1 AW was accepted by slave 2", s_aw_cnt[2] == 1);
+    mif[0].awvalid = 0;                               // *** CHANNEL 1 STOPPED ***
+    idle_cycles(2);
+
+    // Channel 0 presents its AW but must NOT be accepted while the stale
+    // binding is unresolved.
+    s_aw_en[0] = 1; s_w_en[0] = 1;
+    @(negedge aclk);
+    mif[0].awaddr = 32'h0000_0400; mif[0].awqos = 4'd0; mif[0].awvalid = 1;
+    idle_cycles(TB_ABORT_TIMEOUT - 8);
+    check("ch0 AW is back-pressured while the stale binding is unresolved",
+          s_aw_cnt[0] == 0);
+    mif[0].awvalid = 0;
+    idle_cycles(TB_ABORT_TIMEOUT + 10);               // let the abort fire
+
+    // Now channel 0 retries and must be routed correctly.
+    m0_aw(32'h0000_0400, 4'd0, 60, ok);
+    check("after abort recovery ch0 AW was accepted", ok);
+    m0_w(32'hFEED_0000, 40, ok);
+    check("after abort recovery ch0 W was accepted", ok);
+    idle_cycles(2);
+    check("ch0 AW landed on slave 0",
+          s_aw_cnt[0] == 1 && s_last_awaddr[0] == 32'h0000_0400);
+    check("ch0 W  landed on slave 0",
+          s_w_cnt[0] == 1 && s_last_wdata[0] == 32'hFEED_0000);
+    check("ch0 W never reached slave 2", s_w_cnt[2] == 0);
+
+    // =================================================================
+    $display("\n=== SCENARIO C : read, a stale slave must not win the backward mux ===");
+    reset_all();
+    s_ar_en[2] = 1;
+    m0_ar(32'h0000_2000, 4'd15, 40, ok);
+    check("ch1 AR was accepted by slave 2", ok && s_ar_cnt[2] == 1);
+    @(negedge aclk);
+    s_ar_en[2] = 0;
+    s_r_en[2] = 1; s_rlast[2] = 0;   // slave 2 still has beats, never RLAST
+    mif[0].rready = 0;               // *** CHANNEL 1 STOPPED consuming ***
+    idle_cycles(3);
+
+    // Channel 0 presents its AR. It must be back-pressured until the stale
+    // read binding is reclaimed, and must never be handed slave 2's data.
+    s_ar_en[0] = 1;
+    @(negedge aclk);
+    mif[0].araddr = 32'h0000_0400; mif[0].arqos = 4'd0; mif[0].arvalid = 1;
+    idle_cycles(TB_ABORT_TIMEOUT - 8);
+    check("ch0 AR is back-pressured while the stale binding is unresolved",
+          s_ar_cnt[0] == 0);
+    @(negedge aclk); mif[0].arvalid = 0;
+    idle_cycles(TB_ABORT_TIMEOUT + 10);   // let the abort reclaim slave 2
+
+    // Slave 2 deliberately KEEPS driving read data to prove a released slave
+    // can no longer leak it back to the master.
+    @(negedge aclk);
+    mif[0].rready = 1;
+    m0_ar(32'h0000_0400, 4'd0, 60, ok);
+    check("ch0 AR was accepted after recovery", ok);
+    check("ch0 AR landed on slave 0",
+          s_ar_cnt[0] == 1 && s_last_araddr[0] == 32'h0000_0400);
+    check("ch0 AR never leaked into slave 2", s_ar_cnt[2] == 1);
+
+    @(negedge aclk);
+    s_r_en[0] = 1; s_rlast[0] = 1;   // slave 0 returns its data
+    idle_cycles(4);
+    $display("  master0 last rdata=0x%08h (slave0=0x%08h slave2=0x%08h)",
+             m0_last_rdata, 32'hD0D0_0000, 32'hD0D0_0002);
+    check("master 0 read data came from slave 0, not stale slave 2",
+          m0_r_cnt >= 1 && m0_last_rdata == 32'hD0D0_0000);
+
+    // =================================================================
+    $display("\n=== SCENARIO D : baseline, a normal write then a normal read ===");
+    reset_all();
+    for (int s = 0; s < TOTAL_SLAVES; s++) begin
+      s_aw_en[s]=1; s_w_en[s]=1; s_ar_en[s]=1;
+    end
+
+    m0_aw(32'h0000_3010, 4'd5, 40, ok);
+    check("normal write AW accepted", ok);
+    m0_w(32'hAAAA_5555, 40, ok);
+    check("normal write W accepted", ok);
+    @(negedge aclk); s_b_en[3] = 1;          // slave 3 returns its response
+    idle_cycles(4);
+    @(negedge aclk); s_b_en[3] = 0;
+    idle_cycles(2);
+
+    check("normal write AW landed on slave 3",
+          s_aw_cnt[3] == 1 && s_last_awaddr[3] == 32'h0000_3010);
+    check("normal write W landed on slave 3",
+          s_w_cnt[3] == 1 && s_last_wdata[3] == 32'hAAAA_5555);
+    check("normal write touched no other slave",
+          s_aw_cnt[0]==0 && s_aw_cnt[1]==0 && s_aw_cnt[2]==0 && s_aw_cnt[4]==0);
+    check("master 0 received its B response", m0_b_cnt == 1);
+
+    // The read also proves the write binding was released on B.
+    @(negedge aclk); s_r_en[1] = 1; s_rlast[1] = 1;
+    m0_ar(32'h0000_1004, 4'd5, 40, ok);
+    check("normal read AR accepted", ok);
+    idle_cycles(3);
+    check("normal read AR landed on slave 1",
+          s_ar_cnt[1] == 1 && s_last_araddr[1] == 32'h0000_1004);
+    check("normal read data came from slave 1",
+          m0_r_cnt >= 1 && m0_last_rdata == 32'hD0D0_0001);
+    @(negedge aclk); s_r_en[1] = 0; s_rlast[1] = 0;
+
+    // =================================================================
+    $display("\n=== SCENARIO E : out-of-range address goes to the default slave ===");
+    reset_all();
+    for (int s = 0; s < TOTAL_SLAVES; s++) begin s_aw_en[s]=1; s_w_en[s]=1; end
+    m0_aw(32'hDEAD_0000, 4'd1, 40, ok);
+    check("out-of-range AW accepted", ok);
+    idle_cycles(2);
+    check("out-of-range AW went to the default slave",
+          s_aw_cnt[NO_OF_SLAVES] == 1 && s_last_awaddr[NO_OF_SLAVES] == 32'hDEAD_0000);
+
+    // =================================================================
+    $display("\n=== SCENARIO F : QoS arbitration between two masters ===");
+    reset_all();
+    s_aw_en[1] = 1; s_w_en[1] = 1;
+    @(negedge aclk);
+    mif[0].awaddr = 32'h0000_1000; mif[0].awqos = 4'd2;  mif[0].awvalid = 1;
+    mif[1].awaddr = 32'h0000_1040; mif[1].awqos = 4'd12; mif[1].awvalid = 1;
+    idle_cycles(6);
+    check("higher-QoS master won slave 1",
+          s_aw_cnt[1] == 1 && s_last_awaddr[1] == 32'h0000_1040);
+    @(negedge aclk); mif[0].awvalid = 0; mif[1].awvalid = 0;
+
+    // =================================================================
+    $display("\n=== SCENARIO H : back-to-back writes to different slaves ===");
+    // Proves the per-master binding is released and re-taken cleanly, and that
+    // an earlier destination never picks up a later burst.
+    reset_all();
+    for (int s = 0; s < TOTAL_SLAVES; s++) begin
+      s_aw_en[s]=1; s_w_en[s]=1;
+    end
+    begin
+      logic [31:0] addrs [3];
+      logic [31:0] datas [3];
+      addrs[0] = 32'h0000_0100; addrs[1] = 32'h0000_2100; addrs[2] = 32'h0000_1100;
+      datas[0] = 32'h1111_1111; datas[1] = 32'h2222_2222; datas[2] = 32'h3333_3333;
+
+      for (int i = 0; i < 3; i++) begin
+        int dst;
+        dst = (addrs[i] >> SLAVE_MEMORY_SIZE);
+        m0_aw(addrs[i], 4'd3, 40, ok);
+        check($sformatf("burst %0d AW accepted", i), ok);
+        m0_w(datas[i], 40, ok);
+        check($sformatf("burst %0d W accepted", i), ok);
+        @(negedge aclk); s_b_en[dst] = 1;
+        idle_cycles(4);
+        @(negedge aclk); s_b_en[dst] = 0;
+        idle_cycles(2);
+        check($sformatf("burst %0d data landed on slave %0d", i, dst),
+              s_last_wdata[dst] == datas[i]);
+      end
+      check("each slave saw exactly its own single burst",
+            s_w_cnt[1] == 1 && s_w_cnt[2] == 1 && s_w_cnt[0] == 1);
+      check("untouched slaves saw nothing",
+            s_w_cnt[3] == 0 && s_w_cnt[4] == 0);
+    end
+
+    // =================================================================
+    $display("\n=== SCENARIO I : two masters concurrently to different slaves ===");
+    reset_all();
+    for (int s = 0; s < TOTAL_SLAVES; s++) begin s_aw_en[s]=1; s_w_en[s]=1; end
+    @(negedge aclk);
+    mif[0].awaddr = 32'h0000_0200; mif[0].awqos = 4'd4; mif[0].awvalid = 1;
+    mif[1].awaddr = 32'h0000_3200; mif[1].awqos = 4'd4; mif[1].awvalid = 1;
+    idle_cycles(6);
+    @(negedge aclk); mif[0].awvalid = 0; mif[1].awvalid = 0;
+    idle_cycles(2);
+    check("master 0 reached slave 0",
+          s_aw_cnt[0] == 1 && s_last_awaddr[0] == 32'h0000_0200);
+    check("master 1 reached slave 3",
+          s_aw_cnt[3] == 1 && s_last_awaddr[3] == 32'h0000_3200);
+    check("no cross-talk to other slaves",
+          s_aw_cnt[1] == 0 && s_aw_cnt[2] == 0 && s_aw_cnt[4] == 0);
+
+    // =================================================================
+    $display("\n=== SCENARIO J : equal-QoS fairness (no starvation) ===");
+    // Both masters hammer the SAME slave at equal QoS. Round-robin tie-break
+    // must let each of them through; the old lowest-index-wins would starve
+    // master 1 completely.
+    reset_all();
+    s_aw_en[1] = 1; s_w_en[1] = 1;
+    begin
+      @(negedge aclk);
+      mif[0].awaddr = 32'h0000_1000; mif[0].awqos = 4'd7; mif[0].awvalid = 1;
+      mif[1].awaddr = 32'h0000_1080; mif[1].awqos = 4'd7; mif[1].awvalid = 1;
+      // Each grant completes as soon as slave 1 returns its B response.
+      for (int i = 0; i < 8; i++) begin
+        @(negedge aclk); s_b_en[1] = 1;
+        idle_cycles(3);
+        @(negedge aclk); s_b_en[1] = 0;
+        idle_cycles(3);
+      end
+      @(negedge aclk); mif[0].awvalid = 0; mif[1].awvalid = 0;
+      idle_cycles(2);
+      $display("  grants on slave 1: master0=%0d master1=%0d", aw_m0_wins, aw_m1_wins);
+      check("both masters were granted at equal QoS (no starvation)",
+            aw_m0_wins > 0 && aw_m1_wins > 0);
+    end
+
+    // =================================================================
+    $display("\n=== SCENARIO G : address decode boundaries ===");
+    check("0x00000000 -> slave 0", dut.decode_address(32'h0000_0000) == 0);
+    check("0x00000FFF -> slave 0", dut.decode_address(32'h0000_0FFF) == 0);
+    check("0x00001000 -> slave 1", dut.decode_address(32'h0000_1000) == 1);
+    check("0x00001FFF -> slave 1", dut.decode_address(32'h0000_1FFF) == 1);
+    check("0x00002000 -> slave 2", dut.decode_address(32'h0000_2000) == 2);
+    check("0x00003FFF -> slave 3", dut.decode_address(32'h0000_3FFF) == 3);
+    check("0x00004000 -> default", dut.decode_address(32'h0000_4000) == NO_OF_SLAVES);
+    check("0xFFFFFFFF -> default", dut.decode_address(32'hFFFF_FFFF) == NO_OF_SLAVES);
+
+    $display("\n================ errors = %0d ================", errors);
+    if (errors == 0) $display("RESULT: ALL CHECKS PASSED");
+    else             $display("RESULT: %0d CHECK(S) FAILED", errors);
+    $finish;
+  end
+
+  initial begin
+    #500000;
+    $display("TIMEOUT");
+    $finish;
+  end
+
+endmodule
