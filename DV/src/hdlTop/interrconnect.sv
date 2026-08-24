@@ -492,8 +492,16 @@ logic[NO_OF_MASTERS-1:0]masterReadReq[TOTAL_SLAVES];
 
             ADDR_PHASE: begin
 
-              if (master_awvalid[wr_owner[s]] && slave_awready[s]) 
-
+              // If the owning master's request was withdrawn, or its address
+              // no longer decodes to this slave (e.g. the DMA internal
+              // arbiter switched channels on this same shared master port
+              // before this slave's AWREADY ever arrived), release the
+              // stale grant instead of latching it forever. Without this,
+              // a later unrelated request from the same master index gets
+              // silently absorbed by this slave's leftover ADDR_PHASE.
+              if (!master_awvalid[wr_owner[s]] || decode_address(master_awaddr[wr_owner[s]]) != s)
+                wr_state[s] <= IDLE;
+              else if (slave_awready[s])
                 wr_state[s] <= DATA_PHASE;
 
             end
@@ -556,8 +564,11 @@ logic[NO_OF_MASTERS-1:0]masterReadReq[TOTAL_SLAVES];
 
             ADDR_PHASE: begin
 
-              if (master_arvalid[rd_owner[s]] && slave_arready[s])
-
+              // Same stale-grant release as the write FSM above, for the
+              // read channel.
+              if (!master_arvalid[rd_owner[s]] || decode_address(master_araddr[rd_owner[s]]) != s)
+                rd_state[s] <= IDLE;
+              else if (slave_arready[s])
                 rd_state[s] <= DATA_PHASE;
 
             end
@@ -632,7 +643,12 @@ logic[NO_OF_MASTERS-1:0]masterReadReq[TOTAL_SLAVES];
 
           axiSlaveInterface[s].awqos   = master_awqos[wr_owner[s]];
 
-          axiSlaveInterface[s].awvalid = (wr_state[s] == ADDR_PHASE) && master_awvalid[wr_owner[s]];
+          // Also re-check the address decode here, not just the FSM state:
+          // guards the same-cycle race where wr_owner[s]'s address has
+          // already moved on to a different slave but the ADDR_PHASE->IDLE
+          // release above hasn't landed yet.
+          axiSlaveInterface[s].awvalid = (wr_state[s] == ADDR_PHASE) && master_awvalid[wr_owner[s]]
+                                        && (decode_address(master_awaddr[wr_owner[s]]) == s);
 
           axiSlaveInterface[s].wdata   = master_wdata[wr_owner[s]];
 
@@ -668,7 +684,9 @@ logic[NO_OF_MASTERS-1:0]masterReadReq[TOTAL_SLAVES];
 
           axiSlaveInterface[s].arqos   = master_arqos[rd_owner[s]];
 
-          axiSlaveInterface[s].arvalid = (rd_state[s] == ADDR_PHASE) && master_arvalid[rd_owner[s]];
+          // Same address re-check as the write side above.
+          axiSlaveInterface[s].arvalid = (rd_state[s] == ADDR_PHASE) && master_arvalid[rd_owner[s]]
+                                        && (decode_address(master_araddr[rd_owner[s]]) == s);
 
           axiSlaveInterface[s].rready  = master_rready[rd_owner[s]];
 
