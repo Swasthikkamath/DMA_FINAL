@@ -40,6 +40,9 @@ module tb_interconnect;
   logic [31:0] s_last_awaddr[TOTAL_SLAVES], s_last_araddr[TOTAL_SLAVES],
                s_last_wdata [TOTAL_SLAVES];
   logic [3:0]  s_arid[TOTAL_SLAVES];   // ARID captured at AR handshake, echoed on RID
+  int          s_burst_len[TOTAL_SLAVES];  // beats a read burst returns (0 = manual mode)
+  int          s_beats_left[TOTAL_SLAVES]; // remaining beats of the active burst
+  bit          s_bursting[TOTAL_SLAVES];   // a burst engine read is in progress
 
   genvar gs;
   generate
@@ -48,9 +51,19 @@ module tb_interconnect;
         sif[gs].awready = s_aw_en[gs];
         sif[gs].wready  = s_w_en[gs];
         sif[gs].arready = s_ar_en[gs];
-        sif[gs].rvalid  = s_r_en[gs];
-        sif[gs].rlast   = s_rlast[gs];
-        sif[gs].rdata   = 32'hD0D0_0000 + gs;   // slave-unique pattern
+        // Burst engine takes over when s_burst_len is set for this slave;
+        // otherwise the manual s_r_en/s_rlast controls apply.
+        if (s_burst_len[gs] != 0) begin
+          sif[gs].rvalid = s_bursting[gs];
+          sif[gs].rlast  = s_bursting[gs] && (s_beats_left[gs] == 1);
+          // beat value encodes slave and beat index so mis-routing is visible
+          sif[gs].rdata  = 32'hD0D0_0000 + (gs << 8) +
+                           (s_burst_len[gs] - s_beats_left[gs]);
+        end else begin
+          sif[gs].rvalid = s_r_en[gs];
+          sif[gs].rlast  = s_rlast[gs];
+          sif[gs].rdata  = 32'hD0D0_0000 + gs;   // slave-unique pattern
+        end
         sif[gs].rresp   = 2'b00;
         sif[gs].rid     = s_arid[gs];   // echo the captured ARID
         sif[gs].bvalid  = s_b_en[gs];
@@ -63,7 +76,17 @@ module tb_interconnect;
           s_aw_cnt[gs] <= 0; s_w_cnt[gs] <= 0; s_ar_cnt[gs] <= 0;
           s_last_awaddr[gs] <= '0; s_last_araddr[gs] <= '0; s_last_wdata[gs] <= '0;
           s_arid[gs] <= '0;
+          s_bursting[gs] <= 1'b0; s_beats_left[gs] <= 0;
         end else begin
+          if (s_burst_len[gs] != 0) begin
+            if (sif[gs].arvalid && sif[gs].arready) begin
+              s_bursting[gs]   <= 1'b1;
+              s_beats_left[gs] <= s_burst_len[gs];
+            end else if (s_bursting[gs] && sif[gs].rvalid && sif[gs].rready) begin
+              if (s_beats_left[gs] == 1) s_bursting[gs] <= 1'b0;
+              s_beats_left[gs] <= s_beats_left[gs] - 1;
+            end
+          end
           if (sif[gs].awvalid && sif[gs].awready) begin
             s_aw_cnt[gs] <= s_aw_cnt[gs] + 1; s_last_awaddr[gs] <= sif[gs].awaddr;
             $display("[%0t] SLAVE%0d AW  addr=0x%08h", $time, gs, sif[gs].awaddr);
@@ -90,12 +113,18 @@ module tb_interconnect;
   logic [3:0]  m0_last_rid;
   bit          m0_saw_ch0_data;   // saw a beat tagged RID 0 carrying slave 0's pattern
   bit          m0_saw_ch1_data;   // saw a beat tagged RID 1 (a stopped channel's drain)
+  int          m0_beats_rid0, m0_beats_rid1;
+  bit          m0_interleaved;    // a burst was broken up by another slave's beats
+  logic [3:0]  m0_prev_rid;
+  bit          m0_in_burst;
 
   always_ff @(posedge aclk) begin
     if (!aresetn) begin
       m0_aw_cnt <= 0; m0_w_cnt <= 0; m0_b_cnt <= 0;
       m0_ar_cnt <= 0; m0_r_cnt <= 0; m0_last_rdata <= '0; m0_last_rid <= '0;
       m0_saw_ch0_data <= 1'b0; m0_saw_ch1_data <= 1'b0;
+      m0_beats_rid0 <= 0; m0_beats_rid1 <= 0;
+      m0_interleaved <= 1'b0; m0_in_burst <= 1'b0; m0_prev_rid <= '0;
     end else begin
       if (mif[0].awvalid && mif[0].awready) m0_aw_cnt <= m0_aw_cnt + 1;
       if (mif[0].wvalid  && mif[0].wready ) m0_w_cnt  <= m0_w_cnt  + 1;
@@ -107,6 +136,12 @@ module tb_interconnect;
         m0_last_rid   <= mif[0].rid;
         if (mif[0].rid == 4'd0 && mif[0].rdata == 32'hD0D0_0000) m0_saw_ch0_data <= 1'b1;
         if (mif[0].rid == 4'd1) m0_saw_ch1_data <= 1'b1;
+        if (mif[0].rid == 4'd0) m0_beats_rid0 <= m0_beats_rid0 + 1;
+        if (mif[0].rid == 4'd1) m0_beats_rid1 <= m0_beats_rid1 + 1;
+        // A burst must not be broken up by beats of a different ID.
+        if (m0_in_burst && mif[0].rid != m0_prev_rid) m0_interleaved <= 1'b1;
+        m0_prev_rid <= mif[0].rid;
+        m0_in_burst <= !mif[0].rlast;
         $display("[%0t] MASTER0 R  rid=%0d data=0x%08h", $time, mif[0].rid, mif[0].rdata);
       end
     end
@@ -150,6 +185,7 @@ module tb_interconnect;
     for (int s = 0; s < TOTAL_SLAVES; s++) begin
       s_aw_en[s]=0; s_w_en[s]=0; s_ar_en[s]=0;
       s_r_en[s]=0;  s_rlast[s]=0; s_b_en[s]=0;
+      s_burst_len[s]=0;
     end
     repeat (4) @(negedge aclk);
     aresetn = 1;
@@ -199,6 +235,31 @@ module tb_interconnect;
     for (int t = 0; t < limit; t++) begin
       @(negedge aclk);
       if (m0_w_cnt >= target) begin ok = 1; break; end
+    end
+    mif[0].wvalid = 0; mif[0].wlast = 0;
+  endtask
+
+  // Multi-beat write burst: n beats, WLAST on the last.
+  task automatic m0_wburst(input logic [31:0] base, input int n,
+                           input int limit, output bit ok);
+    int target;
+    ok = 1;
+    for (int i = 0; i < n; i++) begin
+      target = m0_w_cnt + 1;
+      @(negedge aclk);
+      mif[0].wdata  = base + i;
+      mif[0].wvalid = 1;
+      mif[0].wlast  = (i == n-1);
+      for (int t = 0; t < limit; t++) begin
+        @(negedge aclk);
+        // Deassert as soon as the beat is taken, otherwise WVALID stays high
+        // with stale data and the slave accepts the same beat again.
+        if (m0_w_cnt >= target) begin
+          mif[0].wvalid = 0; mif[0].wlast = 0;
+          break;
+        end
+      end
+      if (m0_w_cnt < target) ok = 0;
     end
     mif[0].wvalid = 0; mif[0].wlast = 0;
   endtask
@@ -540,6 +601,81 @@ module tb_interconnect;
     m0_ar(32'h0000_1500, 4'd3, 40, ok);
     check("a new transfer after the stop is accepted", ok);
     check("it routed to slave 1 by address", s_ar_cnt[1] == 1);
+
+    // =================================================================
+    $display("\n=== SCENARIO O : 10-beat bursts, stop mid-burst (real traffic shape) ===");
+    // Matches the captured DMA traffic: arlen=09 (10 beats), two channels
+    // distinguished by ARID, channel 1 stopped part-way through its burst.
+    reset_all();
+    s_burst_len[1] = 10;             // slave 1 returns 10-beat bursts
+    s_burst_len[0] = 10;             // slave 0 too
+    s_ar_en[1] = 1;
+
+    @(negedge aclk);
+    mif[0].arid = 4'd1; mif[0].arlen = 8'd9;
+    mif[0].araddr = 32'h0000_1300; mif[0].arqos = 4'd7; mif[0].arvalid = 1;
+    idle_cycles(4);
+    check("ch1 10-beat AR accepted by slave 1", s_ar_cnt[1] == 1);
+    @(negedge aclk); mif[0].arvalid = 0; s_ar_en[1] = 0;
+
+    // Take a few beats, then *** STOP CHANNEL 1 *** part-way through.
+    idle_cycles(4);
+    @(negedge aclk); mif[0].rready = 0;
+    idle_cycles(6);
+
+    // Channel 0's pending read goes out to a different slave.
+    s_ar_en[0] = 1;
+    @(negedge aclk);
+    mif[0].arid = 4'd0; mif[0].arlen = 8'd9;
+    mif[0].araddr = 32'h0000_02bc; mif[0].arqos = 4'd5; mif[0].arvalid = 1;
+    idle_cycles(6);
+    check("ch0 AR accepted while ch1's burst is still outstanding",
+          s_ar_cnt[0] == 1 && s_last_araddr[0] == 32'h0000_02bc);
+    check("ch0 AR did not go to slave 1", s_ar_cnt[1] == 1);
+    @(negedge aclk); mif[0].arvalid = 0;
+
+    // DMA resumes draining; both bursts must complete fully.
+    @(negedge aclk); mif[0].rready = 1;
+    idle_cycles(60);
+
+    $display("  beats delivered: rid0=%0d rid1=%0d interleaved=%0b",
+             m0_beats_rid0, m0_beats_rid1, m0_interleaved);
+    check("ch1's 10-beat burst was delivered in full", m0_beats_rid1 == 10);
+    check("ch0's 10-beat burst was delivered in full", m0_beats_rid0 == 10);
+    check("no burst was interleaved with another ID", !m0_interleaved);
+    s_burst_len[0] = 0; s_burst_len[1] = 0;
+
+    // =================================================================
+    $display("\n=== SCENARIO P : multi-beat write bursts to two slaves ===");
+    // Exercises the per-master W destination queue with real bursts: every
+    // beat must land on the slave whose AW it followed, and WLAST must retire
+    // the right queue entry.
+    reset_all();
+    for (int i = 0; i < TOTAL_SLAVES; i++) begin s_aw_en[i]=1; s_w_en[i]=1; end
+
+    m0_aw(32'h0000_2000, 4'd6, 40, ok);
+    check("burst-1 AW accepted by slave 2", ok && s_aw_cnt[2] == 1);
+    m0_wburst(32'hAA00_0000, 8, 40, ok);
+    check("burst-1 all 8 beats accepted", ok);
+    @(negedge aclk); s_b_en[2] = 1; idle_cycles(4);
+    @(negedge aclk); s_b_en[2] = 0; idle_cycles(2);
+
+    m0_aw(32'h0000_0400, 4'd6, 40, ok);
+    check("burst-2 AW accepted by slave 0", ok && s_aw_cnt[0] == 1);
+    m0_wburst(32'hBB00_0000, 8, 40, ok);
+    check("burst-2 all 8 beats accepted", ok);
+    @(negedge aclk); s_b_en[0] = 1; idle_cycles(4);
+    @(negedge aclk); s_b_en[0] = 0; idle_cycles(2);
+
+    $display("  slave2 got %0d beats (last 0x%08h), slave0 got %0d beats (last 0x%08h)",
+             s_w_cnt[2], s_last_wdata[2], s_w_cnt[0], s_last_wdata[0]);
+    check("slave 2 received exactly its own 8 beats",
+          s_w_cnt[2] == 8 && s_last_wdata[2] == 32'hAA00_0007);
+    check("slave 0 received exactly its own 8 beats",
+          s_w_cnt[0] == 8 && s_last_wdata[0] == 32'hBB00_0007);
+    check("no write beats leaked to any other slave",
+          s_w_cnt[1]==0 && s_w_cnt[3]==0 && s_w_cnt[4]==0);
+    check("both B responses returned", m0_b_cnt == 2);
 
     // =================================================================
     $display("\n=== SCENARIO G : address decode boundaries ===");
