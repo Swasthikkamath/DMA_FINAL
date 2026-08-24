@@ -990,6 +990,18 @@ interface AxiInterconnect #(
           if (b_sel[s] && slave_bvalid[s] && master_bready[wr_owner[s]])
             $display("[%0t] IC B   slave=%0d -> master=%0d bid=%0d resp=%0d",
                      $time, s, wr_owner[s], slave_bid[s], slave_bresp[s]);
+          // Beats drained and thrown away because the owning channel was
+          // stopped: handshaked on the slave side, never forwarded to the
+          // master. These are the handshakes the interconnect performs itself.
+          if (rd_discard[s] && slave_rvalid[s])
+            $display("[%0t] IC DROP R slave=%0d (stopped ch id=%0d) data=0x%08h last=%0b",
+                     $time, s, rd_id[s], slave_rdata[s], slave_rlast[s]);
+          if (wr_discard[s] && slave_bvalid[s])
+            $display("[%0t] IC DROP B slave=%0d (stopped ch id=%0d)",
+                     $time, s, wr_id[s]);
+          if (rd_discard[s] && slave_rvalid[s] && slave_rlast[s])
+            $display("[%0t] IC DRAINED read slave=%0d, slave is free again",
+                     $time, s);
           if (wr_kill[s])
             $display("[%0t] IC ABORT write slave=%0d (master=%0d) reclaimed on timeout",
                      $time, s, wr_owner[s]);
