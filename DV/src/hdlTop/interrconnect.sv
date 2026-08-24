@@ -421,6 +421,23 @@ interface AxiInterconnect #(
   // presenting data nobody is consuming cannot wedge the arbiter.
   int r_lock  [NO_OF_MASTERS];
   bit r_lock_v[NO_OF_MASTERS];
+
+  // ---- Stopped-channel detection -------------------------------------------
+  // The DMA carries the channel number in AWID/ARID and only moves to another
+  // channel's pending transfer when the current channel is stopped. So if a new
+  // address is accepted for a master while an older transfer of that master is
+  // still outstanding UNDER A DIFFERENT ID, that older transfer belongs to a
+  // channel that has just been stopped.
+  //
+  // Its data must not be routed back to the master - the master has moved on and
+  // will not accept it, which otherwise stalls the read channel forever. But the
+  // slave still has a burst in flight and must be allowed to finish it, so the
+  // interconnect drains that burst itself (asserting RREADY / BREADY towards the
+  // slave) and discards the beats instead of forwarding them.
+  logic [ID_WIDTH-1:0] rd_id[TOTAL_SLAVES];   // ARID captured at AR handshake
+  logic [ID_WIDTH-1:0] wr_id[TOTAL_SLAVES];   // AWID captured at AW handshake
+  bit rd_discard[TOTAL_SLAVES];
+  bit wr_discard[TOTAL_SLAVES];
   int r_rr    [NO_OF_MASTERS];  // round-robin pointer for picking the next burst
   int b_rr    [NO_OF_MASTERS];  // round-robin pointer for B responses
 
@@ -437,6 +454,33 @@ interface AxiInterconnect #(
   bit rd_done[TOTAL_SLAVES];
   bit wr_kill[TOTAL_SLAVES];
   bit rd_kill[TOTAL_SLAVES];
+
+  // A new address accepted this cycle for each master, and the ID it carried.
+  bit                  new_ar[NO_OF_MASTERS];
+  bit                  new_aw[NO_OF_MASTERS];
+  logic [ID_WIDTH-1:0] new_ar_id[NO_OF_MASTERS];
+  logic [ID_WIDTH-1:0] new_aw_id[NO_OF_MASTERS];
+
+  always_comb begin
+    for (int m = 0; m < NO_OF_MASTERS; m++) begin
+      new_ar[m]    = 1'b0;
+      new_aw[m]    = 1'b0;
+      new_ar_id[m] = '0;
+      new_aw_id[m] = '0;
+    end
+    for (int s = 0; s < TOTAL_SLAVES; s++) begin
+      if (rd_state[s] == ADDR_PHASE && rd_owner[s] >= 0 &&
+          ar_fwd[s] && slave_arready[s]) begin
+        new_ar[rd_owner[s]]    = 1'b1;
+        new_ar_id[rd_owner[s]] = master_arid[rd_owner[s]];
+      end
+      if (wr_state[s] == ADDR_PHASE && wr_owner[s] >= 0 &&
+          aw_fwd[s] && slave_awready[s]) begin
+        new_aw[wr_owner[s]]    = 1'b1;
+        new_aw_id[wr_owner[s]] = master_awid[wr_owner[s]];
+      end
+    end
+  end
 
   always_comb begin
     int pick;
@@ -485,14 +529,14 @@ interface AxiInterconnect #(
       if (r_lock_v[m]) begin
         // Mid-burst: stay with the locked slave.
         if (rd_state[r_lock[m]] == DATA_PHASE && rd_owner[r_lock[m]] == m &&
-            slave_rvalid[r_lock[m]]) begin
+            !rd_discard[r_lock[m]] && slave_rvalid[r_lock[m]]) begin
           pick = r_lock[m];
         end
       end else begin
         for (int k = 0; k < TOTAL_SLAVES; k++) begin
           c = (r_rr[m] + 1 + k) % TOTAL_SLAVES;
           if (pick == -1 && rd_state[c] == DATA_PHASE && rd_owner[c] == m &&
-              slave_rvalid[c]) begin
+              !rd_discard[c] && slave_rvalid[c]) begin
             pick = c;
           end
         end
@@ -510,7 +554,7 @@ interface AxiInterconnect #(
       for (int k = 0; k < TOTAL_SLAVES; k++) begin
         c = (b_rr[m] + 1 + k) % TOTAL_SLAVES;
         if (pick == -1 && wr_state[c] == DATA_PHASE && wr_owner[c] == m &&
-            slave_bvalid[c]) begin
+            !wr_discard[c] && slave_bvalid[c]) begin
           pick = c;
         end
       end
@@ -518,6 +562,14 @@ interface AxiInterconnect #(
         b_sel[pick]   = 1'b1;
         wr_done[pick] = master_bready[m];
       end
+    end
+
+    // ---- discarded transfers complete when the interconnect drains them ----
+    for (int s = 0; s < TOTAL_SLAVES; s++) begin
+      if (rd_discard[s] && rd_state[s] == DATA_PHASE)
+        rd_done[s] = slave_rvalid[s] && slave_rlast[s];   // RREADY forced high
+      if (wr_discard[s] && wr_state[s] == DATA_PHASE)
+        wr_done[s] = slave_bvalid[s];                     // BREADY forced high
     end
 
     // ---- abandoned-transfer reclaim ----
@@ -646,6 +698,52 @@ interface AxiInterconnect #(
   endgenerate
 
   // ----------------------------------------------------------------------------
+  // Stopped-channel tracking, per slave.
+  //
+  // rd_id/wr_id remember which channel (AXI ID) each accepted transfer belongs
+  // to. When the master gets a new address accepted under a different ID, any
+  // still-outstanding transfer of that master belongs to a channel that has
+  // been stopped, so it is marked for discard: drained towards the slave,
+  // never forwarded to the master.
+  // ----------------------------------------------------------------------------
+  generate
+    for (genvar s = 0; s < TOTAL_SLAVES; s++) begin : stopped_channel_track
+      always_ff @(posedge aclk or negedge aresetn) begin
+        if (!aresetn) begin
+          rd_id[s]      <= '0;
+          wr_id[s]      <= '0;
+          rd_discard[s] <= 1'b0;
+          wr_discard[s] <= 1'b0;
+        end else begin
+          // ---- reads ----
+          if (rd_state[s] == ADDR_PHASE && rd_owner[s] >= 0 &&
+              ar_fwd[s] && slave_arready[s]) begin
+            rd_id[s]      <= master_arid[rd_owner[s]];
+            rd_discard[s] <= 1'b0;              // freshly accepted, keep it
+          end else if (rd_state[s] == DATA_PHASE && rd_owner[s] >= 0 &&
+                       new_ar[rd_owner[s]] && (new_ar_id[rd_owner[s]] != rd_id[s])) begin
+            // The master moved to a different channel while this one was still
+            // outstanding => this channel was stopped. Do not return its data.
+            rd_discard[s] <= 1'b1;
+          end
+          if (rd_done[s] || rd_kill[s]) rd_discard[s] <= 1'b0;
+
+          // ---- writes ----
+          if (wr_state[s] == ADDR_PHASE && wr_owner[s] >= 0 &&
+              aw_fwd[s] && slave_awready[s]) begin
+            wr_id[s]      <= master_awid[wr_owner[s]];
+            wr_discard[s] <= 1'b0;
+          end else if (wr_state[s] == DATA_PHASE && wr_owner[s] >= 0 &&
+                       new_aw[wr_owner[s]] && (new_aw_id[wr_owner[s]] != wr_id[s])) begin
+            wr_discard[s] <= 1'b1;
+          end
+          if (wr_done[s] || wr_kill[s]) wr_discard[s] <= 1'b0;
+        end
+      end
+    end
+  endgenerate
+
+  // ----------------------------------------------------------------------------
   // Per-master bookkeeping: W destination queue, R burst lock, round-robin ptrs
   // ----------------------------------------------------------------------------
   generate
@@ -709,6 +807,7 @@ interface AxiInterconnect #(
           end
           // A locked slave that gets reclaimed must release the lock.
           if (r_lock_v[m] && (rd_kill[r_lock[m]] ||
+                              rd_discard[r_lock[m]] ||
                               rd_state[r_lock[m]] != DATA_PHASE ||
                               rd_owner[r_lock[m]] != m)) begin
             r_lock_v[m] <= 1'b0;
@@ -785,7 +884,8 @@ interface AxiInterconnect #(
             axiSlaveInterface[s].wlast  = master_wlast[wo];
             axiSlaveInterface[s].wvalid = w_fwd[s];
           end
-          axiSlaveInterface[s].bready = b_sel[s] && master_bready[wo];
+          axiSlaveInterface[s].bready = wr_discard[s] ? 1'b1
+                                                       : (b_sel[s] && master_bready[wo]);
         end
 
         if (rd_state[s] == ADDR_PHASE && ro >= 0) begin
@@ -802,7 +902,10 @@ interface AxiInterconnect #(
         end
 
         if (rd_state[s] == DATA_PHASE && ro >= 0) begin
-          axiSlaveInterface[s].rready = r_sel[s] && master_rready[ro];
+          // A stopped channel's burst is drained by the interconnect itself so
+          // the slave can finish; the beats are simply not forwarded.
+          axiSlaveInterface[s].rready = rd_discard[s] ? 1'b1
+                                                      : (r_sel[s] && master_rready[ro]);
         end
       end
     end

@@ -271,6 +271,7 @@ module tb_interconnect;
   endtask
 
   bit ok;
+  int rid1_at_switch;
 
   // ---------------------------------------------------------------
   initial begin
@@ -373,10 +374,10 @@ module tb_interconnect;
     @(negedge aclk); s_r_en[2] = 0; s_rlast[2] = 0;
     idle_cycles(8);
 
-    check("ch1's outstanding read data was delivered, not dropped",
-          m0_saw_ch1_data);
     check("ch0's read data was delivered tagged RID 0",
           m0_saw_ch0_data);
+    check("slave 2's abandoned burst was drained, leaving it free",
+          dut.rd_state[2] == 0 /* IDLE */);
 
     // =================================================================
     $display("\n=== SCENARIO D : baseline, a normal write then a normal read ===");
@@ -633,16 +634,19 @@ module tb_interconnect;
           s_ar_cnt[0] == 1 && s_last_araddr[0] == 32'h0000_02bc);
     check("ch0 AR did not go to slave 1", s_ar_cnt[1] == 1);
     @(negedge aclk); mif[0].arvalid = 0;
+    rid1_at_switch = m0_beats_rid1;   // ch1 beats delivered up to the stop
 
     // DMA resumes draining; both bursts must complete fully.
     @(negedge aclk); mif[0].rready = 1;
     idle_cycles(60);
 
-    $display("  beats delivered: rid0=%0d rid1=%0d interleaved=%0b",
-             m0_beats_rid0, m0_beats_rid1, m0_interleaved);
-    check("ch1's 10-beat burst was delivered in full", m0_beats_rid1 == 10);
+    $display("  beats to master: rid0=%0d rid1=%0d (rid1 at switch=%0d)",
+             m0_beats_rid0, m0_beats_rid1, rid1_at_switch);
     check("ch0's 10-beat burst was delivered in full", m0_beats_rid0 == 10);
-    check("no burst was interleaved with another ID", !m0_interleaved);
+    check("no stopped-channel beats reached the master after the switch",
+          m0_beats_rid1 == rid1_at_switch);
+    check("slave 1's burst was still drained to completion, not left wedged",
+          dut.rd_state[1] == 0 /* IDLE */ && !s_bursting[1]);
     s_burst_len[0] = 0; s_burst_len[1] = 0;
 
     // =================================================================
