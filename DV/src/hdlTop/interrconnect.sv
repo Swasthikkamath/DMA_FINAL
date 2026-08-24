@@ -847,4 +847,44 @@ interface AxiInterconnect #(
     end
   endgenerate
 
+  // ============================================================================
+  // Routing trace (compile with +define+AXI_IC_DEBUG to enable)
+  //
+  // Prints every address accepted and every response returned, with the master,
+  // the slave, and the ID. One run of this answers "did channel N's request go
+  // to the right slave, and did the right data come back" without needing to
+  // read it off a waveform.
+  // ============================================================================
+`ifdef AXI_IC_DEBUG
+  generate
+    for (genvar s = 0; s < TOTAL_SLAVES; s++) begin : ic_trace_slave
+      always_ff @(posedge aclk) begin
+        if (aresetn) begin
+          if (axiSlaveInterface[s].awvalid && slave_awready[s])
+            $display("[%0t] IC AW  master=%0d -> slave=%0d addr=0x%08h id=%0d",
+                     $time, wr_owner[s], s, axiSlaveInterface[s].awaddr,
+                     axiSlaveInterface[s].awid);
+          if (axiSlaveInterface[s].arvalid && slave_arready[s])
+            $display("[%0t] IC AR  master=%0d -> slave=%0d addr=0x%08h id=%0d",
+                     $time, rd_owner[s], s, axiSlaveInterface[s].araddr,
+                     axiSlaveInterface[s].arid);
+          if (r_sel[s] && slave_rvalid[s] && master_rready[rd_owner[s]])
+            $display("[%0t] IC R   slave=%0d -> master=%0d rid=%0d data=0x%08h last=%0b",
+                     $time, s, rd_owner[s], slave_rid[s], slave_rdata[s],
+                     slave_rlast[s]);
+          if (b_sel[s] && slave_bvalid[s] && master_bready[wr_owner[s]])
+            $display("[%0t] IC B   slave=%0d -> master=%0d bid=%0d resp=%0d",
+                     $time, s, wr_owner[s], slave_bid[s], slave_bresp[s]);
+          if (wr_kill[s])
+            $display("[%0t] IC ABORT write slave=%0d (master=%0d) reclaimed on timeout",
+                     $time, s, wr_owner[s]);
+          if (rd_kill[s])
+            $display("[%0t] IC ABORT read  slave=%0d (master=%0d) reclaimed on timeout",
+                     $time, s, rd_owner[s]);
+        end
+      end
+    end
+  endgenerate
+`endif
+
 endinterface
