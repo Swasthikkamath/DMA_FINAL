@@ -72,10 +72,20 @@ import AxiGlobalPackage::*;
  
 interface AxiInterconnect #(
   // Cycles a slave may sit in DATA_PHASE with no progress before the
-  // interconnect concludes the master abandoned the burst (DMA channel stop)
-  // and reclaims the slave. No mis-routing is possible while stalled, so this
-  // only bounds how long recovery takes; it is safe to make it large.
-  parameter int ABORT_TIMEOUT = 1024
+  // interconnect gives up on the transfer and reclaims the slave.
+  //
+  // DISABLED BY DEFAULT (0), deliberately. The DMA-350 TRM section 4.8.2 states
+  // that a channel stop "waits for all the outstanding responses from read and
+  // write transactions". So every accepted AR/AW must eventually produce its R
+  // or B response at the master, even for a channel that has been stopped - the
+  // DMA is draining those responses in order to complete the stop handshake.
+  //
+  // Reclaiming a transfer here drops its response on the floor, which hangs
+  // that handshake forever. There is therefore no such thing as an abandoned
+  // read for this DUT: the master is always still waiting. Leave this at 0
+  // unless you are deliberately debugging a wedged slave model, where a
+  // stuck-forever interconnect is harder to diagnose than a reclaimed one.
+  parameter int ABORT_TIMEOUT = 0
 )(
 
   input logic aclk,
@@ -512,8 +522,10 @@ interface AxiInterconnect #(
 
     // ---- abandoned-transfer reclaim ----
     for (int s = 0; s < TOTAL_SLAVES; s++) begin
-      wr_kill[s] = (wr_state[s] == DATA_PHASE) && (wr_stall[s] >= ABORT_TIMEOUT);
-      rd_kill[s] = (rd_state[s] == DATA_PHASE) && (rd_stall[s] >= ABORT_TIMEOUT);
+      wr_kill[s] = (ABORT_TIMEOUT != 0) &&
+                   (wr_state[s] == DATA_PHASE) && (wr_stall[s] >= ABORT_TIMEOUT);
+      rd_kill[s] = (ABORT_TIMEOUT != 0) &&
+                   (rd_state[s] == DATA_PHASE) && (rd_stall[s] >= ABORT_TIMEOUT);
     end
   end
 

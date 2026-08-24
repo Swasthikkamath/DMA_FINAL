@@ -16,7 +16,10 @@ module tb_interconnect;
   import AxiGlobalPackage::*;
 
   localparam int TOTAL_SLAVES     = NO_OF_SLAVES + 1;
-  localparam int TB_ABORT_TIMEOUT = 20;   // RTL default is much larger
+  // Match the shipped default: reclaim disabled. Per the DMA-350 TRM a channel
+  // stop waits for every outstanding response, so the interconnect must never
+  // drop one.
+  localparam int TB_ABORT_TIMEOUT = 0;
 
   logic aclk = 0;
   logic aresetn = 0;
@@ -86,12 +89,13 @@ module tb_interconnect;
   logic [31:0] m0_last_rdata;
   logic [3:0]  m0_last_rid;
   bit          m0_saw_ch0_data;   // saw a beat tagged RID 0 carrying slave 0's pattern
+  bit          m0_saw_ch1_data;   // saw a beat tagged RID 1 (a stopped channel's drain)
 
   always_ff @(posedge aclk) begin
     if (!aresetn) begin
       m0_aw_cnt <= 0; m0_w_cnt <= 0; m0_b_cnt <= 0;
       m0_ar_cnt <= 0; m0_r_cnt <= 0; m0_last_rdata <= '0; m0_last_rid <= '0;
-      m0_saw_ch0_data <= 1'b0;
+      m0_saw_ch0_data <= 1'b0; m0_saw_ch1_data <= 1'b0;
     end else begin
       if (mif[0].awvalid && mif[0].awready) m0_aw_cnt <= m0_aw_cnt + 1;
       if (mif[0].wvalid  && mif[0].wready ) m0_w_cnt  <= m0_w_cnt  + 1;
@@ -102,6 +106,7 @@ module tb_interconnect;
         m0_last_rdata <= mif[0].rdata;
         m0_last_rid   <= mif[0].rid;
         if (mif[0].rid == 4'd0 && mif[0].rdata == 32'hD0D0_0000) m0_saw_ch0_data <= 1'b1;
+        if (mif[0].rid == 4'd1) m0_saw_ch1_data <= 1'b1;
         $display("[%0t] MASTER0 R  rid=%0d data=0x%08h", $time, mif[0].rid, mif[0].rdata);
       end
     end
@@ -236,83 +241,81 @@ module tb_interconnect;
     check("nothing leaked into slave 2", s_aw_cnt[2] == 0 && s_w_cnt[2] == 0);
 
     // =================================================================
-    $display("\n=== SCENARIO B : write, channel stopped AFTER its AW was accepted ===");
-    // Slave 2 is left holding an accepted AW whose W beats never arrive.
-    // The interconnect must back-pressure channel 0 rather than bind it over
-    // the top, then reclaim slave 2 once the abort timeout expires.
+    $display("\n=== SCENARIO B : write, channel stopped with a write outstanding ===");
+    // Per DMA-350 TRM 4.8.2 a stop "waits for all the outstanding responses
+    // from read and write transactions", so an accepted AW always gets its W
+    // burst and its B response - even on a stopped channel. Both masters'
+    // writes must land on their own slaves and both B responses must come back.
     reset_all();
-    s_aw_en[2] = 1; s_w_en[2] = 1;
-    @(negedge aclk);
-    mif[0].awaddr = 32'h0000_2000; mif[0].awqos = 4'd15; mif[0].awvalid = 1;
-    idle_cycles(5);
-    check("ch1 AW was accepted by slave 2", s_aw_cnt[2] == 1);
-    mif[0].awvalid = 0;                               // *** CHANNEL 1 STOPPED ***
+    for (int i = 0; i < TOTAL_SLAVES; i++) begin s_aw_en[i]=1; s_w_en[i]=1; end
+
+    m0_aw(32'h0000_2000, 4'd15, 40, ok);           // channel 1 -> slave 2
+    check("ch1 AW accepted by slave 2", ok && s_aw_cnt[2] == 1);
+    m0_w(32'hBEEF_0000, 40, ok);                   // it completes its burst
+    check("ch1 W accepted", ok);
+    @(negedge aclk); s_b_en[2] = 1;
+    idle_cycles(4);
+    @(negedge aclk); s_b_en[2] = 0;
+    check("ch1 got its B response", m0_b_cnt == 1);
+
+    m0_aw(32'h0000_0400, 4'd0, 40, ok);            // channel 0 -> slave 0
+    check("ch0 AW accepted by slave 0", ok);
+    m0_w(32'hFEED_0000, 40, ok);
+    check("ch0 W accepted", ok);
+    @(negedge aclk); s_b_en[0] = 1;
+    idle_cycles(4);
+    @(negedge aclk); s_b_en[0] = 0;
     idle_cycles(2);
 
-    // Channel 0 presents its AW but must NOT be accepted while the stale
-    // binding is unresolved.
-    s_aw_en[0] = 1; s_w_en[0] = 1;
-    @(negedge aclk);
-    mif[0].awaddr = 32'h0000_0400; mif[0].awqos = 4'd0; mif[0].awvalid = 1;
-    idle_cycles(6);
-    // Channel 0 must NOT be blocked behind channel 1's abandoned transfer.
-    // Gating a new AW on an older one draining deadlocks against a master that
-    // withholds BREADY/RREADY until its own request is accepted.
-    check("ch0 AW is accepted promptly, not blocked by the stale slave",
-          s_aw_cnt[0] == 1);
-    mif[0].awvalid = 0;
-    check("ch0 AW landed on slave 0, not slave 2",
-          s_last_awaddr[0] == 32'h0000_0400 && s_aw_cnt[2] == 1);
-    // NOTE: W beats follow AW acceptance order (the W channel has no address),
-    // so a master that abandons a burst after its AW was accepted - which is an
-    // AXI protocol violation - will have its next burst's data follow the stale
-    // AW. The interconnect cannot detect that; the abort timeout is the only
-    // recovery. DMA-350 completes in-flight bursts, so this case should not
-    // arise in practice.
-    idle_cycles(TB_ABORT_TIMEOUT + 10);               // abort reclaims slave 2
-    check("stale slave 2 write was reclaimed after the abort timeout",
-          dut.wr_state[2] == 0 /* IDLE */);
+    check("ch1 data landed on slave 2", s_last_wdata[2] == 32'hBEEF_0000);
+    check("ch0 data landed on slave 0", s_last_wdata[0] == 32'hFEED_0000);
+    check("neither write leaked into the other's slave",
+          s_w_cnt[2] == 1 && s_w_cnt[0] == 1);
+    check("both B responses reached the master", m0_b_cnt == 2);
 
     // =================================================================
-    $display("\n=== SCENARIO C : read, a stale slave must not win the backward mux ===");
+    $display("\n=== SCENARIO C : stopped channel's read still gets its response ===");
+    // Channel 1's read is outstanding when the channel stops and the DMA stops
+    // consuming. Channel 0's read is issued meanwhile. When the DMA resumes,
+    // BOTH responses must arrive, each tagged with its own channel's ID, and
+    // neither may be dropped - a dropped response hangs the stop handshake.
     reset_all();
     s_ar_en[2] = 1;
-    m0_ar(32'h0000_2000, 4'd15, 40, ok);
-    check("ch1 AR was accepted by slave 2", ok && s_ar_cnt[2] == 1);
     @(negedge aclk);
-    s_ar_en[2] = 0;
-    s_r_en[2] = 1; s_rlast[2] = 0;   // slave 2 still has beats, never RLAST
-    mif[0].rready = 0;               // *** CHANNEL 1 STOPPED consuming ***
-    idle_cycles(3);
+    mif[0].arid = 4'd1;
+    mif[0].araddr = 32'h0000_2000; mif[0].arqos = 4'd15; mif[0].arvalid = 1;
+    idle_cycles(5);
+    check("ch1 AR accepted by slave 2", s_ar_cnt[2] == 1 && s_arid[2] == 4'd1);
+    @(negedge aclk);
+    mif[0].arvalid = 0; s_ar_en[2] = 0;
+    s_r_en[2] = 1; s_rlast[2] = 0;      // slave 2 holding beats
+    mif[0].rready = 0;                  // *** CHANNEL 1 STOPPED consuming ***
+    idle_cycles(4);
 
-    // Channel 0 presents its AR. It must be back-pressured until the stale
-    // read binding is reclaimed, and must never be handed slave 2's data.
     s_ar_en[0] = 1;
     @(negedge aclk);
+    mif[0].arid = 4'd0;
     mif[0].araddr = 32'h0000_0400; mif[0].arqos = 4'd0; mif[0].arvalid = 1;
     idle_cycles(6);
-    check("ch0 AR is accepted promptly, not blocked by the stale slave",
-          s_ar_cnt[0] == 1);
+    check("ch0 AR accepted by slave 0 while ch1's read is still outstanding",
+          s_ar_cnt[0] == 1 && s_last_araddr[0] == 32'h0000_0400);
+    check("ch0 AR never leaked into slave 2", s_ar_cnt[2] == 1);
     @(negedge aclk); mif[0].arvalid = 0;
 
-    // Slave 2 deliberately KEEPS driving read data to prove its data is never
-    // mistaken for channel 0's.
+    // DMA resumes draining. Channel 1's burst finishes, then channel 0's data.
     @(negedge aclk);
+    s_r_en[0] = 1; s_rlast[0] = 1;
     mif[0].rready = 1;
-    check("ch0 AR landed on slave 0",
-          s_ar_cnt[0] >= 1 && s_last_araddr[0] == 32'h0000_0400);
-    check("ch0 AR never leaked into slave 2", s_ar_cnt[2] == 1);
-
-    @(negedge aclk);
-    s_rlast[2] = 1;                  // slave 2 drains its abandoned burst
+    idle_cycles(3);
+    @(negedge aclk); s_rlast[2] = 1;    // slave 2 completes its burst
     idle_cycles(3);
     @(negedge aclk); s_r_en[2] = 0; s_rlast[2] = 0;
-    s_r_en[0] = 1; s_rlast[0] = 1;   // slave 0 returns its data
-    idle_cycles(4);
-    $display("  master0 last rdata=0x%08h (slave0=0x%08h slave2=0x%08h)",
-             m0_last_rdata, 32'hD0D0_0000, 32'hD0D0_0002);
-    check("master 0 read data came from slave 0, not stale slave 2",
-          m0_r_cnt >= 1 && m0_last_rdata == 32'hD0D0_0000);
+    idle_cycles(8);
+
+    check("ch1's outstanding read data was delivered, not dropped",
+          m0_saw_ch1_data);
+    check("ch0's read data was delivered tagged RID 0",
+          m0_saw_ch0_data);
 
     // =================================================================
     $display("\n=== SCENARIO D : baseline, a normal write then a normal read ===");
@@ -497,6 +500,46 @@ module tb_interconnect;
     // which the DMA discards for a stopped channel). What matters is that
     // channel 0's own data reached the master tagged with channel 0's ID.
     check("ch0 read data reached the master tagged RID 0", m0_saw_ch0_data);
+
+    // =================================================================
+    $display("\n=== SCENARIO N : channel stop with NO other traffic ===");
+    // The quiet case: one channel has a read outstanding, the channel is
+    // stopped, and nothing else is in flight. Per TRM 4.8.2 the stop drains
+    // the outstanding response, so the interconnect must deliver it and then
+    // return the slave to IDLE, ready for the next transfer.
+    reset_all();
+    s_ar_en[3] = 1;
+    @(negedge aclk);
+    mif[0].arid = 4'd1;
+    mif[0].araddr = 32'h0000_3000; mif[0].arqos = 4'd9; mif[0].arvalid = 1;
+    idle_cycles(5);
+    check("AR accepted by slave 3", s_ar_cnt[3] == 1);
+
+    // *** CHANNEL STOPPED *** - no new requests are issued from here on.
+    @(negedge aclk);
+    mif[0].arvalid = 0; s_ar_en[3] = 0;
+    s_r_en[3] = 1; s_rlast[3] = 0;   // slave still has beats to return
+    mif[0].rready = 0;               // DMA momentarily not consuming
+    idle_cycles(10);
+    check("nothing is driven to any other slave during the stop",
+          s_ar_cnt[0]==0 && s_ar_cnt[1]==0 && s_ar_cnt[2]==0 && s_ar_cnt[4]==0);
+
+    // The stop drains the outstanding response.
+    @(negedge aclk); mif[0].rready = 1;
+    idle_cycles(3);
+    @(negedge aclk); s_rlast[3] = 1;
+    idle_cycles(3);
+    @(negedge aclk); s_r_en[3] = 0; s_rlast[3] = 0;
+    idle_cycles(4);
+    check("the outstanding response was delivered, not dropped", m0_saw_ch1_data);
+    check("slave 3 returned to IDLE after the drain", dut.rd_state[3] == 0);
+
+    // The interconnect must be usable again for the next transfer.
+    s_ar_en[1] = 1;
+    @(negedge aclk); mif[0].arid = 4'd0;
+    m0_ar(32'h0000_1500, 4'd3, 40, ok);
+    check("a new transfer after the stop is accepted", ok);
+    check("it routed to slave 1 by address", s_ar_cnt[1] == 1);
 
     // =================================================================
     $display("\n=== SCENARIO G : address decode boundaries ===");
