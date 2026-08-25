@@ -76,6 +76,10 @@ all:
 compile:
 	make clean_compile;
 	make clean_simulate;
+	rm -rf dma*
+	rm -rf work/ regression_summary.log *.txt simulation_output.vcd 
+	rm transcript
+
 	vlib work; 
 	vlog -sv \
 	+acc \
