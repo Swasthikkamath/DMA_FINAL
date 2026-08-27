@@ -37,6 +37,7 @@ class axi4_slave_driver_proxy extends uvm_driver#(axi4_slave_tx);
   //Declaring handle for axi4 driver bfm
   virtual axi4_slave_driver_bfm axi4_slave_drv_bfm_h;
 
+  axi4_read_transfer_char_s  struct_read_packet;
   //Declaring handle for uvm_tlm_analysis_fifo's for all the five channels
   uvm_tlm_fifo #(axi4_slave_tx) axi4_slave_write_addr_fifo_h;
   uvm_tlm_fifo #(axi4_slave_tx) axi4_slave_write_data_in_fifo_h;
@@ -438,7 +439,7 @@ task axi4_slave_driver_proxy::axi4_read_task();
       axi4_slave_tx              local_slave_raddr_tx;
       axi4_slave_tx              qos_value_check_1;
       axi4_slave_tx              packet;
-      axi4_read_transfer_char_s  struct_read_packet;
+ //     axi4_read_transfer_char_s  struct_read_packet;
       axi4_transfer_cfg_s        struct_cfg;
       int                        total_bytes;
 
@@ -518,8 +519,8 @@ task axi4_slave_driver_proxy::axi4_read_task();
           axi4_slave_cfg_converter::from_class(axi4_slave_agent_cfg_h,struct_cfg);
           `uvm_info(get_type_name(), $sformatf("from_read_class:: struct_cfg =  \n %0p",struct_cfg),UVM_DEBUG);
         end  
-        for(int i=0;i<(struct_read_packet.arlen+1);i++)
-           struct_read_packet.rdata[i] ='0;
+        //for(int i=0;i<(struct_read_packet.arlen+1);i++)
+          // struct_read_packet.rdata[i] ='0;
  
         total_bytes = (local_slave_raddr_tx.arlen+1)*(2**(local_slave_raddr_tx.arsize));
         if(axi4_slave_agent_cfg_h.read_data_mode != SLAVE_ERR_RESP_MODE )begin : ADDR_INSIDE_SLAVE_MEM_RANGE

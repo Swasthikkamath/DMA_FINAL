@@ -143,7 +143,7 @@ function void dma2dBlockTransferWithXContinueSrcSmallerDesXsizeYContinueSrcSmall
   topEnvConfigHandle.allChannelConfig[1][0].CH_CTRL.TRANSIZE = 2;
   topEnvConfigHandle.allChannelConfig[1][0].CH_CTRL.DONETYPE = 1;
 
-  topEnvConfigHandle.allChannelConfig[1][0].CH_SRCADDR = 'd 5000;
+  topEnvConfigHandle.allChannelConfig[1][0].CH_SRCADDR = 'd 900;
   topEnvConfigHandle.allChannelConfig[1][0].CH_DESADDR = 'd 3400;
 
   // X SIZE -> SRCXSIZE < DESXSIZE
