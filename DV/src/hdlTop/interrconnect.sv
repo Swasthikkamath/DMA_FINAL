@@ -8,7 +8,7 @@ package AxiGlobalPackage;
 
   parameter int ADDR_WIDTH = 32;
 
-  parameter int DATA_WIDTH = 32;
+  parameter int DATA_WIDTH = 64;
 
   parameter int ID_WIDTH = 4;
 
