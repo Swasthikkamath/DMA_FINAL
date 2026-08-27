@@ -46,7 +46,7 @@ class axi4_slave_driver_proxy extends uvm_driver#(axi4_slave_tx);
   uvm_tlm_fifo #(axi4_slave_tx) axi4_slave_read_addr_fifo_h;
   uvm_tlm_fifo #(axi4_slave_tx) axi4_slave_read_data_in_fifo_h;
 
-
+  logic[DATA_WIDTH-1:0]rdata;
 
   //queue for holding the packets in axi channel needed to get the packet during out of order transmission of data
 
@@ -513,9 +513,11 @@ task axi4_slave_driver_proxy::axi4_read_task();
           wait(axiReadSlaveAddressQueue.size()>0);
           local_slave_raddr_tx  = axiReadSlaveAddressQueue.pop_front();
         //Converting transactions into struct data type
-          axi4_slave_seq_item_converter::from_read_class(local_slave_raddr_tx,struct_read_packet);
+          rdata = struct_read_packet.rdata[0];
+        axi4_slave_seq_item_converter::from_read_class(local_slave_raddr_tx,struct_read_packet);
         `uvm_info(get_type_name(), $sformatf("from_read_class:: struct_read_data_packet = \n %0p",struct_read_packet), UVM_DEBUG);
-        //Converting configurations into struct config type
+         struct_read_packet.rdata[0] = rdata;
+          //Converting configurations into struct config type
           axi4_slave_cfg_converter::from_class(axi4_slave_agent_cfg_h,struct_cfg);
           `uvm_info(get_type_name(), $sformatf("from_read_class:: struct_cfg =  \n %0p",struct_cfg),UVM_DEBUG);
         end  
