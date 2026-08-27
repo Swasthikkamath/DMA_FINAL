@@ -156,8 +156,8 @@ function void dma1dBlockTransferWithContinueSrcAndDesXsizeEqAndHwTiAndHiTo::buil
 
   //TRIGGER DEST SEL
   topEnvConfigHandle.allChannelConfig[1][0].CH_DESTRIGINCFG.DESTRIGINSEL = 3;
-  topEnvConfigHandle.allChannelConfig[1][0].CH_TMPLTCFG.SRCTMPLTSIZE=0;
-  topEnvConfigHandle.allChannelConfig[1][0].CH_SRCTMPLT='b 11;
+  topEnvConfigHandle.allChannelConfig[1][0].CH_TMPLTCFG.SRCTMPLTSIZE=4;
+  topEnvConfigHandle.allChannelConfig[1][0].CH_SRCTMPLT='b 101;
   topEnvConfigHandle.allChannelConfig[1][0].CH_TMPLTCFG.DESTMPLTSIZE=0;
   topEnvConfigHandle.allChannelConfig[1][0].CH_DESTMPLT='b 11;
 
@@ -197,7 +197,7 @@ function void dma1dBlockTransferWithContinueSrcAndDesXsizeEqAndHwTiAndHiTo::buil
   // CH_XSIZE = 32'H 0005_0005
   topEnvConfigHandle.allChannelConfig[1][0].CH_XSIZE = 'h 000A0005;
 
-  topEnvConfigHandle.allChannelConfig[1][0].CH_YSIZE = 'h 000A0005;
+  topEnvConfigHandle.allChannelConfig[1][0].CH_YSIZE = 'h 00010001;
   // CH_SRCTRANSCFG.SRCMAXBURSTLEN = 6
   topEnvConfigHandle.allChannelConfig[1][0].CH_SRCTRANSCFG.SRCMAXBURSTLEN=10;
 

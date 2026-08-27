@@ -630,7 +630,7 @@
             `uvm_info("TOP_SCOREBOARD","THE EXPECTED READ ADDR MATCHES WITH THE ACTUAL ADDRESS FOR READ PATH",UVM_HIGH)
           end
           else begin 
-            `uvm_error("TOP_SCOREBOARD",$sformatf("expectedAddr %D q is %p",expectedAddr,sharedResource::expectedReadAddr[arbitChannel]))
+            `uvm_error("TOP_SCOREBOARD",$sformatf("expectedAddr %D q is %p got address is %d",expectedAddr,sharedResource::expectedReadAddr[arbitChannel],raddr_tx.araddr))
           end 
 
           for(int index =0 ; index < (raddr_tx.arlen);index++) begin //<3  0 1 2

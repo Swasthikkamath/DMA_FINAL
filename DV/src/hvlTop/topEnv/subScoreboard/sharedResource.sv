@@ -624,13 +624,17 @@ task sharedResource::setUp1DAddress(int channel);
   
     if(dmaChannelRegHandle[channel].CH_TMPLTCFG.SRCTMPLTSIZE> 0) begin 
       int validCheck=0;
-       $display("V2 TRANSFER IS %0d",totalTransfers);
+      $display("V2 TRANSFER IS %0d tmplt is %b size is %d",totalTransfers,dmaChannelRegHandle[channel].CH_SRCTMPLT,dmaChannelRegHandle[channel].CH_TMPLTCFG.SRCTMPLTSIZE);
       for(int i=0;i<totalTransfers;i++) begin 
+        $display("THE TMPLT BIT CONSIDERED IS %D and its value is %d",validCheck,dmaChannelRegHandle[channel].CH_SRCTMPLT[validCheck]);
         if (dmaChannelRegHandle[channel].CH_SRCTMPLT[validCheck] !=1) begin 
              i--;
+             $display("speaking this address %d",srcAddr);
              srcAddr = srcAddr + beat_bytes; // skip this address 
+             $display("new address is %d",srcAddr);
              validCheck = ((validCheck+1)%(dmaChannelRegHandle[channel].CH_TMPLTCFG.SRCTMPLTSIZE+1));
              continue;
+
         end
         case (xType)
           X_CONTINUE: begin
@@ -652,14 +656,19 @@ task sharedResource::setUp1DAddress(int channel);
           end
         endcase
         if(dmaChannelRegHandle[channel].CH_SRCTMPLT[validCheck] ==1)begin
+          $display("valid is one");
           validCheck = ((validCheck+1)%(dmaChannelRegHandle[channel].CH_TMPLTCFG.SRCTMPLTSIZE+1));
-          if(xType != X_WRAP) begin
+          /*if(xType != X_WRAP) begin //the trm doesnt clearly mentions whether the dimension rules should be applicable or not 
             srcAddr = srcAddr + beat_bytes;
           end
-          else if(i % srcXsize ==0) begin
+          else if(i % srcXsize ==0 && i>0) begin
            srcAddr = dmaChannelRegHandle[channel].CH_SRCADDR.SRCADDR;
           end
-
+          else begin
+            srcAddr = srcAddr + beat_bytes;
+          end */
+          srcAddr = srcAddr + beat_bytes;
+          $display("new address is %d",srcAddr);
         end
 
         if(calculateSrcXsize == 1 && (determineNumberOfReads(channel) > srcXsize)) begin 
