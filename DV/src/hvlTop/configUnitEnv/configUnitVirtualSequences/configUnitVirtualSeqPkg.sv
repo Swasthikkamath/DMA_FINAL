@@ -17,13 +17,15 @@ package configUnitVirtualSeqPkg;
 	//import topEnvPkg::*;
 	  import configUnitEnvPkg::*;
 	  import interruptSlavePkg::*;
-	
-//  import configunit_seq_pkg::*;
+    import bootGlobalPkg:: *;	
+    import bootMasterPkg :: *;
+  //  import configunit_seq_pkg::*;
     `include "interrupt_slave_seq.sv"
+     `include "bootMasterSeq.sv"
 
-    `include "configUnitVirtualBaseSeq.sv"
+      `include "configUnitVirtualBaseSeq.sv"
 
-`include "configUnitInterruptSlaveOnlyVirtualSequence.sv"
+   `include "configUnitInterruptSlaveOnlyVirtualSequence.sv"
 endpackage : configUnitVirtualSeqPkg
 
 `endif

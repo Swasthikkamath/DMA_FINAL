@@ -37,6 +37,8 @@ module hdlTop;
 
   interruptInterface  interruptInterfaceHandle(pclk);
   triggerInterface triggerInterfaceHandle[axi4_globals_pkg::NO_OF_SLAVES+1](pclk);
+  bootInterface bootInterfaceHandle(pclk,preset_n);
+
   top_mod#(.DATA_W(64)) u_dma (
     // APB
     .clk(pclk),
@@ -121,6 +123,7 @@ module hdlTop;
   apb_master_agent_bfm apbMasterAgentBfm(apbInterfaceHandle);
   interruptSlaveAgentBfm interruptSlaveAgentBfmHandle(interruptInterfaceHandle);
   interruptMasterAgentBfm interruptMasterAgentBfmHandle(interruptInterfaceHandle);
+  bootMasterAgentBfm bootMasterAgentBfmHandle(bootInterfaceHandle);
 
 initial begin
   $dumpfile("simulation_output.vcd");

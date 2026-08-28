@@ -18,6 +18,7 @@
     uvm_tlm_analysis_fifo #(axi4_slave_tx) peripheralUnitAxi4SlavePathReadAddressAnalysisExport[];
     uvm_tlm_analysis_fifo #(axi4_slave_tx) peripheralUnitAxi4SlavePathReadDataAnalysisExport[];
 
+    uvm_tlm_analysis_fifo#(bootMasterTx) configUnitBootPathAnalysisExport[];
     extern function new(string name="topAxiSubScoreboard",uvm_component parent=null);
     extern virtual function void build_phase(uvm_phase phase);
     extern task handleAxi4MasterWrite(int master_id);
@@ -44,9 +45,11 @@
     peripheralUnitAxi4SlavePathWriteResponseAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES+1];
     peripheralUnitAxi4SlavePathReadAddressAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES+1];
     peripheralUnitAxi4SlavePathReadDataAnalysisExport = new[axi4_globals_pkg::NO_OF_SLAVES+1];
-
+ 
+    configUnitBootPathAnalysisExport = new[axi4_globals_pkg ::NO_OF_SLAVES+1];
 
     foreach (peripheralUnitAxi4MasterPathWriteAddressAnalysisExport[i]) begin
+      configUnitBootPathAnalysisExport[i] = new($sformatf("configUnitBootPathAnalysisExport[%d]",i),this);
       peripheralUnitAxi4MasterPathWriteAddressAnalysisExport[i] = 
         new($sformatf("peripheralUnitAxi4MasterPathWriteAddressAnalysisExport[%0d]", i), this);
       peripheralUnitAxi4MasterPathWriteDataAnalysisExport[i] = 
@@ -354,8 +357,17 @@
       sharedResource::managerReadAccess=0;
       peripheralUnitAxi4SlavePathReadAddressAnalysisExport[slave_id].get(raddr_tx);
      // if(!raddr_tx.araddr inside {sharedResource::topEnvConfigHandle.addressIfLinking[arbitChannel]}) begin 
+  
+      if((configUnitBootPathAnalysisExport[slave_id].used()>0 && (raddr_tx.araddr inside {[sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[slave_id].min_address:sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[slave_id].max_address]}))) begin 
+        arbitChannel =0;
+        for(int i=0;i<=axi4_globals_pkg::NO_OF_SLAVES;i++)begin 
+          if(slave_id != i)
+          configUnitBootPathAnalysisExport[i].flush(); //to prevent false boot check 
+        end 
+      end 
+      else begin 
         arbitChannel = checkArbit(slave_id,1); // here we get what channel becomes the owner base    d on the qos value
-      //end 
+      end 
 
   //    if((arbitChannel != raddr_tx.arid) && !(raddr_tx.araddr inside {sharedResource::topEnvConfigHandle.addressIfLinking[arbitChannel]}))begin 
         `uvm_error("TOP_SCOREBOARD",$sformatf("ARBIT:EXPECTED CHANNEL IS %d GOT CHANNEL IS %d ",arbitChannel,raddr_tx.arid))
@@ -383,10 +395,11 @@
         sharedResource::prioritySrcPerChannel[selectedInterface][arbitChannel].commandDone =1; //exiting the arbitChannel
         continue;
       end  
-      if((raddr_tx.araddr inside {sharedResource::topEnvConfigHandle.addressIfLinking[arbitChannel]}) && headerRead ==0) begin
+      if(((raddr_tx.araddr inside {sharedResource::topEnvConfigHandle.addressIfLinking[arbitChannel]}) && headerRead ==0 ) || (configUnitBootPathAnalysisExport[slave_id].used()>0 && (raddr_tx.araddr inside {[sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[slave_id].min_address :sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[slave_id].max_address]}))) begin
         header = rdata_tx.rdata[0];
         headerRead=1;
 
+        configUnitBootPathAnalysisExport[slave_id].flush();
         `uvm_info("TOP_SCOREBOARD",$sformatf("STARTED COMMAND LINKING FOR CHANNEL %0d",arbitChannel),UVM_NONE) 
         sharedResource::commandDone[sharedResource ::dmaChannelRegHandle[arbitChannel].CH_SRCTRIGINCFG.SRCTRIGINSEL] = 0;
         sharedResource::commandDone[sharedResource ::dmaChannelRegHandle[arbitChannel].CH_DESTRIGINCFG.DESTRIGINSEL] =0;

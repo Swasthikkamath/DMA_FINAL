@@ -15,6 +15,7 @@ package topVirtualSeqPkg;
   import triggerMasterSequencePkg::*;
   import axi4_slave_seq_pkg:: *; 
   import topEnvPkg::*; 
+  import bootGlobalPkg:: *;
   `include "topVirtualBaseSeq.sv"
   `include "dmaPollingVirtualSeq.sv"
   `include "dma1DVirtualSeq.sv"

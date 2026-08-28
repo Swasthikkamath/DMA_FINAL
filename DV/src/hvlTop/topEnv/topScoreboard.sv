@@ -39,7 +39,7 @@ class topScoreboard extends uvm_scoreboard;
   // Analysis FIFOs - Config Path
   uvm_analysis_export #(apb_master_tx) configUnitApbPathAnalysisExport;
   uvm_analysis_export #(interruptSlaveTx) configUnitInterruptPathAnalysisExport;
-  
+  uvm_analysis_export #(bootMasterTx) configUnitBootPathAnalysisExport;
   // Method declarations
   extern function new(string name = "topScoreboard", uvm_component parent = null);
   extern virtual function void build_phase(uvm_phase phase);
@@ -119,7 +119,7 @@ function void topScoreboard::build_phase(uvm_phase phase);
   
   configUnitApbPathAnalysisExport = new("configUnitApbPathAnalysisExport", this);
   configUnitInterruptPathAnalysisExport = new("configUnitInterruptPathAnalysisExport", this);
-  
+  configUnitBootPathAnalysisExport = new("configUnitBootPathAnalysisExport",this);
   // Initialize semaphores
   sharedResource::interruptControl = new(0);
   foreach (sharedResource::semaPhoreTriggerHandle[i])begin 
@@ -164,6 +164,7 @@ this.peripheralUnitAxi4MasterPathWriteResponseAnalysisExport[i].connect(topAxiSu
    end     
 
    foreach(peripheralUnitAxi4SlavePathWriteAddressAnalysisExport[i]) begin
+     this.configUnitBootPathAnalysisExport.connect(topAxiSubScoreboardHandle.configUnitBootPathAnalysisExport[i].analysis_export);
      this.peripheralUnitAxi4SlavePathWriteAddressAnalysisExport[i].connect(topAxiSubScoreboardHandle.peripheralUnitAxi4SlavePathWriteAddressAnalysisExport[i].analysis_export);
      this.peripheralUnitAxi4SlavePathWriteDataAnalysisExport[i].connect(topAxiSubScoreboardHandle.peripheralUnitAxi4SlavePathWriteDataAnalysisExport[i].analysis_export);
      this.peripheralUnitAxi4SlavePathWriteResponseAnalysisExport[i].connect(topAxiSubScoreboardHandle.peripheralUnitAxi4SlavePathWriteResponseAnalysisExport[i].analysis_export);

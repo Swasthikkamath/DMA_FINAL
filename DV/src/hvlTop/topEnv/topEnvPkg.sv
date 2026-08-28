@@ -14,6 +14,7 @@ package topEnvPkg;
  import dmaGlobalPkg::*;
  import configUnitEnvPkg ::*;
  import interruptSlavePkg :: *;
+ import bootMasterPkg :: *;
  `include "topRal_Reg.sv"
  `include "topRal_Reg_Block.sv"
  `include "topEnvConfig.sv"

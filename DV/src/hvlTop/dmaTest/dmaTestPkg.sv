@@ -16,6 +16,7 @@ package dmaTestPkg;
   import dmaGlobalPkg::*;
   import interruptSlavePkg :: *;
   import topVirtualSeqPkg::*;
+  import bootMasterPkg :: *;
   `include "dmaReportServer.sv"
   `include "dmaBaseTest.sv"
 

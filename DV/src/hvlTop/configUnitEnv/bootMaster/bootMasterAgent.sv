@@ -36,9 +36,11 @@ function void bootMasterAgent::build_phase(uvm_phase phase);
 
   if(bootMasterAgentConfigHandle.is_active==1)begin 
     bootMasterDriverProxyHandle = bootMasterDriverProxy::type_id :: create("bootMasterDriverProxyHandle",this);
+    uvm_config_db #(bootMasterAgentConfig) :: set(this,"bootMasterDriverProxyHandle","bootMasterAgentConfigHandle",bootMasterAgentConfigHandle);
     bootMasterSequencerHandle = bootMasterSequencer :: type_id :: create("bootMasterSequencerHandle",this);
   end 
 
+  uvm_config_db #(bootMasterAgentConfig) :: set(this,"bootMasterMonitorProxyHandle","bootMasterAgentConfigHandle",bootMasterAgentConfigHandle);
   bootMasterMonitorProxyHandle = bootMasterMonitorProxy :: type_id :: create("bootMasterMonitorProxyHandle",this);
   bootMasterMonitorProxyAnalysisPort = new("bootMasterMonitorProxyAnalysisPort",this);
 endfunction 

@@ -17,6 +17,7 @@ class configUnitEnvConfig extends uvm_object;
   // Handle for interrupt slave agent configuration
   interruptSlaveAgentConfig interruptSlaveAgentConfigHandle;
 
+  bootMasterAgentConfig bootMasterAgentConfigHandle;
    // Flag to indicate whether virtual sequencer is present or not
   bit  hasVirtualSequencer;
 

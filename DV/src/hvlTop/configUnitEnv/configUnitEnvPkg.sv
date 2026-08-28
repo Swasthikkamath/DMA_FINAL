@@ -7,6 +7,8 @@ package configUnitEnvPkg;
  import uvm_pkg ::*;
  import apb_master_pkg :: *;
  import interruptSlavePkg :: *;
+ import bootMasterPkg ::*;
+
  `include "configUnitEnvVirtualSequencer.sv" 
  `include "configUnitEnvConfig.sv"
  `include "configUnitEnv.sv"

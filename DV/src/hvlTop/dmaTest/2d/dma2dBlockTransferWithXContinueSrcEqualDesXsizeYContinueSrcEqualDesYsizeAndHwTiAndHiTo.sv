@@ -44,7 +44,7 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
   // TRIGGER SRC MODE
   topEnvConfigHandle.allChannelConfig[0][0].CH_SRCTRIGINCFG.SRCTRIGINMODE = 0;
   // Trigger SRC TYPE  (HW trigger in)
-  topEnvConfigHandle.allChannelConfig[0][0].CH_SRCTRIGINCFG.SRCTRIGINTYPE = 2'b00;
+  topEnvConfigHandle.allChannelConfig[0][0].CH_SRCTRIGINCFG.SRCTRIGINTYPE = 2'b10;
   // TRIGGER SRC SEL
   topEnvConfigHandle.allChannelConfig[0][0].CH_SRCTRIGINCFG.SRCTRIGINSEL = 0;
 
@@ -53,7 +53,7 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
   // TRIGGER DEST MODE
   topEnvConfigHandle.allChannelConfig[0][0].CH_DESTRIGINCFG.DESTRIGINMODE = 0;
   // Trigger DEST TYPE  (HW trigger in)
-  topEnvConfigHandle.allChannelConfig[0][0].CH_DESTRIGINCFG.DESTRIGINTYPE = 2'b00;
+  topEnvConfigHandle.allChannelConfig[0][0].CH_DESTRIGINCFG.DESTRIGINTYPE = 2'b10;
   // TRIGGER DEST SEL
   topEnvConfigHandle.allChannelConfig[0][0].CH_DESTRIGINCFG.DESTRIGINSEL = 1;
 
@@ -239,7 +239,7 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
 
   // same way you can update the needed fields for confguring the respective channels as per req
   dump_config_to_file();
-  topEnvConfigHandle.addressIfLinking[1][1] = 3000;
+  topEnvConfigHandle.addressIfLinking[0][0] = 3000;
   setUpCommand();
 
 endfunction
@@ -248,13 +248,16 @@ task dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDesYsizeAnd
   super.run_phase(phase);
   phase.raise_objection(this);
   `uvm_info(get_type_name(),"Starting dma1DVirtualSequence (2D BLOCK transfer)",UVM_LOW)
-  /*dma1DVirtualSeqHandle = dma1DVirtualSeq::type_id::create("dma1DVirtualSeqHandle");
+  dma1DVirtualSeqHandle = dma1DVirtualSeq::type_id::create("dma1DVirtualSeqHandle");
   dma1DVirtualSeqHandle.topEnvConfigHandle =topEnvConfigHandle;
   dma1DVirtualSeqHandle.reqType = triggerGlobalPkg::BLOCK;
-  dma1DVirtualSeqHandle.start(topEnvHandle.topEnvVirtualSequencerHandle);*/
-  seq =dmaPollingVirtualSeq :: type_id :: create("test");
+  dma1DVirtualSeqHandle.bootEnable=1;
+  dma1DVirtualSeqHandle.bootAddress = topEnvConfigHandle.addressIfLinking[0][0];
+  dma1DVirtualSeqHandle.start(topEnvHandle.topEnvVirtualSequencerHandle);
+  /*seq =dmaPollingVirtualSeq :: type_id :: create("test");
   seq.reqType = triggerGlobalPkg::BLOCK;
   seq.topEnvConfigHandle =topEnvConfigHandle;
+  */
   seq.start(topEnvHandle.topEnvVirtualSequencerHandle);
 
   phase.drop_objection(this);

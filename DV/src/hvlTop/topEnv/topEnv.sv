@@ -116,7 +116,7 @@ function void topEnv::connect_phase(uvm_phase phase);
   if(topEnvConfigHandle.hasScoreboard == 1)begin
     configUnitEnvHandle.apbPathAnalysisPort.connect(topScoreboardHandle.configUnitApbPathAnalysisExport);
     configUnitEnvHandle.interruptPathAnalysisPort.connect(topScoreboardHandle.configUnitInterruptPathAnalysisExport);   
-    
+    configUnitEnvHandle.bootPathAnalysisPort.connect(topScoreboardHandle.configUnitBootPathAnalysisExport);
     foreach(peripheralEnvHandle[i]) begin     
       // AXI master & slave path connections
       peripheralEnvHandle[i].axi4MasterPathWriteAddressAnalysisPort.connect(topScoreboardHandle.peripheralUnitAxi4MasterPathWriteAddressAnalysisExport[i]);
@@ -150,7 +150,6 @@ function void topEnv::connect_phase(uvm_phase phase);
     end
     configUnitEnvHandle.apbPathAnalysisPort.connect(topCoverageHandle.coverageConfigUnitApbPathAnalysisExport.analysis_export);
     configUnitEnvHandle.interruptPathAnalysisPort.connect(topCoverageHandle.coverageConfigUnitInterruptPathAnalysisExport.analysis_export);   
-
   end 
   configUnitEnvHandle.apbPathAnalysisPort.connect(topPredictor.bus_in);
   

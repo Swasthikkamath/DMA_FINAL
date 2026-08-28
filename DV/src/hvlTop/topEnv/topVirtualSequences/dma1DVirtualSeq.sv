@@ -21,6 +21,9 @@ class dma1DVirtualSeq extends topVirtualBaseSeq;
   CH_XSIZE_FIELD curXSIZE;
   CH_YSIZE_FIELD curYSIZE;
   CH_TRIGOUTCFG_FIELD triggerOutType;
+  bit bootEnable;
+  bit[BOOT_ADDRESS_WIDTH-1:0]bootAddress;
+  bootMasterSeq bootMasterSeqHandle;
   extern function new(string name = "dma1DVirtualSeq");
   extern task body();
 endclass : dma1DVirtualSeq
@@ -40,10 +43,21 @@ task dma1DVirtualSeq::body();
    peripheralTriggerMasterOnlyVirtualSequenceHandle[j].reqType = this.reqType;
 end
  configUnitInterruptSlaveOnlyVirtualSequenceHandle = configUnitInterruptSlaveOnlyVirtualSequence :: type_id :: create("configUnitInterruptSlaveOnlyVirtualSequenceHandle");
+  bootMasterSeqHandle = bootMasterSeq :: type_id :: create("bootMasterSeqHandle");
   fork 
     begin
       for (i = 0; i < NUM_CHANNELS; i++) begin
         toKillWhenInterrupt = process :: self;
+        if(bootEnable && i==0) begin 
+         
+         fork 
+           begin 
+             bootMasterSeqHandle.bootAddress = bootAddress;
+             bootMasterSeqHandle.start(p_sequencer.configUnitEnvVirtualSequencerHandle.bootMasterSequencerHandle);
+           end 
+         join_none
+         continue;
+        end 
         topEnvConfigHandle.regBlockHandle.CH_SRCTRIGINCFG_inst[i].write(status,topEnvConfigHandle.allChannelConfig[i][0].CH_SRCTRIGINCFG);
 
         topEnvConfigHandle.regBlockHandle.CH_CTRL_inst[i].write(status,topEnvConfigHandle.allChannelConfig[i][0].CH_CTRL);

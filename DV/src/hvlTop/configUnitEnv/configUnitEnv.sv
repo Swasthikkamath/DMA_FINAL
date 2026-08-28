@@ -15,12 +15,15 @@ class configUnitEnv extends uvm_env;
   // Analysis port for Interrupt Slave transactions
   uvm_analysis_port #(interruptSlaveTx) interruptPathAnalysisPort;
 
+  uvm_analysis_port #(bootMasterTx) bootPathAnalysisPort;
   // Handle for APB Master Agent
   apb_master_agent apbMasterAgentHandle;
 
   // Handle for Interrupt Slave Agent
   interruptSlaveAgent interruptSlaveAgentHandle;
 
+  //handle for boot master agent 
+  bootMasterAgent bootMasterAgentHandle;
   // Handle for Virtual Sequencer
   // Used for coordinating sequences across multiple agents 
   configUnitEnvVirtualSequencer configUnitEnvVirtualSequencerHandle;
@@ -65,14 +68,17 @@ function void configUnitEnv :: build_phase(uvm_phase phase);
    // Pass Interrupt slave agent config to agent via config_db
   uvm_config_db #(interruptSlaveAgentConfig) :: set(this,"interruptSlaveAgentHandle","interruptSlaveAgentConfigHandle",configUnitEnvConfigHandle.interruptSlaveAgentConfigHandle); 
 
+  uvm_config_db #(bootMasterAgentConfig) :: set(this,"bootMasterAgentHandle","bootMasterAgentConfigHandle",configUnitEnvConfigHandle.bootMasterAgentConfigHandle);
    // Create agent instances
   apbMasterAgentHandle =apb_master_agent::type_id::create("apbMasterAgentHandle",this);
   interruptSlaveAgentHandle = interruptSlaveAgent :: type_id :: create("interruptSlaveAgentHandle",this);
 
+  bootMasterAgentHandle = bootMasterAgent :: type_id ::create("bootMasterAgentHandle",this);
+
   // Create analysis ports
   interruptPathAnalysisPort = new("interruptPathAnalysisPort",this);
   apbPathAnalysisPort = new("apbPathAnalysisPort",this);
-
+  bootPathAnalysisPort = new("bootPathAnalysisPort",this);
   // Conditionally create virtual sequencer
   if(configUnitEnvConfigHandle.hasVirtualSequencer ==1 ) begin 
     configUnitEnvVirtualSequencerHandle = configUnitEnvVirtualSequencer :: type_id :: create("configUnitEnvVirtualSequencerHandle",this);
@@ -95,6 +101,7 @@ function void configUnitEnv :: connect_phase(uvm_phase phase);
   // Connect interrupt monitor analysis port to env analysis port
    interruptSlaveAgentHandle.interruptSlaveMonitorProxyAnalysisPort.connect(interruptPathAnalysisPort);
 
+   bootMasterAgentHandle.bootMasterMonitorProxyAnalysisPort.connect(bootPathAnalysisPort);
   // Virtual sequencer connections
    if (configUnitEnvConfigHandle.hasVirtualSequencer == 1) begin
       // Connect APB sequencer to the virtual sequencer if agent is active
@@ -106,6 +113,9 @@ function void configUnitEnv :: connect_phase(uvm_phase phase);
        configUnitEnvVirtualSequencerHandle.interruptSlaveSequencerHandle =  interruptSlaveAgentHandle.interruptSlaveSequencerHandle;
      end
 
+     if(configUnitEnvConfigHandle.bootMasterAgentConfigHandle.is_active == UVM_ACTIVE)begin
+       configUnitEnvVirtualSequencerHandle.bootMasterSequencerHandle  = bootMasterAgentHandle.bootMasterSequencerHandle;
+     end 
   end
 endfunction 
 

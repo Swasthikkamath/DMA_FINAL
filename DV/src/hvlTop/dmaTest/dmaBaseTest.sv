@@ -21,6 +21,7 @@ class dmaBaseTest extends uvm_test;
   extern function void setupConfigUnitEnvConfig();
   extern function void setupApbMasterAgentConfig();
   extern function void setupInterruptSlaveAgentConfig();
+  extern function void setupBootMasterAgentConfig();
   extern function void setUpCommand();
   extern function string configuration_dump();
   extern function string format_struct(string raw);
@@ -182,8 +183,20 @@ function void dmaBaseTest :: setupConfigUnitEnvConfig();
   topEnvConfigHandle.configUnitEnvConfigHandle.hasVirtualSequencer = 1;
   setupApbMasterAgentConfig();
   setupInterruptSlaveAgentConfig();
+  setupBootMasterAgentConfig();
 endfunction
 
+function void dmaBaseTest :: setupBootMasterAgentConfig();
+  topEnvConfigHandle.configUnitEnvConfigHandle.bootMasterAgentConfigHandle = bootMasterAgentConfig :: type_id :: create("bootMasterAgentConfigHandle");
+  topEnvConfigHandle.configUnitEnvConfigHandle.bootMasterAgentConfigHandle.is_active = UVM_ACTIVE;
+  if(!(uvm_config_db #(virtual bootMasterDriverBfm) :: get(this,"","bootMasterDriverBfmHandle",topEnvConfigHandle.configUnitEnvConfigHandle.bootMasterAgentConfigHandle.bootMasterDriverBfmHandle)) )begin 
+    `uvm_fatal("TEST","FAILED TO GET BOOT DRIVER") 
+  end 
+  if(!(uvm_config_db #(virtual bootMasterMonitorBfm) :: get(this,"","bootMasterMonitorBfmHandle",topEnvConfigHandle.configUnitEnvConfigHandle.bootMasterAgentConfigHandle.bootMasterMonitorBfmHandle)) )begin 
+    `uvm_fatal("TEST","FAILED TO GET BOOT MONITOR") 
+  end 
+   
+endfunction 
 function void dmaBaseTest::setupApbMasterAgentConfig();
   bit [63:0]local_min_address;
   bit [63:0]local_max_address;

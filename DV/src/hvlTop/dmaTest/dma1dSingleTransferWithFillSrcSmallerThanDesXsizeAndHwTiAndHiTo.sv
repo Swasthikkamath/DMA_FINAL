@@ -18,7 +18,8 @@ function void dma1dSingleTransferWithFillSrcSmallerThanDesXsizeAndHwTiAndHiTo::b
   super.build_phase(phase);
   
   topEnvConfigHandle.numberOfCommandPerChannel.rand_mode(0);
-
+   topEnvConfigHandle.numberOfCommandPerChannel[0]=1;
+   //   topEnvConfigHandle.numberOfCommandPerChannel[1]=1;
   foreach(topEnvConfigHandle.allChannelConfig[i]) begin
     topEnvConfigHandle.allChannelConfig[i] = new[topEnvConfigHandle.numberOfCommandPerChannel[i]];
   end
@@ -80,7 +81,8 @@ function void dma1dSingleTransferWithFillSrcSmallerThanDesXsizeAndHwTiAndHiTo::b
 
   // CH_CTRL.TRANSIZE = 2
   topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.TRANSIZE = 2;
-
+ 
+  topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.DONETYPE=1;
   // CH_SRCADDR	= 32'D700
   topEnvConfigHandle.allChannelConfig[0][0].CH_SRCADDR = 'd 700;
 
@@ -91,7 +93,17 @@ function void dma1dSingleTransferWithFillSrcSmallerThanDesXsizeAndHwTiAndHiTo::b
   // CH_XSIZE = 32'H 0010_0005
   topEnvConfigHandle.allChannelConfig[0][0].CH_XSIZE = 'h 0010_0005;
 
+  topEnvConfigHandle.allChannelConfig[0][0].CH_YSIZE = 'h 0001_0001;
   // CH_SRCTRANSCFG.SRCMAXBURSTLEN = 6
+  topEnvConfigHandle.allChannelConfig[0][0].CH_DESTRIGINCFG.DESTRIGINSEL = 3;
+  topEnvConfigHandle.allChannelConfig[0][0].CH_TMPLTCFG.SRCTMPLTSIZE=4;
+  topEnvConfigHandle.allChannelConfig[0][0].CH_SRCTMPLT='b 101;
+  topEnvConfigHandle.allChannelConfig[0][0].CH_TMPLTCFG.DESTMPLTSIZE=0;
+  topEnvConfigHandle.allChannelConfig[0][0].CH_DESTMPLT='b 11;
+
+
+  
+  
   topEnvConfigHandle.allChannelConfig[0][0].CH_SRCTRANSCFG.SRCMAXBURSTLEN=6;
 
   //CH_DESTRANSCFG.DESMAXBURSTLEN = 6

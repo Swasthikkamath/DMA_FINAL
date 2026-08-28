@@ -18,7 +18,10 @@
 ../../src/globals/dmaGlobalPkg.sv
 ../../src/globals/triggerGlobalPkg.sv
 ../../src/globals/interruptGlobalPkg.sv
+../../src/globals/bootGlobalPkg.sv
+
 ../../src/hvlTop/configUnitEnv/apbMaster/apbMasterPkg.sv
+../../src/hvlTop/configUnitEnv/bootMaster/bootMasterPkg.sv
 ../../src/hvlTop/peripheralEnv/triggerMaster/triggerMasterPkg.sv
 ../../src/hvlTop/peripheralEnv/triggerSlave/triggerSlavePkg.sv 
 ../../src/hvlTop/dmaTest/sequences/triggerMasterSequences/triggerMasterSequencePkg.sv
@@ -59,6 +62,10 @@
 ../../src/hdlTop/interruptSlaveAgentBfm/interruptSlaveAgentBfm.sv
 ../../src/hdlTop/interruptMasterAgentBfm/interruptMasterAgentBfm.sv
 ../../src/hvlTop/hvlTop.sv
+../../src/hdlTop/bootInterface/bootInterface.sv  
+../../src/hdlTop/bootMaster/bootMasterAgentBfm.sv 
+../../src/hdlTop/bootMaster/bootMasterDriverBfm.sv 
+../../src/hdlTop/bootMaster/bootMasterMonitorBfm.sv 
 ../../src/hdlTop/hdlTop.sv
 ../../src/hdlTop/interrconnect.sv
 ../../../RTL/apb_reg.v

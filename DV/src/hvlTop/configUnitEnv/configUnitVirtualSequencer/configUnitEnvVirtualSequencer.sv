@@ -7,6 +7,7 @@ class configUnitEnvVirtualSequencer extends uvm_sequencer;
 
   apb_master_sequencer apbMasterSequencerHandle;
   interruptSlaveSequencer interruptSlaveSequencerHandle;
+  bootMasterSequencer bootMasterSequencerHandle;
 
    extern function new(string name = "configUnitEnvVirtualSequencer",uvm_component parent = null);
 endclass
