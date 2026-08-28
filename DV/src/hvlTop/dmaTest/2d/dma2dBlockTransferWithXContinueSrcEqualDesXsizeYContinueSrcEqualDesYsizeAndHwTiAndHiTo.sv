@@ -258,7 +258,7 @@ task dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDesYsizeAnd
   seq.reqType = triggerGlobalPkg::BLOCK;
   seq.topEnvConfigHandle =topEnvConfigHandle;
   */
-  seq.start(topEnvHandle.topEnvVirtualSequencerHandle);
+  //seq.start(topEnvHandle.topEnvVirtualSequencerHandle);
 
   phase.drop_objection(this);
 endtask

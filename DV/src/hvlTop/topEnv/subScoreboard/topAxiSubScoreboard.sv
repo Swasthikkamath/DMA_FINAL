@@ -396,7 +396,15 @@
         continue;
       end  
       if(((raddr_tx.araddr inside {sharedResource::topEnvConfigHandle.addressIfLinking[arbitChannel]}) && headerRead ==0 ) || (configUnitBootPathAnalysisExport[slave_id].used()>0 && (raddr_tx.araddr inside {[sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[slave_id].min_address :sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[slave_id].max_address]}))) begin
-        header = rdata_tx.rdata[0];
+        int str;
+        int address = raddr_tx.araddr;
+      
+        for(int i=0;i<4;i++) begin //4 bytes fetched header (unaligned support)
+          str = address % (DATA_WIDTH/8);
+          $display("address for header is %d str is %d data is %h complete data is %h",address,str,rdata_tx.rdata[0][8*str +:8],rdata_tx.rdata[0]);
+          header[8*i +:8] = rdata_tx.rdata[0][8*str +:8];
+          address +=1;
+        end 
         headerRead=1;
 
         configUnitBootPathAnalysisExport[slave_id].flush();
@@ -452,6 +460,7 @@
         bit[31:0] dynArr[];
         int str;
         bit flag=0;
+        $display("ARBIT LINK IS %D header is %b",raddr_tx.arlen,header);
         sharedResource::disableChannel[arbitChannel]=0;
         if(raddr_tx.arlen+1 != $countones(header)) begin 
           `uvm_error("TOP_SCOREBOARD","THE BURST LEN FOR COMMAND LINKING DOESNT MATCH WITH EXPECTED LENGHT")
@@ -461,6 +470,7 @@
           `uvm_error("TOP_SCOREBOARD","ADDR IN LINK IS NOT AS EXPECTED")
         addr = addr +4;
         for(int i=0;i<32;i++)begin
+          incrementer=0;
           if(header[i]==1 || (count == raddr_tx.arlen+1))begin 
             if(i==0 || i==1 || i==23 || i==25 || i==27) begin 
               continue;
@@ -481,6 +491,10 @@
               if(rdata_tx.rdata[0][8*str +:8] != dynArr[i][8*k+:8])begin
                 `uvm_error("TOP_SCOREBOARD",$sformatf("THE %0d LINK COMMAND OBTAINED DOESNT MATCH EXPECTED IS %h and ACTUAL OBTAINED IS %h",i,dynArr[i],rdata_tx.rdata[0]))
               end
+              else begin 
+                expectedData[8*str +:8] = rdata_tx.rdata[0][8*str +:8]; //keeps bytes alligned
+                $display("updated link expected data is %h",expectedData);
+              end 
 
               if((addr %4) ==0 && (addr %(axi4_globals_pkg ::DATA_WIDTH /8))!=0) begin 
                 i++;
@@ -488,14 +502,21 @@
                 while((i==0 || i==1 || i==23 || i==25 || i==27) && (header[i]==1)) begin
                   i++;
                 end 
+                
 
               end 
             end           
             if(count <= raddr_tx.arlen) begin
         
               peripheralUnitAxi4SlavePathReadDataAnalysisExport[slave_id].get(rdata_tx); 
+            end
+            
+            for(int j = i+1 ;j<32 ;j++) begin 
+              if(header[j] ==1 && j!=0 && j!=1 && j!=23 && j!=25 && j!=27)begin 
+                incrementer++;
+              end 
             end 
-            if((count == raddr_tx.arlen+1) && flag==0) begin 
+            if((count == raddr_tx.arlen+1) && flag==0 && incrementer>0) begin 
                 if($countones(header)>16) begin 
                    int tempCount;
                    tempCount = count;
