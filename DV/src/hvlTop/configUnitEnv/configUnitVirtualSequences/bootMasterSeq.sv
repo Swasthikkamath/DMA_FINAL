@@ -17,8 +17,13 @@
 
   task bootMasterSeq :: body();
     req = bootMasterTx :: type_id ::create("bootMasterTx");
+    $display("RANDOMIZE EXPECTED IS %d",bootAddress);
+//    req.randomize()with{bootEn==1;bootAddr == bootAddress;};
+    req.bootEn=1;
+    req.bootAddr = bootAddress;
     start_item(req);
-    req.randomize()with{bootEn==1;bootAddr == bootAddress;};
+    $display("RANDOMIZE ADDR IS %d",req.bootAddr); 
+//    req.randomize()with{bootEn==1;bootAddr == bootAddress;};
     finish_item(req);
   endtask
 
