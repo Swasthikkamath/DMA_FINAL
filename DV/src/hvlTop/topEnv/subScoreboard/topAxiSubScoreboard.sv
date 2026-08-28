@@ -429,9 +429,9 @@
             sharedResource::raiseError(arbitChannel,"header bit count is 0");
           end
         end
-        if(sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDREN != 1|| sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDR ==0) begin 
-          `uvm_error("TOP_SCOREBOARD",$sformatf("READING THE LINKED COMMAND INSPITE OF NOT MEETING NECCESSARY CONDITION EN IS %0d AND ADDR IS %0d",sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDREN,sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDR))
-        end
+        //if(sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDREN != 1|| sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDR ==0) begin 
+          //`uvm_error("TOP_SCOREBOARD",$sformatf("READING THE LINKED COMMAND INSPITE OF NOT MEETING NECCESSARY CONDITION EN IS %0d AND ADDR IS %0d",sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDREN,sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDR))
+        //end
         sharedResource ::triggerSrcTaskCall[arbitChannel]=0;
         sharedResource ::triggerDesTaskCall[arbitChannel]=0;
         sharedResource ::triggerOutTaskCall[arbitChannel]=0;

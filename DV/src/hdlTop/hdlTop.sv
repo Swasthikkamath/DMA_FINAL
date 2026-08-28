@@ -86,7 +86,8 @@ module hdlTop;
     .RLAST(axi4InterfaceHandle[NO_OF_SLAVES+1].rlast),
     // Interrupt
     .IRQ(interruptInterfaceHandle.irq),
-    .boot_en(0),
+    .boot_en(bootInterfaceHandle.bootEn),
+    .boot_addr(bootInterfaceHandle.bootAddr),
     // Trigger
     .trig_req(trigInReq),
     .trig_req_type(trigInReqType),
