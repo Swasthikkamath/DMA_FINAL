@@ -1775,10 +1775,10 @@ src_trigack_type <= (src_trigin_type == 2'b10 /*&& (src_trig_req_type == 0||src_
                         else if(ycase5 &&(srcx_transfer_count_reg < desx_transfer_count_reg)&&(srcy_transfer_count_reg >= desy_transfer_count_reg) && ((((srcx_transfer_count_reg * srcy_transfer_count_reg)% desx_transfer_count_reg ) == 0) && x_type == 1)&& y_type == 2 /*&& srcx_transfer_count_reg > desx_transfer_count_reg*/ && (src_y_left == 2) &&(area_src < area_des))begin
                                 src_x_left <= ((area_des % srcx_transfer_count_reg) == 0) ? srcx_transfer_count_reg : area_des % srcx_transfer_count_reg ;//srcx_transfer_count
                       end
-                      else if(ycase5 && src_y_left == 2 && (srcx_transfer_count_reg > desx_transfer_count_reg)&&(srcy_transfer_count_reg >= desy_transfer_count_reg) /* &&(x_type == 3 || x_type == 2)*/ && (y_type == 3 || y_type ==1))begin
-                                src_x_left <=  ((area_des % srcx_transfer_count_reg) == 0) ? srcx_transfer_count_reg : area_des % srcx_transfer_count_reg ; end//srcx_transfer_counte
+                       else if(ycase5 && src_y_left == 2 && (srcx_transfer_count_reg > desx_transfer_count_reg)&&(srcy_transfer_count_reg >= desy_transfer_count_reg) /* &&(x_type == 3 || x_type == 2)*/ && (y_type == 3 || y_type ==1))begin
+                                src_x_left <=  ((area_des % src_x_left_initial) == 0) ? src_x_left_initial : area_des % src_x_left_initial ; end//srcx_transfer_counte
                        else if(ycase5 && src_y_left == 2 && (srcx_transfer_count_reg > desx_transfer_count_reg)&&(srcy_transfer_count_reg < desy_transfer_count_reg) /* &&(x_type == 3 || x_type == 2)*/ && (y_type == 3 || y_type ==1))begin
-                                src_x_left <=  ((area_des % srcx_transfer_count_reg) == 0) ? srcx_transfer_count_reg : area_des % srcx_transfer_count_reg ;//srcx_transfer_count
+                                src_x_left <=  ((area_des % src_x_left_initial) == 0) ? src_x_left_initial : area_des % src_x_left_initial ;//srcx_transfer_count
                      
                             //  src_x_left <= area_des % srcx_transfer_count_reg;//srcx_transfer_count
 //                        src_x_transfer_count_remaining <= area_des % srcx_transfer_count;
@@ -1797,7 +1797,7 @@ src_trigack_type <= (src_trigin_type == 2'b10 /*&& (src_trig_req_type == 0||src_
                 end
             endcase
             
-            if((rd_state == RD_R && !(case3 && y_type ==0))||(rd_state == RD_WRAP_FILL && fill_count == 0)||(ycase2))
+            if((rd_state == RD_R/*&& RLAST*/ && !(case3 && y_type ==0))||(rd_state == RD_WRAP_FILL && fill_count == 0)||(ycase2))
                 wr_start <= 1;
                 if(/*(wr_state == W_DONE_ST || rd_state == RD_WAIT) &&*/ src_x_left == 0 && src_y_left == 0 && des_x_left == 0 && des_y_left == 0 /*&& DONE_temp*/ )
                     wr_start <= 0;
