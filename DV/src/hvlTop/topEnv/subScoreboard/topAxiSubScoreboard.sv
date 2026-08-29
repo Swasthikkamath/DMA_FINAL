@@ -105,13 +105,6 @@
           end 
         end 
         arbitChannel = checkArbit(selectedInterface,0);
-        $display("HI BYE HELLO");
-        sharedResource::dmaChannelRegHandle[arbitChannel].CH_ERRINFO.BUSERR = 1; //arbit using start and done and for this interface it will be 0 right 
-        sharedResource ::dmaChannelRegHandle[arbitChannel].CH_ERRINFO.ERRINFO.AXIRDRESPERR =1;
-        sharedResource ::dmaChannelRegHandle[arbitChannel].CH_STATUS.STAT_ERR =1; //come out of arbitration
-        if(sharedResource ::dmaChannelRegHandle[arbitChannel].CH_INTREN.INTREN_ERR ==1) begin
-          sharedResource ::raiseError(arbitChannel, "BUS ERROR");
-        end
         //sharedResource::commandStatusPerChannel[arbitChannel].readDone=1;
        /* for(int i=0;i<(axi4_globals_pkg :: NO_OF_SLAVES);i++) begin
           if(sharedResource::initialSrcAddress[arbitChannel]>= sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].min_address && sharedResource::initialSrcAddress[arbitChannel]<sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].max_address) begin
