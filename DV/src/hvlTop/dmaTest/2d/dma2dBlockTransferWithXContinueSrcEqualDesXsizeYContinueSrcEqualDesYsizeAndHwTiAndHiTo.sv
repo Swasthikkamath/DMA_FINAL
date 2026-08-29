@@ -86,7 +86,7 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
   topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.CHPRIO=5;
   topEnvConfigHandle.allChannelConfig[1][0].CH_CTRL.CHPRIO=7;
   topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.DONETYPE=3;
-  topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.REGRELOADTYPE=1;
+  topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.REGRELOADTYPE=7;
 
   // CH_SRCADDR / CH_DESADDR
   topEnvConfigHandle.allChannelConfig[0][0].CH_SRCADDR = 'd 700;
@@ -191,13 +191,13 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
 
   topEnvConfigHandle.allChannelConfig[1][0].CH_SRCTRIGINCFG.SRCTRIGINBLKSIZE = 10;
   topEnvConfigHandle.allChannelConfig[1][0].CH_SRCTRIGINCFG.SRCTRIGINMODE = 0;
-  topEnvConfigHandle.allChannelConfig[1][0].CH_SRCTRIGINCFG.SRCTRIGINTYPE = 2'b00;
+  topEnvConfigHandle.allChannelConfig[1][0].CH_SRCTRIGINCFG.SRCTRIGINTYPE = 2'b10;
   topEnvConfigHandle.allChannelConfig[1][0].CH_SRCTRIGINCFG.SRCTRIGINSEL = 2;
 
   topEnvConfigHandle.allChannelConfig[1][0].CH_DESTRIGINCFG.DESTRIGINBLKSIZE = 10;
   topEnvConfigHandle.allChannelConfig[1][0].CH_YADDRSTRIDE ='h 000A000A;
   topEnvConfigHandle.allChannelConfig[1][0].CH_DESTRIGINCFG.DESTRIGINMODE = 0;
-  topEnvConfigHandle.allChannelConfig[1][0].CH_DESTRIGINCFG.DESTRIGINTYPE = 2'b00;
+  topEnvConfigHandle.allChannelConfig[1][0].CH_DESTRIGINCFG.DESTRIGINTYPE = 2'b10;
   topEnvConfigHandle.allChannelConfig[1][0].CH_DESTRIGINCFG.DESTRIGINSEL = 3;
 
   topEnvConfigHandle.allChannelConfig[1][0].CH_TMPLTCFG.SRCTMPLTSIZE=0;
@@ -218,8 +218,8 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
   topEnvConfigHandle.allChannelConfig[1][0].CH_CTRL.TRANSIZE = 2;
   topEnvConfigHandle.allChannelConfig[1][0].CH_CTRL.DONETYPE = 1;
 
-  topEnvConfigHandle.allChannelConfig[1][0].CH_SRCADDR = 'd 5000;
-  topEnvConfigHandle.allChannelConfig[1][0].CH_DESADDR = 'd 8000;
+  topEnvConfigHandle.allChannelConfig[1][0].CH_SRCADDR = 'd 2000;
+  topEnvConfigHandle.allChannelConfig[1][0].CH_DESADDR = 'd 3500;
 
   // X SIZE -> SRCXSIZE == DESXSIZE
   topEnvConfigHandle.allChannelConfig[1][0].CH_XSIZE = 'h 000A000A;

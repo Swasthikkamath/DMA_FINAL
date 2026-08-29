@@ -127,8 +127,9 @@ end
               topEnvConfigHandle.regBlockHandle.CH_ERRINFO_inst[j].read(status,err);
               if(|err) begin //cfgerror & regvalerr
                $display("INCRRR");
-                toKillWhenInterrupt.kill();
-                executedCommand[j]++;
+         //        toKillWhenInterrupt.kill();
+                 topEnvConfigHandle.regBlockHandle.CH_STATUS_inst[j].write(status,.value('h20000));
+                 noChannels++;
               end 
             end
             else begin

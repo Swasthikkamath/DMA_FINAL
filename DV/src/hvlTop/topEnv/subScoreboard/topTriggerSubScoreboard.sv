@@ -306,6 +306,14 @@ task topTriggerSubScoreboard :: handleTriggerOut();
         sharedResource::triggerAccessed[sharedResource ::dmaChannelRegHandle[channel].CH_SRCTRIGINCFG.SRCTRIGINSEL]=0;
       if(sharedResource::disableChannel[channel]==0 && sharedResource::stopChannel[channel]==0)begin 
         if(sharedResource ::dmaChannelRegHandle[channel].CH_AUTOCFG.CMDRESTARTINFEN==1)begin
+          if(sharedResource::dmaChannelRegHandle[channel].CH_CTRL.DONETYPE==3)begin 
+           sharedResource::dmaChannelRegHandle[channel].CH_STATUS.STAT_DONE=1;
+            if(sharedResource::dmaChannelRegHandle[channel].CH_INTREN.INTREN_DONE ==1) begin
+              sharedResource::dmaChannelRegHandle[channel].CH_STATUS.INTR_DONE =1;
+              sharedResource::raiseInterrupt(channel,"DONE INTERRUPT RAISED");
+            end
+          end 
+
           sharedResource ::dmaChannelRegHandle[channel].CH_CMD.ENABLECMD=1;
           case(sharedResource ::dmaChannelRegHandle[channel].CH_CTRL.REGRELOADTYPE) 
             1: begin 
@@ -359,7 +367,15 @@ task topTriggerSubScoreboard :: handleTriggerOut();
 	        sharedResource::setUp1DAddress(channel);
 	        sharedResource :: setUpTrigger(channel);
         end 
-        else if(sharedResource::reloadCount[channel] !=0) begin  
+        else if(sharedResource::reloadCount[channel] !=0) begin 
+          if(sharedResource::dmaChannelRegHandle[channel].CH_CTRL.DONETYPE==3)begin 
+           sharedResource::dmaChannelRegHandle[channel].CH_STATUS.STAT_DONE=1;
+            if(sharedResource::dmaChannelRegHandle[channel].CH_INTREN.INTREN_DONE ==1) begin
+              sharedResource::dmaChannelRegHandle[channel].CH_STATUS.INTR_DONE =1;
+              sharedResource::raiseInterrupt(channel,"DONE INTERRUPT RAISED");
+            end
+          end 
+
           sharedResource ::dmaChannelRegHandle[channel].CH_CMD.ENABLECMD=1;
           case(sharedResource ::dmaChannelRegHandle[channel].CH_CTRL.REGRELOADTYPE) 
             1: begin 

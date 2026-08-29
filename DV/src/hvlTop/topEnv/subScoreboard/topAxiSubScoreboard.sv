@@ -890,6 +890,13 @@
 
       if(sharedResource ::dmaChannelRegHandle[arbitChannel].CH_CTRL.USETRIGOUT==0 && sharedResource::numberOfWriteReq[arbitChannel]==0 && sharedResource::numberOfReadReq[arbitChannel]==0)begin 
         // if no trigout use this to reload the register for auto reload
+        if(sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.DONETYPE==3)begin 
+           sharedResource::dmaChannelRegHandle[arbitChannel].CH_STATUS.STAT_DONE=1;
+            if(sharedResource::dmaChannelRegHandle[arbitChannel].CH_INTREN.INTREN_DONE ==1) begin
+              sharedResource::dmaChannelRegHandle[arbitChannel].CH_STATUS.INTR_DONE =1;
+              sharedResource::raiseInterrupt(arbitChannel,"DONE INTERRUPT RAISED");
+            end
+        end 
         if(sharedResource::disableChannel[arbitChannel]==1 || sharedResource::stopChannel[arbitChannel]==1) begin 
           continue;
         end 
