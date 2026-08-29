@@ -86,7 +86,7 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
   topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.CHPRIO=5;
   topEnvConfigHandle.allChannelConfig[1][0].CH_CTRL.CHPRIO=7;
   topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.DONETYPE=3;
-  topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.REGRELOADTYPE=7;
+  topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.REGRELOADTYPE=1;
 
   // CH_SRCADDR / CH_DESADDR
   topEnvConfigHandle.allChannelConfig[0][0].CH_SRCADDR = 'd 700;
