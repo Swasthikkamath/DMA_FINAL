@@ -18,7 +18,7 @@ endfunction
 function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDesYsizeAndHwTiAndHiTo::build_phase(uvm_phase phase);
   super.build_phase(phase);
   topEnvConfigHandle.numberOfCommandPerChannel.rand_mode(0);
-  topEnvConfigHandle.numberOfCommandPerChannel[0]=1;
+  topEnvConfigHandle.numberOfCommandPerChannel[0]=3;
   topEnvConfigHandle.numberOfCommandPerChannel[1]=1;
   foreach(topEnvConfigHandle.allChannelConfig[i]) begin
     topEnvConfigHandle.allChannelConfig[i] = new[topEnvConfigHandle.numberOfCommandPerChannel[i]];
@@ -73,7 +73,7 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
   // XTYPE = X_CONTINUE
   topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.XTYPE = X_CONTINUE;
 
-  topEnvConfigHandle.allChannelConfig[0][0].CH_AUTOCFG.CMDRESTARTCNT=0;
+  topEnvConfigHandle.allChannelConfig[0][0].CH_AUTOCFG.CMDRESTARTCNT=2;
   topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.DONEPAUSEEN=0;
 
   // ENABLE USETRIGOUT / USESRCTRIGIN / USEDESTRIGIN
@@ -85,8 +85,8 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
   topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.TRANSIZE = 2;
   topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.CHPRIO=5;
   topEnvConfigHandle.allChannelConfig[1][0].CH_CTRL.CHPRIO=7;
-  topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.DONETYPE=1;
-  topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.REGRELOADTYPE=5;
+  topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.DONETYPE=3;
+  topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.REGRELOADTYPE=7;
 
   // CH_SRCADDR / CH_DESADDR
   topEnvConfigHandle.allChannelConfig[0][0].CH_SRCADDR = 'd 700;
@@ -251,7 +251,7 @@ task dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDesYsizeAnd
   dma1DVirtualSeqHandle = dma1DVirtualSeq::type_id::create("dma1DVirtualSeqHandle");
   dma1DVirtualSeqHandle.topEnvConfigHandle =topEnvConfigHandle;
   dma1DVirtualSeqHandle.reqType = triggerGlobalPkg::BLOCK;
-  dma1DVirtualSeqHandle.bootEnable=1;
+  dma1DVirtualSeqHandle.bootEnable=0;
   dma1DVirtualSeqHandle.bootAddress = topEnvConfigHandle.addressIfLinking[0][0];
   dma1DVirtualSeqHandle.start(topEnvHandle.topEnvVirtualSequencerHandle);
   /*seq =dmaPollingVirtualSeq :: type_id :: create("test");

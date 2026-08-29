@@ -857,12 +857,12 @@ end
                         wr_next_st = W_ERROR_ST;end
             W_TRIG_OUT:
                 if (!use_trigout)
-                    wr_next_st = (rd_state != RD_IDLE) ? W_TRIG_OUT:W_DONE_ST;
+                    wr_next_st = !(rd_state == RD_IDLE ||((cmd_restart_en || (restart_cnt_reg1 != 0)) && src_x_left  == 0 && src_y_left  == 0 && des_x_left  == 0 && des_y_left  == 0 && (!(rd_state == RD_WRAP_FILL) || (fill_count == 0 && fill_count_y == 0))))  ? W_TRIG_OUT:W_DONE_ST;
                 else begin
                     if (trigout_type == 2'b00 && trig_out_ack_sw)
-                        wr_next_st =(rd_state != RD_IDLE)? W_TRIG_OUT : W_DONE_ST;
+                        wr_next_st =!(rd_state == RD_IDLE ||((cmd_restart_en || (restart_cnt_reg1 != 0)) && src_x_left  == 0 && src_y_left  == 0 && des_x_left  == 0 && des_y_left  == 0 && (!(rd_state == RD_WRAP_FILL) || (fill_count == 0 && fill_count_y == 0)))) ? W_TRIG_OUT : W_DONE_ST;
                     else if (trigout_type == 2'b10 && trig_out_ack)
-                         wr_next_st =(rd_state != RD_IDLE)? W_TRIG_OUT : W_DONE_ST;
+                         wr_next_st =/*(rd_state != RD_IDLE)? W_TRIG_OUT : */W_DONE_ST;
                 end
             
             W_DONE_ST:
@@ -2220,15 +2220,15 @@ end
                  if(use_trigout && trigout_type == 'b10 && trig_out_ack)
                         trig_out_req <= 0;
                  else if (use_trigout && trigout_type == 'b10)
-                   trig_out_req <= (rd_state != RD_IDLE)? 0 : 1;  
-                  else if (use_trigout && trigout_type == 'b00)             
-                        SWTRIGOUTACK_DATA <= (rd_state != RD_IDLE)? 0 : 1;  
+                        trig_out_req <= (rd_state == RD_IDLE ||((cmd_restart_en || (restart_cnt_reg1 != 0)) && src_x_left  == 0 && src_y_left  == 0 && des_x_left  == 0 && des_y_left  == 0 && (!(rd_state == RD_WRAP_FILL) || (fill_count == 0 && fill_count_y == 0)))) ? 1'b1 : 1'b0;                  
+                 else if (use_trigout && trigout_type == 'b00)             
+                        SWTRIGOUTACK_DATA <= (rd_state == RD_IDLE ||((cmd_restart_en || (restart_cnt_reg1 != 0)) && src_x_left  == 0 && src_y_left  == 0 && des_x_left  == 0 && des_y_left  == 0 && (!(rd_state == RD_WRAP_FILL) || (fill_count == 0 && fill_count_y == 0)))) ? 1 : 0;  
                         
                     if (use_trigout && !trig_out_ack_sw && trigout_type == 'b00) 
 
-                        STAT_TRIGOUTACKWAIT_DATA <= (rd_state != RD_IDLE)? 0 : 1'b1;
+                        STAT_TRIGOUTACKWAIT_DATA <=(rd_state == RD_IDLE ||((cmd_restart_en || (restart_cnt_reg1 != 0)) && src_x_left  == 0 && src_y_left  == 0 && des_x_left  == 0 && des_y_left  == 0 && (!(rd_state == RD_WRAP_FILL) || (fill_count == 0 && fill_count_y == 0)))) ? 1 : 1'b0;
                     else if (use_trigout && !trig_out_ack && trigout_type == 'b10)
-                        STAT_TRIGOUTACKWAIT_DATA <= (rd_state != RD_IDLE)? 0 : 1'b1;
+                        STAT_TRIGOUTACKWAIT_DATA <= (rd_state == RD_IDLE ||((cmd_restart_en || (restart_cnt_reg1 != 0)) && src_x_left  == 0 && src_y_left  == 0 && des_x_left  == 0 && des_y_left  == 0 && (!(rd_state == RD_WRAP_FILL) || (fill_count == 0 && fill_count_y == 0)))) ? 1 : 1'b0;
                     else 
                         STAT_TRIGOUTACKWAIT_DATA <= 1'b0;
                 end

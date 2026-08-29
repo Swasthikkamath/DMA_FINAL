@@ -262,7 +262,7 @@ module mux_logic #(parameter WIDTH = 32)
             // WORD 1 : STATUS
             if (chn_stat_wr_en_reg)
             mux_out_reg[(WIDTH*2)-1:(WIDTH*1)] <= cfg_channel_status;
-            else if (/*(link_en && data_done) || */cmd_done)
+            else //if (/*(link_en && data_done) || */cmd_done)
             mux_out_reg[51:48] <= 0;
             
             // WORD 2 : INTREN
