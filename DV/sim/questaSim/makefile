@@ -186,6 +186,7 @@ clean:
 regression:
 	rm -f regression_summary.log  # Remove old regression log before starting
 	make clean_simulate
+	make compile
 	python regression_handling.py $(testlist_name)
 	make merge_cov_report
 
