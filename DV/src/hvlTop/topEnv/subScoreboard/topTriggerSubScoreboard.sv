@@ -440,11 +440,12 @@ task topTriggerSubScoreboard :: handleTriggerOut();
 	        sharedResource::setUp1DAddress(channel);
 	        sharedResource :: setUpTrigger(channel);
           sharedResource::reloadCount[channel] = sharedResource::reloadCount[channel]-1;
+          $display("left count is %d",sharedResource::reloadCount[channel]);
         end 
       end 
 
        if(sharedResource::numberOfWriteReq[channel] ==0) begin
-         if(sharedResource::dmaChannelRegHandle[channel].CH_CTRL.DONETYPE==1) begin
+         if(sharedResource::dmaChannelRegHandle[channel].CH_CTRL.DONETYPE==1 || sharedResource::dmaChannelRegHandle[channel].CH_CTRL.DONETYPE==3) begin
            sharedResource::dmaChannelRegHandle[channel].CH_STATUS.STAT_DONE=1;
            if(sharedResource::dmaChannelRegHandle[channel].CH_INTREN.INTREN_DONE ==1) begin
              sharedResource::dmaChannelRegHandle[channel].CH_STATUS.INTR_DONE =1;

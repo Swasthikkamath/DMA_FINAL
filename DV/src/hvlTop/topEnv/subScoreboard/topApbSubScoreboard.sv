@@ -160,6 +160,7 @@ task topApbSubScoreboard :: handleApbTransaction();
 	      sharedResource ::setUp1DAddress(selectedChannel);
 	      `uvm_info("TOP_SCOREBOARD",$sformatf("THE COMMAND IN CHANNEL[%0D] HAS %0D AND %0d NUMBER OF EXPECTED READS AND WRITES",selectedChannel,sharedResource::numberOfReadReq[selectedChannel],sharedResource :: numberOfWriteReq[selectedChannel]),UVM_HIGH)
               sharedResource ::initiateSrcTriggerTransfer(selectedChannel);
+            sharedResource::reloadCount[selectedChannel]=sharedResource::dmaChannelRegHandle[selectedChannel].CH_AUTOCFG.CMDRESTARTCNT;
             end 
           end 
           else begin 

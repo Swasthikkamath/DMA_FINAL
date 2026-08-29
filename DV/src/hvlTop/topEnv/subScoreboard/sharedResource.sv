@@ -397,7 +397,7 @@ task sharedResource::initiateSrcTriggerTransfer(int channel);
   if(dmaChannelRegHandle[channel].CH_INTREN.INTREN_SRCTRIGINWAIT==1) begin
      dmaChannelRegHandle[channel].CH_STATUS.INTR_SRCTRIGINWAIT=1;
   end
-  reloadCount[channel]=dmaChannelRegHandle[channel].CH_AUTOCFG.CMDRESTARTCNT;
+  // reloadCount[channel]=dmaChannelRegHandle[channel].CH_AUTOCFG.CMDRESTARTCNT;
 
   // need a guard so that this block is not entered when the pause or stop sw commands is given 
   // Handle source trigger 

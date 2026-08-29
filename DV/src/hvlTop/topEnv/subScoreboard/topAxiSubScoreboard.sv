@@ -93,6 +93,41 @@
       bit[axi4_globals_pkg ::DATA_WIDTH-1:0]expectedCompr;
       peripheralUnitAxi4MasterPathWriteAddressAnalysisExport[master_id].get(addressTx);
       arbitChannel =  checkArbit(master_id,0);
+      if(master_id == axi4_globals_pkg::NO_OF_SLAVES) begin
+        int selectedInterface;
+        selectedInterface = master_id;
+        for(int i=0;i<dmaGlobalPkg::NUM_CHANNELS;i++) begin
+          int maxQos;
+          bit first;
+          if(sharedResource::dmaChannelRegHandle[i].CH_XADDRINC.DESXADDRINC>1 && sharedResource::priorityDesPerChannel[selectedInterface][i].commandDone !=1)begin
+           sharedResource::priorityDesPerChannel[selectedInterface][i].commandStart=1;
+            sharedResource::priorityDesPerChannel[selectedInterface][i].channelPri = sharedResource::dmaChannelRegHandle[i].CH_CTRL.CHPRIO; 
+          end 
+        end 
+        arbitChannel = checkArbit(selectedInterface,0);
+        $display("HI BYE HELLO");
+        sharedResource::dmaChannelRegHandle[arbitChannel].CH_ERRINFO.BUSERR = 1; //arbit using start and done and for this interface it will be 0 right 
+        sharedResource ::dmaChannelRegHandle[arbitChannel].CH_ERRINFO.ERRINFO.AXIRDRESPERR =1;
+        sharedResource ::dmaChannelRegHandle[arbitChannel].CH_STATUS.STAT_ERR =1; //come out of arbitration
+        if(sharedResource ::dmaChannelRegHandle[arbitChannel].CH_INTREN.INTREN_ERR ==1) begin
+          sharedResource ::raiseError(arbitChannel, "BUS ERROR");
+        end
+        //sharedResource::commandStatusPerChannel[arbitChannel].readDone=1;
+       /* for(int i=0;i<(axi4_globals_pkg :: NO_OF_SLAVES);i++) begin
+          if(sharedResource::initialSrcAddress[arbitChannel]>= sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].min_address && sharedResource::initialSrcAddress[arbitChannel]<sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].max_address) begin
+            selectedInterface=i;
+            break;
+          end
+        end
+*/
+        sharedResource::priorityDesPerChannel[selectedInterface][arbitChannel].commandDone =1; //exiting the arbitChannel
+        sharedResource::priorityDesPerChannel[selectedInterface][arbitChannel].commandStart =0; //exiting the arbitChannel
+        sharedResource::prioritySrcPerChannel[selectedInterface][arbitChannel].commandDone =1; //exiting the arbitChannel
+        sharedResource::commandStatusPerChannel[arbitChannel].readDone=0; 
+         sharedResource::waitForResp[arbitChannel] =1;
+        continue;
+      end
+
       if(sharedResource::commandStatusPerChannel[arbitChannel].readDone==1 && sharedResource::commandStatusPerChannel[arbitChannel].count>1)begin 
         sharedResource::commandStatusPerChannel[arbitChannel].readCounter[0] = sharedResource::commandStatusPerChannel[arbitChannel].readCounter[0] - (addressTx.awlen+1);
 
@@ -227,7 +262,7 @@
           sharedResource::dmaChannelRegHandle[arbitChannel].CH_XSIZE.DESXSIZE= sharedResource::expectedDesXsize[arbitChannel].pop_front();
           expected = sharedResource::channelQueue[arbitChannel].pop_front();
           if(expected!=writeData) begin
-            `uvm_error("TOP SCOREBOARD",$sformatf("WRITE DATA DOESNT MATCH WITH EXPECTED FIFO DATA when expectedData=%0h and ACTUAL IS %0h",expected,writeData))
+            `uvm_error("TOP SCOREBOARD",$sformatf("WRITE DATA DOESNT MATCH WITH EXPECTED FIFO DATA when expectedData=%0h and ACTUAL IS %0h channel is %d",expected,writeData,arbitChannel))
           end
           else begin 
             `uvm_info("TOP_SCOREBOARD",$sformatf("WRITE DATA MATCHES DATA IS %h",expected),UVM_HIGH)
@@ -319,7 +354,7 @@
         else begin
           expected = sharedResource::channelQueue[arbitChannel].pop_front();
           if(expected !=writeData)begin 
-            `uvm_error("TOP SCOREBOARD",$sformatf("WRITE DATA DOESNT MATCH WITH EXPECTED FIFO DATA when expectedData=%0h and ACTUAL IS %0h",expected,writeData))
+            `uvm_error("TOP SCOREBOARD",$sformatf("WRITE DATA DOESNT MATCH WITH EXPECTED FIFO DATA when expectedData=%0h and ACTUAL IS %0h channel is %d",expected,writeData,arbitChannel))
           end
           else begin 
             `uvm_info("TOP_SCOREBOARD",$sformatf("WRITE DATA MATCHES DATA IS %h",expected),UVM_HIGH)
@@ -370,31 +405,47 @@
       end 
 
   //    if((arbitChannel != raddr_tx.arid) && !(raddr_tx.araddr inside {sharedResource::topEnvConfigHandle.addressIfLinking[arbitChannel]}))begin 
-        `uvm_error("TOP_SCOREBOARD",$sformatf("ARBIT:EXPECTED CHANNEL IS %d GOT CHANNEL IS %d ",arbitChannel,raddr_tx.arid))
+        //`uvm_error("TOP_SCOREBOARD",$sformatf("ARBIT:EXPECTED CHANNEL IS %d GOT CHANNEL IS %d ",arbitChannel,raddr_tx.arid))
       //  end 
+      if(sharedResource::dmaChannelRegHandle[arbitChannel].CH_XADDRINC.SRCXADDRINC >1)begin 
+        sharedResource::commandStatusPerChannel[arbitChannel].readDone=1;
+      end 
       peripheralUnitAxi4SlavePathReadDataAnalysisExport[slave_id].get(rdata_tx);
       if(slave_id == axi4_globals_pkg::NO_OF_SLAVES) begin
         int selectedInterface;
+        selectedInterface = slave_id;
+        for(int i=0;i<dmaGlobalPkg::NUM_CHANNELS;i++) begin
+          int maxQos;
+          bit first;
+          if(sharedResource::dmaChannelRegHandle[i].CH_XADDRINC.SRCXADDRINC>1 && sharedResource::prioritySrcPerChannel[selectedInterface][i].commandDone !=1)begin
+            $display("TIERED OF THE ARBIT");
+           sharedResource::prioritySrcPerChannel[selectedInterface][i].commandStart=1;
+            sharedResource::prioritySrcPerChannel[selectedInterface][i].channelPri = sharedResource::dmaChannelRegHandle[i].CH_CTRL.CHPRIO; 
+          end 
+        end 
+        arbitChannel = checkArbit(selectedInterface,1);
         $display("HI BYE HELLO");
-        sharedResource::dmaChannelRegHandle[arbitChannel].CH_ERRINFO.BUSERR = 1;
+        sharedResource::dmaChannelRegHandle[arbitChannel].CH_ERRINFO.BUSERR = 1; //arbit using start and done and for this interface it will be 0 right 
         sharedResource ::dmaChannelRegHandle[arbitChannel].CH_ERRINFO.ERRINFO.AXIRDRESPERR =1;
         sharedResource ::dmaChannelRegHandle[arbitChannel].CH_STATUS.STAT_ERR =1; //come out of arbitration
         if(sharedResource ::dmaChannelRegHandle[arbitChannel].CH_INTREN.INTREN_ERR ==1) begin
           sharedResource ::raiseError(arbitChannel, "BUS ERROR");
         end
         //sharedResource::commandStatusPerChannel[arbitChannel].readDone=1;
-        for(int i=0;i<(axi4_globals_pkg :: NO_OF_SLAVES);i++) begin
+       /* for(int i=0;i<(axi4_globals_pkg :: NO_OF_SLAVES);i++) begin
           if(sharedResource::initialSrcAddress[arbitChannel]>= sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].min_address && sharedResource::initialSrcAddress[arbitChannel]<sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].max_address) begin
             selectedInterface=i;
             break;
           end
         end
-
-        sharedResource::priorityDesPerChannel[selectedInterface][arbitChannel].commandDone =1; //exiting the arbitChannel
-        sharedResource::priorityDesPerChannel[selectedInterface][arbitChannel].commandStart =0; //exiting the arbitChannel
+*/
+        sharedResource::priorityDesPerChannel[selectedInterface][arbitChannel].commandDone =0; //exiting the arbitChannel
+        sharedResource::priorityDesPerChannel[selectedInterface][arbitChannel].commandStart =1; //exiting the arbitChannel
         sharedResource::prioritySrcPerChannel[selectedInterface][arbitChannel].commandDone =1; //exiting the arbitChannel
+        sharedResource::commandStatusPerChannel[arbitChannel].readDone=1; 
         continue;
-      end  
+      end
+      `uvm_error("TOP_SCOREBOARD",$sformatf("ARBIT:EXPECTED CHANNEL IS %d GOT CHANNEL IS %d ",arbitChannel,raddr_tx.arid))
       if(((raddr_tx.araddr inside {sharedResource::topEnvConfigHandle.addressIfLinking[arbitChannel]}) && headerRead ==0 ) || (configUnitBootPathAnalysisExport[slave_id].used()>0 && (raddr_tx.araddr inside {[sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[slave_id].min_address :sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[slave_id].max_address]}))) begin
         int str;
         int address = raddr_tx.araddr;
@@ -814,10 +865,10 @@
       if(master_id == axi4_globals_pkg::NO_OF_SLAVES) begin
         int selectedInterface;
         sharedResource::dmaChannelRegHandle[arbitChannel].CH_ERRINFO.BUSERR = 1;
-        sharedResource ::dmaChannelRegHandle[arbitChannel].CH_ERRINFO.ERRINFO.AXIRDRESPERR =1;
+        sharedResource ::dmaChannelRegHandle[arbitChannel].CH_ERRINFO.ERRINFO.AXIWRRESPERR =1;
         sharedResource ::dmaChannelRegHandle[arbitChannel].CH_STATUS.STAT_ERR =1; //come out of arbitration
         if(sharedResource ::dmaChannelRegHandle[arbitChannel].CH_INTREN.INTREN_ERR ==1) begin
-          sharedResource ::raiseError(arbitChannel, "BUS ERROR");
+          sharedResource ::raiseError(arbitChannel, "BUS ERROR from default");
         end
         for(int i=0;i<(axi4_globals_pkg :: NO_OF_SLAVES);i++) begin
           if(sharedResource::initialDesAddress[arbitChannel]>= sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].min_address && sharedResource::initialDesAddress[arbitChannel]<sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].max_address) begin
@@ -825,7 +876,7 @@
             break;
           end
         end
-
+        $display("BUS ERR IN RESP");
         sharedResource::priorityDesPerChannel[selectedInterface][arbitChannel].commandDone =1; //exiting the arbitChannel
         continue;
       end 

@@ -128,8 +128,8 @@ function void topScoreboard::build_phase(uvm_phase phase);
   end 
   
   // Initialize AXI path tracking
-  sharedResource::prioritySrcPerChannel = new[axi4_globals_pkg :: NO_OF_SLAVES];
-  sharedResource::priorityDesPerChannel = new[axi4_globals_pkg :: NO_OF_SLAVES];
+  sharedResource::prioritySrcPerChannel = new[axi4_globals_pkg :: NO_OF_SLAVES+1];
+  sharedResource::priorityDesPerChannel = new[axi4_globals_pkg :: NO_OF_SLAVES+1];
 
   topAxiSubScoreboardHandle = topAxiSubScoreboard ::type_id :: create("topAxiSubScoreboardHandle",this);
   topApbSubScoreboardHandle = topApbSubScoreboard :: type_id :: create("topApbSubScoreboardHandle",this);
