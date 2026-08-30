@@ -18,8 +18,8 @@ endfunction
 function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDesYsizeAndHwTiAndHiTo::build_phase(uvm_phase phase);
   super.build_phase(phase);
   topEnvConfigHandle.numberOfCommandPerChannel.rand_mode(0);
-  topEnvConfigHandle.numberOfCommandPerChannel[0]=3;
-  topEnvConfigHandle.numberOfCommandPerChannel[1]=1;
+  topEnvConfigHandle.numberOfCommandPerChannel[0]=1;
+  topEnvConfigHandle.numberOfCommandPerChannel[1]=2;
   foreach(topEnvConfigHandle.allChannelConfig[i]) begin
     topEnvConfigHandle.allChannelConfig[i] = new[topEnvConfigHandle.numberOfCommandPerChannel[i]];
   end
@@ -73,7 +73,7 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
   // XTYPE = X_CONTINUE
   topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.XTYPE = X_CONTINUE;
 
-  topEnvConfigHandle.allChannelConfig[0][0].CH_AUTOCFG.CMDRESTARTCNT=2;
+  topEnvConfigHandle.allChannelConfig[0][0].CH_AUTOCFG.CMDRESTARTCNT=0;
   topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.DONEPAUSEEN=0;
 
   // ENABLE USETRIGOUT / USESRCTRIGIN / USEDESTRIGIN
@@ -85,7 +85,7 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
   topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.TRANSIZE = 2;
   topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.CHPRIO=5;
   topEnvConfigHandle.allChannelConfig[1][0].CH_CTRL.CHPRIO=7;
-  topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.DONETYPE=3;
+  topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.DONETYPE=1;
   topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.REGRELOADTYPE=1;
 
   // CH_SRCADDR / CH_DESADDR
@@ -233,13 +233,13 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
 
   topEnvConfigHandle.allChannelConfig[1][0].CH_CMD.DISABLECMD = 0;
   topEnvConfigHandle.allChannelConfig[1][0].CH_CMD.ENABLECMD = 1;
-  topEnvConfigHandle.allChannelConfig[1][0].CH_LINKADDR.LINKADDREN =0;
-  topEnvConfigHandle.allChannelConfig[1][0].CH_LINKADDR.LINKADDR = 3000;
+  topEnvConfigHandle.allChannelConfig[1][0].CH_LINKADDR.LINKADDREN =1;
+  topEnvConfigHandle.allChannelConfig[1][0].CH_LINKADDR.LINKADDR = 5000;
   //topEnvConfigHandle.allChannelConfig[0][1].CH_LINKADDR.LINKADDR = 000;
 
   // same way you can update the needed fields for confguring the respective channels as per req
   dump_config_to_file();
-  topEnvConfigHandle.addressIfLinking[0][0] = 3000;
+  topEnvConfigHandle.addressIfLinking[1][1] = 5000;
   setUpCommand();
 
 endfunction

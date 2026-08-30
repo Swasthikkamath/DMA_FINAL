@@ -39,7 +39,7 @@ module hdlTop;
   triggerInterface triggerInterfaceHandle[axi4_globals_pkg::NO_OF_SLAVES+1](pclk);
   bootInterface bootInterfaceHandle(pclk,preset_n);
 
-  top_mod#(.DATA_W(32)) u_dma (
+  top_mod#(.DATA_W(64)) u_dma (
     // APB
     .clk(pclk),
     .resetn(preset_n),

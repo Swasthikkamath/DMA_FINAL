@@ -235,16 +235,16 @@ task topTriggerSubScoreboard :: handleTriggerOut();
           if(sharedResource::numberOfReadReq[channel]==0)
             sharedResource::dmaChannelRegHandle[channel].CH_CMD.ENABLECMD=0;
           end
-       if(sharedResource::dmaChannelRegHandle[channel].CH_LINKADDR.LINKADDREN == 1 && sharedResource::dmaChannelRegHandle[channel].CH_LINKADDR.LINKADDR >0 && sharedResource::numberOfWriteReq[channel]==0) begin
+       if(sharedResource::dmaChannelRegHandle[channel].CH_LINKADDR.LINKADDREN == 1 && sharedResource::dmaChannelRegHandle[channel].CH_LINKADDR.LINKADDR >0 && sharedResource::numberOfWriteReq[channel]==0 && sharedResource::disableChannel[channel]==0) begin
         int slave_id;
         for(int i=0;i<(axi4_globals_pkg :: NO_OF_SLAVES);i++) begin
-          if(sharedResource::dmaChannelRegHandle[channel].CH_SRCADDR>= sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].min_address && sharedResource::dmaChannelRegHandle[channel].CH_SRCADDR<sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].max_address) begin
+          if(sharedResource::dmaChannelRegHandle[channel].CH_LINKADDR.LINKADDR >= sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].min_address && sharedResource::dmaChannelRegHandle[channel].CH_LINKADDR.LINKADDR<sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].max_address) begin
             slave_id =i;
             break;
           end
         end
 
-        $displa("STARTED LINK EN FOR ARBIT FOR CHANNEL %d",channel);
+        $display("STARTED LINK EN FOR ARBIT FOR CHANNEL %d slave id is %d link addr is %d",channel,slave_id,sharedResource::dmaChannelRegHandle[channel].CH_LINKADDR.LINKADDR);
         sharedResource::dmaChannelRegHandle[channel].CH_CMD.ENABLECMD=1;
         sharedResource::prioritySrcPerChannel[slave_id][channel].commandStart=1;
         sharedResource::prioritySrcPerChannel[slave_id][channel].commandDone=0;

@@ -438,7 +438,7 @@
         sharedResource::commandStatusPerChannel[arbitChannel].readDone=1; 
         continue;
       end
-      `uvm_error("TOP_SCOREBOARD",$sformatf("ARBIT:EXPECTED CHANNEL IS %d GOT CHANNEL IS %d ",arbitChannel,raddr_tx.arid))
+      `uvm_error("TOP_SCOREBOARD",$sformatf("ARBIT:EXPECTED CHANNEL IS %d GOT CHANNEL IS %d arbit if linking is %p",arbitChannel,raddr_tx.arid,sharedResource::topEnvConfigHandle.addressIfLinking[arbitChannel]))
       if(((raddr_tx.araddr inside {sharedResource::topEnvConfigHandle.addressIfLinking[arbitChannel]}) && headerRead ==0 ) || (configUnitBootPathAnalysisExport[slave_id].used()>0 && (raddr_tx.araddr inside {[sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[slave_id].min_address :sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[slave_id].max_address]}))) begin
         int str;
         int address = raddr_tx.araddr;
@@ -882,10 +882,21 @@
         sharedResource::dmaChannelRegHandle[arbitChannel].CH_CMD.ENABLECMD=0;
       end
       if(sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.USETRIGOUT==0 && sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDREN == 1 && sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDR >0 && sharedResource::numberOfWriteReq[arbitChannel]==0) begin
+        int slave_id;
+        for(int i=0;i<(axi4_globals_pkg :: NO_OF_SLAVES);i++) begin
+          if(sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDR >= sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].min_address && sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDR<sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].max_address) begin
+            slave_id =i;
+            break;
+          end
+        end
+
+        $display("STARTED LINK EN FOR ARBIT FOR CHANNEL %d slave id is %d link addr is %d",arbitChannel,slave_id,sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDR);
+
         sharedResource::dmaChannelRegHandle[arbitChannel].CH_CMD.ENABLECMD=1;
-        sharedResource::prioritySrcPerChannel[master_id][arbitChannel].commandStart=0;
-        sharedResource::prioritySrcPerChannel[master_id][arbitChannel].commandDone=1;
+        sharedResource::prioritySrcPerChannel[slave_id][arbitChannel].commandStart=1;
+        sharedResource::prioritySrcPerChannel[slave_id][arbitChannel].commandDone=0;
         sharedResource::commandStatusPerChannel[arbitChannel].readDone=0;
+        
       end
 
       if(sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.USETRIGOUT==1 && sharedResource::numberOfWriteReq[arbitChannel]==0 && sharedResource::numberOfReadReq[arbitChannel]==0) begin
