@@ -36,9 +36,9 @@ task axi4_slave_nbk_write_64b_transfer_seq::body();
 
   start_item(req);
   if(!req.randomize())begin
-      `uvm_fatal("axi4","Rand failed");
+    `uvm_fatal("axi4","Rand failed");
   end
-  `uvm_info("SLAVE_WRITE_NBK_SEQ", $sformatf("slave_seq = \n%s",req.sprint()), UVM_NONE); 
+  `uvm_info("SLAVE_WRITE_NBK_SEQ", $sformatf("slave_seq = \n%s",req.sprint()), UVM_HIGH);
   finish_item(req);
 
 endtask : body

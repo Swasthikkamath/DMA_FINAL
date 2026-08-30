@@ -693,7 +693,7 @@ task sharedResource::setUp1DAddress(int channel);
         if(calculateSrcXsize == 1 && (determineNumberOfReads(channel) >srcXsize)) begin
           calculateSrcXsize = (determineNumberOfReads(channel) +1);
         end
-        `uvm_info("TOP_SCOREBOARD",$sformatf("1D Excepted Write Addr:%p, Excepted Read Addr:%p",expectedWriteAddr,expectedReadAddr),UVM_NONE)
+        `uvm_info("TOP_SCOREBOARD",$sformatf("1D Expected Write Addr:%p, Expected Read Addr:%p",expectedWriteAddr,expectedReadAddr),UVM_HIGH)
       end
     end
 
@@ -758,7 +758,7 @@ task sharedResource::setUp1DAddress(int channel);
         end
         expectedWriteAddr[channel].push_back(desAddr +(i * beat_bytes));
 
-        `uvm_info("TOP_SCOREBOARD",$sformatf("1D Excepted Write Addr:%p, Excepted Read Addr:%p",expectedWriteAddr,expectedReadAddr),UVM_NONE)
+        `uvm_info("TOP_SCOREBOARD",$sformatf("1D Expected Write Addr:%p, Expected Read Addr:%p",expectedWriteAddr,expectedReadAddr),UVM_HIGH)
       end
     end
 
@@ -775,7 +775,7 @@ task sharedResource::setUp1DAddress(int channel);
         totalTransferPerRow++;
         totalElements++;
         expectedReadAddr[channel].push_back(push_addr);
-        `uvm_info("TOP_SCOREBOARD",$sformatf("2D Excepted Read Addr:%p and qsize is %0d row_no=%0d srcysize=%0d noOfElem=%0d ytype %s",expectedReadAddr,expectedReadAddr[channel].size(),row_no,srcYsize,totalTransferPerRow,yType),UVM_NONE)
+        `uvm_info("TOP_SCOREBOARD",$sformatf("2D Expected Read Addr:%p and qsize is %0d row_no=%0d srcysize=%0d noOfElem=%0d ytype %s",expectedReadAddr,expectedReadAddr[channel].size(),row_no,srcYsize,totalTransferPerRow,yType),UVM_HIGH)
 
         calculateSrcXsize--;
         expectedSrcXsize[channel].push_back(calculateSrcXsize);
@@ -1042,16 +1042,16 @@ task sharedResource::initiateTriggerOutTransfer(int channel);
     end
 
     if(numberOfReadReq[channel] != 0) begin
-      `uvm_error("TOP SCOREBOARD","NUMBER OF EXPECTED READS HAS NOT TAKEN PLACE")
+      `uvm_error("TOP_SCOREBOARD","NUMBER OF EXPECTED READS HAS NOT TAKEN PLACE")
     end
     else begin
-      `uvm_info("TOP SCOREBOARD","NUMBER OF EXPECTED READS HAS TAKEN PLACE ",UVM_HIGH)
+      `uvm_info("TOP_SCOREBOARD","NUMBER OF EXPECTED READS HAS TAKEN PLACE ",UVM_HIGH)
     end
     if(numberOfWriteReq[channel] != 0) begin
-      `uvm_error("TOP SCOREBOARD","NUMBER OF EXPECTED WRITES HAS NOT TAKEN PLACE ")
+      `uvm_error("TOP_SCOREBOARD","NUMBER OF EXPECTED WRITES HAS NOT TAKEN PLACE ")
     end
     else begin
-      `uvm_info("TOP SCOREBOARD","NUMBER OF EXPECTED WRITES HAS TAKEN PLACE ",UVM_HIGH)
+      `uvm_info("TOP_SCOREBOARD","NUMBER OF EXPECTED WRITES HAS TAKEN PLACE ",UVM_HIGH)
     end
   end
   else begin

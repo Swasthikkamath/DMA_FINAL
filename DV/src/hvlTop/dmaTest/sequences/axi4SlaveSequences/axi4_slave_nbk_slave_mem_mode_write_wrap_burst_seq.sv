@@ -38,7 +38,7 @@ task axi4_slave_nbk_slave_mem_mode_write_wrap_burst_seq::body();
   if(!req.randomize)begin
     `uvm_fatal("axi4","Rand failed");
   end
-  `uvm_info(get_type_name(), $sformatf("slave_seq \n%s",req.sprint()), UVM_NONE); 
+  `uvm_info(get_type_name(), $sformatf("slave_seq \n%s",req.sprint()), UVM_HIGH);
   finish_item(req);
 
 endtask : body

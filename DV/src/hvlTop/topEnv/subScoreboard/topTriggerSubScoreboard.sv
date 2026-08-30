@@ -64,7 +64,7 @@ task topTriggerSubScoreboard::handleTriggers();
                   // Read operation (source trigger)
                   sharedResource ::dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE =sharedResource ::numberOfReadReq[channel];
                   sharedResource::trigSrcInfoChannel[channel] = trigReqEnum'(sharedResource::topEnvConfigHandle.peripheralEnvConfigHandle.triggerSlaveAgentConfigHandle[triggerNum].srcReqType);
-                  `uvm_info("TOP_SCOREBOARD",$sformatf("TRIGGER TYPE RECEIVED IN SOURCE END IS %s",sharedResource ::trigSrcInfoChannel[channel]),UVM_NONE)
+                  `uvm_info("TOP_SCOREBOARD",$sformatf("TRIGGER TYPE RECEIVED IN SOURCE END IS %s",sharedResource ::trigSrcInfoChannel[channel]),UVM_MEDIUM)
                   for(int i=0;i<(axi4_globals_pkg :: NO_OF_SLAVES);i++) begin
                     if(sharedResource::dmaChannelRegHandle[channel].CH_SRCADDR>= sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].min_address && sharedResource::dmaChannelRegHandle[channel].CH_SRCADDR<sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].max_address) begin
                       selectedInterface=i;
@@ -140,7 +140,7 @@ task topTriggerSubScoreboard::handleTriggers();
                 // Read operation (source trigger)
                 sharedResource ::dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE =sharedResource ::numberOfReadReq[channel];
                 sharedResource::trigSrcInfoChannel[channel] = trigReqEnum'(triggerTx.reqType);
-                `uvm_info("TOP_SCOREBOARD",$sformatf("TRIGGER TYPE RECEIVED IN SOURCE END IS %s",sharedResource ::trigSrcInfoChannel[channel]),UVM_NONE)
+                `uvm_info("TOP_SCOREBOARD",$sformatf("TRIGGER TYPE RECEIVED IN SOURCE END IS %s",sharedResource ::trigSrcInfoChannel[channel]),UVM_MEDIUM)
                 for(int i=0;i<(axi4_globals_pkg :: NO_OF_SLAVES);i++) begin
                   if(sharedResource::dmaChannelRegHandle[channel].CH_SRCADDR>= sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].min_address && sharedResource::dmaChannelRegHandle[channel].CH_SRCADDR<sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].max_address) begin
                     selectedInterface=i;
@@ -271,23 +271,23 @@ task topTriggerSubScoreboard :: handleTriggerOut();
         sharedResource::triggerOutAccessed[triggerNum]=0;
 
         if(sharedResource::numberOfReadReq[channel] == 0) begin
-          `uvm_info("TOP SCOREBOARD","NUMBER OF EXPECTED READS HAS TAKEN PLACE",UVM_HIGH)
+          `uvm_info("TOP_SCOREBOARD","NUMBER OF EXPECTED READS HAS TAKEN PLACE",UVM_HIGH)
         end
         else if(sharedResource::numberOfReadReq[channel] < 0)begin
-          `uvm_error("TOP SCOREBOARD","MORE READ HAS OCCURED THAN EXPECTED ")
+          `uvm_error("TOP_SCOREBOARD","MORE READ HAS OCCURED THAN EXPECTED ")
         end
         else begin
-          `uvm_error("TOP SCOREBOARD","NUMBER OF EXPECTED READS HAS NOT TAKEN PLACE")
+          `uvm_error("TOP_SCOREBOARD","NUMBER OF EXPECTED READS HAS NOT TAKEN PLACE")
         end
 
         if(sharedResource::numberOfWriteReq[channel] == 0) begin
-          `uvm_info("TOP SCOREBOARD","NUMBER OF EXPECTED WRITES HAS TAKEN PLACE",UVM_HIGH)
+          `uvm_info("TOP_SCOREBOARD","NUMBER OF EXPECTED WRITES HAS TAKEN PLACE",UVM_HIGH)
         end
         else if(sharedResource::numberOfWriteReq[channel] < 0)begin
-          `uvm_error("TOP SCOREBOARD","MORE WRITES HAS OCCURED THAN EXPECTED ")
+          `uvm_error("TOP_SCOREBOARD","MORE WRITES HAS OCCURED THAN EXPECTED ")
         end
         else begin
-          `uvm_error("TOP SCOREBOARD","NUMBER OF EXPECTED WRITES HAS NOT TAKEN PLACE")
+          `uvm_error("TOP_SCOREBOARD","NUMBER OF EXPECTED WRITES HAS NOT TAKEN PLACE")
         end
 
         if(sharedResource::dmaChannelRegHandle[channel].CH_SRCTRIGINCFG.SRCTRIGINTYPE ==2'b 10) begin

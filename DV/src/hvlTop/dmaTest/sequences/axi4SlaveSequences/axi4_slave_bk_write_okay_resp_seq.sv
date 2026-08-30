@@ -34,13 +34,13 @@ endfunction : new
 task axi4_slave_bk_write_okay_resp_seq::body();
   super.body();
   req.transfer_type=OUTSTANDING_WRITE;
-  
+
   start_item(req);
   if(!req.randomize)begin
     `uvm_fatal("axi4","Rand failed");
   end
-  
-  `uvm_info(get_type_name(), $sformatf("slave_seq \n%s",req.sprint()), UVM_NONE); 
+
+  `uvm_info(get_type_name(), $sformatf("slave_seq \n%s",req.sprint()), UVM_HIGH);
   finish_item(req);
 
 endtask :body

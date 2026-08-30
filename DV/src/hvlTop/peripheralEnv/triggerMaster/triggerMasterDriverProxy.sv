@@ -1,5 +1,5 @@
 `ifndef TRIGGERMASTERDRIVERPROXY_INCLUDED
-`define TRIGGERMASTERDRIVERPROXY_INCLUDED 
+`define TRIGGERMASTERDRIVERPROXY_INCLUDED
 
 //------------------------------------------------------------------------------
 // Class: triggerMasterDriverProxy
@@ -17,7 +17,7 @@ class triggerMasterDriverProxy extends uvm_driver#(triggerMasterTx);
 
   // Handle to agent configuration
   triggerMasterAgentConfig triggerMasterAgentConfigHandle;
-  
+
   // Constructor
   extern function new(string name = "triggerMasterDriverProxy",uvm_component parent = null);
 
@@ -27,7 +27,7 @@ class triggerMasterDriverProxy extends uvm_driver#(triggerMasterTx);
   // Run phase
   extern virtual task run_phase(uvm_phase phase);
 
-endclass 
+endclass
 
 
 //------------------------------------------------------------------------------
@@ -48,7 +48,7 @@ function void triggerMasterDriverProxy :: build_phase(uvm_phase phase);
 
   // Assign BFM handle from config
   triggerMasterDriverBfmHandle = triggerMasterAgentConfigHandle.triggerMasterDriverBfmHandle;
-endfunction  
+endfunction
 
 
 //------------------------------------------------------------------------------
@@ -62,17 +62,17 @@ endfunction
 //------------------------------------------------------------------------------
 task triggerMasterDriverProxy :: run_phase(uvm_phase phase);
   super.run_phase(phase);
-  fork 
+  fork
     forever begin
       // Struct packet handle used for BFM communication
       triggerStructPacket triggerStructPacketHandle;
- 
+
       // Get next transaction from sequence
       seq_item_port.get_next_item(req);
 
       // Print received transaction
       `uvm_info(get_type_name(), $sformatf("TriggerMASTER-TX\n %s",req.sprint),UVM_HIGH);
-  
+
       // Convert class transaction to struct
       triggerMasterSeqItemConverter::from_class(req,triggerStructPacketHandle);
 
@@ -83,16 +83,16 @@ task triggerMasterDriverProxy :: run_phase(uvm_phase phase);
       triggerMasterSeqItemConverter::to_class(triggerStructPacketHandle, req);
 
       // Debug print after driving
-      `uvm_info(get_type_name(), $sformatf("AFTER :: received req packet in Trigger Master Driver \n %s",req.sprint()),UVM_NONE);
+      `uvm_info(get_type_name(), $sformatf("AFTER :: received req packet in Trigger Master Driver \n %s",req.sprint()),UVM_HIGH);
 
       // Inform sequence that item is done
       seq_item_port.item_done();
     end
-    forever begin 
+    forever begin
       triggerStructPacket triggerStructPacketHandle;
       triggerMasterDriverBfmHandle.triggerDriveOut(triggerStructPacketHandle);
-    end 
+    end
   join
-endtask 
+endtask
 
 `endif

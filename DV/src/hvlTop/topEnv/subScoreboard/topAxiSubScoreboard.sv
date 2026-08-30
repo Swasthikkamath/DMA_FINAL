@@ -212,7 +212,7 @@ task topAxiSubScoreboard::handleAxi4MasterWrite(int master_id);
           for(int i=0,j=0;i<(2**(addressTx.awsize));i++) begin
             j =expectedAddr %((axi4_globals_pkg::DATA_WIDTH)/8);
             if(writeData[8*j +:8] != sharedResource::dmaChannelRegHandle[arbitChannel].CH_FILLVAL[8*i +:8]) begin
-              `uvm_error("TOP SCOREBOARD",$sformatf("FILL VAL CHECK FOR BYTE %d FAILED WHEN ACTUAL DATA IS %H AND FILL VAL IS %h",i,writeData,sharedResource::dmaChannelRegHandle[arbitChannel].CH_FILLVAL))
+              `uvm_error("TOP_SCOREBOARD",$sformatf("FILL VAL CHECK FOR BYTE %d FAILED WHEN ACTUAL DATA IS %H AND FILL VAL IS %h",i,writeData,sharedResource::dmaChannelRegHandle[arbitChannel].CH_FILLVAL))
             end
             else begin
               `uvm_info("TOP_SCOREBOARD","FILL VAL BYTE MATCHES",UVM_HIGH)
@@ -247,7 +247,7 @@ task topAxiSubScoreboard::handleAxi4MasterWrite(int master_id);
         sharedResource::dmaChannelRegHandle[arbitChannel].CH_XSIZE.DESXSIZE= sharedResource::expectedDesXsize[arbitChannel].pop_front();
         expected = sharedResource::channelQueue[arbitChannel].pop_front();
         if(expected!=writeData) begin
-          `uvm_error("TOP SCOREBOARD",$sformatf("WRITE DATA DOESNT MATCH WITH EXPECTED FIFO DATA when expectedData=%0h and ACTUAL IS %0h channel is %d",expected,writeData,arbitChannel))
+          `uvm_error("TOP_SCOREBOARD",$sformatf("WRITE DATA DOESNT MATCH WITH EXPECTED FIFO DATA when expectedData=%0h and ACTUAL IS %0h channel is %d",expected,writeData,arbitChannel))
         end
         else begin
           `uvm_info("TOP_SCOREBOARD",$sformatf("WRITE DATA MATCHES DATA IS %h",expected),UVM_HIGH)
@@ -324,7 +324,7 @@ task topAxiSubScoreboard::handleAxi4MasterWrite(int master_id);
         for(int i=0,j=0;i<(2**(addressTx.awsize));i++) begin
           j =expectedAddr %((axi4_globals_pkg::DATA_WIDTH)/8);
           if(writeData[8*j +:8] != sharedResource::dmaChannelRegHandle[arbitChannel].CH_FILLVAL    [8*i +:8]) begin
-            `uvm_error("TOP SCOREBOARD",$sformatf("FILL VAL CHECK FOR BYTE %d FAILED WHEN ACTUA    L DATA IS %H AND FILL VAL IS %h",i,writeData,sharedResource::dmaChannelRegHandle[arbitChannel].CH_FILLVAL))
+            `uvm_error("TOP_SCOREBOARD",$sformatf("FILL VAL CHECK FOR BYTE %d FAILED WHEN ACTUA    L DATA IS %H AND FILL VAL IS %h",i,writeData,sharedResource::dmaChannelRegHandle[arbitChannel].CH_FILLVAL))
           end
           else begin
             `uvm_info("TOP_SCOREBOARD","FILL VAL BYTE MATCHES",UVM_HIGH)
@@ -335,7 +335,7 @@ task topAxiSubScoreboard::handleAxi4MasterWrite(int master_id);
       else begin
         expected = sharedResource::channelQueue[arbitChannel].pop_front();
         if(expected !=writeData)begin
-          `uvm_error("TOP SCOREBOARD",$sformatf("WRITE DATA DOESNT MATCH WITH EXPECTED FIFO DATA when expectedData=%0h and ACTUAL IS %0h channel is %d",expected,writeData,arbitChannel))
+          `uvm_error("TOP_SCOREBOARD",$sformatf("WRITE DATA DOESNT MATCH WITH EXPECTED FIFO DATA when expectedData=%0h and ACTUAL IS %0h channel is %d",expected,writeData,arbitChannel))
         end
         else begin
           `uvm_info("TOP_SCOREBOARD",$sformatf("WRITE DATA MATCHES DATA IS %h",expected),UVM_HIGH)
@@ -436,23 +436,23 @@ task topAxiSubScoreboard::handleAxi4SlaveRead(int slave_id);
       headerRead=1;
 
       configUnitBootPathAnalysisExport[slave_id].flush();
-      `uvm_info("TOP_SCOREBOARD",$sformatf("STARTED COMMAND LINKING FOR CHANNEL %0d",arbitChannel),UVM_NONE)
+      `uvm_info("TOP_SCOREBOARD",$sformatf("STARTED COMMAND LINKING FOR CHANNEL %0d",arbitChannel),UVM_LOW)
       sharedResource::commandDone[sharedResource ::dmaChannelRegHandle[arbitChannel].CH_SRCTRIGINCFG.SRCTRIGINSEL] = 0;
       sharedResource::commandDone[sharedResource ::dmaChannelRegHandle[arbitChannel].CH_DESTRIGINCFG.DESTRIGINSEL] =0;
       sharedResource::dmaChannelRegHandle[arbitChannel].CH_STATUS.STAT_DONE=0;
       sharedResource::dmaChannelRegHandle[arbitChannel].CH_STATUS.INTR_DONE =0;
 
       if(sharedResource::numberOfReadReq[arbitChannel] != 0) begin
-        `uvm_error("TOP SCOREBOARD","NUMBER OF EXPECTED READS HAS NOT TAKEN PLACE")
+        `uvm_error("TOP_SCOREBOARD","NUMBER OF EXPECTED READS HAS NOT TAKEN PLACE")
       end
       else begin
-        `uvm_info("TOP SCOREBOARD","NUMBER OF EXPECTED READS HAS TAKEN PLACE ",UVM_DEBUG)
+        `uvm_info("TOP_SCOREBOARD","NUMBER OF EXPECTED READS HAS TAKEN PLACE ",UVM_DEBUG)
       end
       if(sharedResource::numberOfWriteReq[arbitChannel] != 0) begin
-        `uvm_error("TOP SCOREBOARD","NUMBER OF EXPECTED WRITES HAS NOT TAKEN PLACE ")
+        `uvm_error("TOP_SCOREBOARD","NUMBER OF EXPECTED WRITES HAS NOT TAKEN PLACE ")
       end
       else begin
-        `uvm_info("TOP SCOREBOARD","NUMBER OF EXPECTED WRITES HAS TAKEN PLACE ",UVM_DEBUG)
+        `uvm_info("TOP_SCOREBOARD","NUMBER OF EXPECTED WRITES HAS TAKEN PLACE ",UVM_DEBUG)
       end
 
       addr = raddr_tx.araddr;
@@ -643,7 +643,7 @@ task topAxiSubScoreboard::handleAxi4SlaveRead(int slave_id);
           end
           else begin
             expectedData[8*j +:8] = rdata_tx.rdata[0][8*j +:8];
-            `uvm_info("TOP_SCOREBOARd",$sformatf("PUSHING THE DATA INTO CHANNEL FIFO THE DATA IS %0h AND CHANNEL IS %0d",expectedData,arbitChannel),UVM_HIGH)
+            `uvm_info("TOP_SCOREBOARD",$sformatf("PUSHING THE DATA INTO CHANNEL FIFO THE DATA IS %0h AND CHANNEL IS %0d",expectedData,arbitChannel),UVM_HIGH)
           end
         end
         sharedResource::dmaChannelRegHandle[arbitChannel].CH_XSIZE.SRCXSIZE= sharedResource::expectedSrcXsize[arbitChannel].pop_front();
@@ -714,7 +714,7 @@ task topAxiSubScoreboard::handleAxi4SlaveRead(int slave_id);
               end
               else begin
                 expectedData[8*j +:8] = rdata_tx.rdata[0][8*j +:8];
-                `uvm_info("TOP_SCOREBOARd",$sformatf("PUSHING THE DATA INTO CHANNEL FIFO THE DATA IS %h AND CHANNEL IS %0d slave is %d ARBIT CHANNEL IS %0d",expectedData,arbitChannel,slave_id,arbitChannel),UVM_NONE)
+                `uvm_info("TOP_SCOREBOARD",$sformatf("PUSHING THE DATA INTO CHANNEL FIFO THE DATA IS %h AND CHANNEL IS %0d slave is %d ARBIT CHANNEL IS %0d",expectedData,arbitChannel,slave_id,arbitChannel),UVM_HIGH)
               end
             end
             sharedResource::channelQueue[arbitChannel].push_back(expectedData);
@@ -781,7 +781,7 @@ task topAxiSubScoreboard::handleAxi4SlaveRead(int slave_id);
             end
             else begin
               expectedData[8*j +:8] = rdata_tx.rdata[0][8*j +:8];
-              `uvm_info("TOP_SCOREBOARd",$sformatf("PUSHING THE DATA INTO CHANNEL FIFO THE DATA IS %0h AND CHANNEL IS %0d slave is %d ARBIT CHANNEL IS %0d",expectedData,arbitChannel,slave_id,arbitChannel),UVM_NONE)
+              `uvm_info("TOP_SCOREBOARD",$sformatf("PUSHING THE DATA INTO CHANNEL FIFO THE DATA IS %0h AND CHANNEL IS %0d slave is %d ARBIT CHANNEL IS %0d",expectedData,arbitChannel,slave_id,arbitChannel),UVM_HIGH)
             end
           end
           sharedResource::dmaChannelRegHandle[arbitChannel].CH_SRCADDR = expectedAddr;
@@ -805,7 +805,7 @@ task topAxiSubScoreboard::handleAxi4SlaveRead(int slave_id);
             sharedResource:: prioritySrcPerChannel[slave_id][arbitChannel].commandStart=0;
             sharedResource::prioritySrcPerChannel[slave_id][arbitChannel].commandDone=1;
           end
-          //`uvm_info("TOP_SCOREBOARd",$sformatf("PUSHING THE DATA INTO CHANNEL FIFO THE DATA IS %0h AND CHANNEL IS %0d",expectedData,arbitChannel),UVM_HIGH)
+          //`uvm_info("TOP_SCOREBOARD",$sformatf("PUSHING THE DATA INTO CHANNEL FIFO THE DATA IS %0h AND CHANNEL IS %0d",expectedData,arbitChannel),UVM_HIGH)
         end
       end
     end

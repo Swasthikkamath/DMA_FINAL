@@ -32,17 +32,17 @@ endfunction : new
 //--------------------------------------------------------------------------------------------
 task axi4_slave_bk_write_cross_seq::body();
   super.body();
-begin 
-  req.transfer_type = OUTSTANDING_WRITE;
+  begin
+    req.transfer_type = OUTSTANDING_WRITE;
 
-  start_item(req);
-  if(!req.randomize())begin
-    `uvm_fatal("axi4","Rand failed");
+    start_item(req);
+    if(!req.randomize())begin
+      `uvm_fatal("axi4","Rand failed");
+    end
+    `uvm_info("SLAVE_WRITE_bk_SEQ", $sformatf("slave_seq = \n%s",req.sprint()), UVM_HIGH);
+    finish_item(req);
+
   end
-  `uvm_info("SLAVE_WRITE_bk_SEQ", $sformatf("slave_seq = \n%s",req.sprint()), UVM_NONE); 
-  finish_item(req);
-
-end
 endtask : body
 
 `endif

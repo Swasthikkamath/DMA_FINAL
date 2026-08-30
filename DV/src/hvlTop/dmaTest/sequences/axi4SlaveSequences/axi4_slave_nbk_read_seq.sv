@@ -33,12 +33,12 @@ endfunction : new
 task axi4_slave_nbk_read_seq::body();
   super.body();
   req.transfer_type=NON_OUTSTANDING_READ;
-  
+
   start_item(req);
   if(!req.randomize())begin
     `uvm_fatal("axi4","Rand failed");
   end
-  `uvm_info("SLAVE_READ_NBK_SEQ", $sformatf("slave_seq = \n%s",req.sprint()), UVM_NONE); 
+  `uvm_info("SLAVE_READ_NBK_SEQ", $sformatf("slave_seq = \n%s",req.sprint()), UVM_HIGH);
   finish_item(req);
 
 endtask : body

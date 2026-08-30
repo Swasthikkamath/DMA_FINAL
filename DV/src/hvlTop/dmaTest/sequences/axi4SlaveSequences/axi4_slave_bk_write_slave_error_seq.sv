@@ -38,7 +38,7 @@ task axi4_slave_bk_write_slave_error_seq::body();
   if(!req.randomize())begin
     `uvm_fatal("axi4","Rand failed");
   end
-  `uvm_info("SLAVE_WRITE_bk_SEQ", $sformatf("slave_seq = \n%s",req.sprint()), UVM_NONE); 
+  `uvm_info("SLAVE_WRITE_bk_SEQ", $sformatf("slave_seq = \n%s",req.sprint()), UVM_HIGH);
   finish_item(req);
 
 endtask : body
