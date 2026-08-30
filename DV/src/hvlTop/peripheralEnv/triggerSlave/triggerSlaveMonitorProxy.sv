@@ -1,5 +1,5 @@
 `ifndef TRIGGERSLAVEMONITORPROXY_INCLUDED
-`define TRIGGERSLAVEMONITORPROXY_INCLUDED 
+`define TRIGGERSLAVEMONITORPROXY_INCLUDED
 
 //------------------------------------------------------------------------------
 // Class: triggerSlaveMonitorProxy
@@ -20,11 +20,11 @@ class triggerSlaveMonitorProxy extends uvm_monitor;
 
   // Analysis port to send monitored transactions
   uvm_analysis_port #(triggerSlaveTx) triggerSlaveMonitorAnalysisPort;
-  
+
   // Analysis port to send monitored transactions
   uvm_analysis_port #(triggerSlaveTx) triggerOutSlaveMonitorAnalysisPort;
 
-  //Flag declaration to ensure only one trig out monitored 
+  //Flag declaration to ensure only one trig out monitored
   bit flag;
   // Constructor
   extern function new(string name = "triggerSlaveMonitorProxy",uvm_component parent = null);
@@ -35,7 +35,7 @@ class triggerSlaveMonitorProxy extends uvm_monitor;
   // Run phase
   extern virtual task run_phase(uvm_phase phase);
 
-endclass 
+endclass
 
 
 //------------------------------------------------------------------------------
@@ -64,7 +64,7 @@ function void triggerSlaveMonitorProxy ::build_phase(uvm_phase phase);
   //create analysis port
   triggerOutSlaveMonitorAnalysisPort = new("triggerOutSlaveMonitorAnalysisPort",this);
 
-endfunction  
+endfunction
 
 //------------------------------------------------------------------------------
 // Task: run_phase
@@ -84,10 +84,10 @@ task triggerSlaveMonitorProxy ::run_phase(uvm_phase phase);
   triggerSlaveTx req1;
   super.run_phase(phase);
   fork
-    forever  begin      
+    forever  begin
       // Create transaction object
       req = triggerSlaveTx :: type_id :: create("req");
-  
+
       // Collect trigger packet from BFM
       triggerSlaveMonitorBfmHandle.triggerSlaveMonitor(triggerStructPacketHandle);
 
@@ -96,16 +96,16 @@ task triggerSlaveMonitorProxy ::run_phase(uvm_phase phase);
 
       // Send transaction to analysis port
       triggerSlaveMonitorAnalysisPort.write(req);
-    end 
-  
-    forever begin   
+    end
+
+    forever begin
       // Create transaction object
       req1 = triggerSlaveTx :: type_id :: create("req1");
       triggerSlaveMonitorBfmHandle.triggerOutSlaveMonitor(triggerOutStructPacketHandle);
       triggerSlaveSeqItemConverter::to_class(triggerOutStructPacketHandle, req1);
       triggerOutSlaveMonitorAnalysisPort.write(req1);
-    end 
+    end
   join
-endtask 
+endtask
 
 `endif

@@ -3,7 +3,7 @@
 
 //--------------------------------------------------------------------------------------------
 // Class: axi4_slave_agent
-// This agent has sequencer, driver_proxy, monitor_proxy for axi4  
+// This agent has sequencer, driver_proxy, monitor_proxy for axi4
 //--------------------------------------------------------------------------------------------
 class axi4_slave_memory extends uvm_object;
   `uvm_object_utils(axi4_slave_memory)
@@ -18,7 +18,7 @@ class axi4_slave_memory extends uvm_object;
   //Declaration of fifo_memory to store the data from master of type fixed
   protected bit [7:0] fifo_memory [$];
 
-  extern function new(string name = "axi4_slave_memory");  
+  extern function new(string name = "axi4_slave_memory");
   extern static function void mem_write(input bit [ADDRESS_WIDTH-1:0]slave_address, bit [DATA_WIDTH-1:0]data);
   extern virtual function void mem_read (input bit [ADDRESS_WIDTH-1:0]slave_address, output bit [DATA_WIDTH-1:0]data);
   extern virtual function void fifo_write(input bit [DATA_WIDTH-1:0]data);
@@ -38,9 +38,9 @@ endclass : axi4_slave_memory
 //--------------------------------------------------------------------------------------------
 function axi4_slave_memory::new(string name = "axi4_slave_memory");
   super.new(name);
-  for(int i=0;i<3000;i++) begin 
+  for(int i=0;i<3000;i++) begin
     slave_memory[i] = i;
-  end  
+  end
 endfunction : new
 
 
@@ -58,7 +58,7 @@ endfunction : mem_write
 function void axi4_slave_memory::commandWrite(input bit [ADDRESS_WIDTH-1 :0]slave_address, bit [7:0]data);
 
   commandMemory[slave_address] = data;
-endfunction 
+endfunction
 //--------------------------------------------------------------------------------------------
 //Task : mem_read
 //Used to store the slave data into the slave memory
@@ -67,13 +67,13 @@ endfunction
 //data          - bit [DATA_WIDTH-1:0]
 //--------------------------------------------------------------------------------------------
 function void axi4_slave_memory::mem_read(input bit [ADDRESS_WIDTH-1 :0]slave_address, output bit [DATA_WIDTH-1:0]data);
-   data = slave_memory[slave_address];
+  data = slave_memory[slave_address];
 endfunction : mem_read
 
 
 function void axi4_slave_memory::commandRead(input bit [ADDRESS_WIDTH-1 :0]slave_address, output bit [7:0]data);
-   data = commandMemory[slave_address];
-endfunction 
+  data = commandMemory[slave_address];
+endfunction
 
 //--------------------------------------------------------------------------------------------
 //Task : fifo_write

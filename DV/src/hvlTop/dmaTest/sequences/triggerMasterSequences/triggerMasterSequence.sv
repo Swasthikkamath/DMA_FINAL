@@ -6,11 +6,11 @@ class triggerMasterSequence extends uvm_sequence#(triggerMasterTx);
   reqTypeEnum reqType;
   extern function new(string name="triggerMasterSequence");
   extern virtual task body();
-endclass 
+endclass
 
- function triggerMasterSequence :: new(string name ="triggerMasterSequence");
-   super.new(name);
- endfunction
+function triggerMasterSequence :: new(string name ="triggerMasterSequence");
+  super.new(name);
+endfunction
 
 task triggerMasterSequence::body();
   super.body();
@@ -18,6 +18,6 @@ task triggerMasterSequence::body();
   req.randomize()with{reqTypeName == reqType;};
   start_item(req);
   finish_item(req);
-endtask 
+endtask
 
 `endif

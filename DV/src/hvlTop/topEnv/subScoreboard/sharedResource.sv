@@ -51,18 +51,18 @@ class sharedResource extends uvm_object;
   //Type : anonymous
   //Description : Used for holding initial destination XSIZE and accessed when using work register
   static bit[31:0]initialDesYsize[dmaGlobalPkg::NUM_CHANNELS];
-   
+
   //Variable: expectedSrcxsize
-  //Type : int 
-  //Description : Used for holding expected src xsize which will update channel srcxsize when data 
+  //Type : int
+  //Description : Used for holding expected src xsize which will update channel srcxsize when data
   //read happens
   static int expectedSrcXsize[dmaGlobalPkg :: NUM_CHANNELS][$];
 
   //Variable: expectedDesxsize
   //Type : int
-  //Description : Used for holding expected des xsize which will update channel desxsize when data 
+  //Description : Used for holding expected des xsize which will update channel desxsize when data
   //write happens
-  static int expectedDesXsize[dmaGlobalPkg :: NUM_CHANNELS][$];  
+  static int expectedDesXsize[dmaGlobalPkg :: NUM_CHANNELS][$];
 
   //Variable: triggerPortChannelMap
   //Type : int
@@ -79,32 +79,32 @@ class sharedResource extends uvm_object;
   //Variable: triggerSrcTaskCall
   //Type : bit
   //Description :Variable is used as flag to indicate whether a source trigger sw/hw check has been i  //ntiated
-  static bit triggerSrcTaskCall[dmaGlobalPkg::NUM_CHANNELS];  
- 
+  static bit triggerSrcTaskCall[dmaGlobalPkg::NUM_CHANNELS];
+
 
 
   static bit waitForResp[dmaGlobalPkg::NUM_CHANNELS];
 
   //Variable: triggerOutTaskCall
   //Type : bit
-  //Description :Variable is used as flag to indicate whether a trigger out sw/hw check has been   
+  //Description :Variable is used as flag to indicate whether a trigger out sw/hw check has been
   //intiated
   static bit triggerOutTaskCall[dmaGlobalPkg::NUM_CHANNELS];
- 
+
   //Variable: triggerDesTaskCall
   //Type : bit
   //Description :Variable is used as flag to indicate whether a destination trigger sw/hw check has    //been intiated
   static bit triggerDesTaskCall[dmaGlobalPkg::NUM_CHANNELS];
-   
+
   //Variable: commandDone
   //Type : bit
-  //Description :Variable is used as flag to indicate whether a command is done and to leave the 
+  //Description :Variable is used as flag to indicate whether a command is done and to leave the
   //accessed trigger
   static bit commandDone[axi4_globals_pkg :: NO_OF_SLAVES+1];
-  
+
   //Variable: pauseChannel
   //Type : bit
-  //Description :Variable is used as flag to indicate whether a command is paused 
+  //Description :Variable is used as flag to indicate whether a command is paused
   static bit pauseChannel[dmaGlobalPkg :: NUM_CHANNELS];
 
   //Variable: stopChannel
@@ -119,37 +119,37 @@ class sharedResource extends uvm_object;
 
   //Variable: dmaChannelRegHandle
   //Type : dmaChannelReg
-  //Description : Variable is a local register structure for each channel 
+  //Description : Variable is a local register structure for each channel
   static dmaChannelReg dmaChannelRegHandle[dmaGlobalPkg::NUM_CHANNELS];
-  
+
   //Variable: numberOfReadReq
-  //Type : int 
+  //Type : int
   //Description : This variable is used to hold the expected number of read for each command of a
   // channel
   static int numberOfReadReq[dmaGlobalPkg :: NUM_CHANNELS];
-  
+
   //Variable: numberOfWriteReq
   //Type : int
-  //Description : This variable is used to hold the expected number of write for each command of a 
+  //Description : This variable is used to hold the expected number of write for each command of a
   // channel
   static int numberOfWriteReq[dmaGlobalPkg :: NUM_CHANNELS];
-  
+
   //Variable: channelRequestingLinK
   //Type : int
   //Description : This variable is used to hold the expected channel that has command linking
   static int channelRequestingLink;
-  
+
   //Variable: respref
   //Type : axi4_master_tx
   //Description : This handle is used to hold the expected response of axi4 transaction
   static axi4_master_tx respRef[axi4_globals_pkg::NO_OF_SLAVES+1];
-  
+
   //Variable: channelQueue
   //Type : anonymous
-  //Description : This variable is used as fifo structure by each channel and each channel has a 
+  //Description : This variable is used as fifo structure by each channel and each channel has a
   // queue which implements a first in first out policy
   static bit[axi4_globals_pkg::DATA_WIDTH-1:0] channelQueue[dmaGlobalPkg::NUM_CHANNELS][$];
-  
+
   //Variable: triggerAccessed
   //Type : bit
   //Description : This handle is used as a flag to indicate whether currently trigger is accessed or   //not this is made zero when the trigger associated channel command is done
@@ -159,18 +159,18 @@ class sharedResource extends uvm_object;
   //Type : bit
   //Description : This handle is used as a flag to indicate whether currently trigger is accessed or   //not this is made zero when the trigger associated channel command is done
   static bit triggerOutAccessed[axi4_globals_pkg::NO_OF_SLAVES+1];
- 
+
   //Variable: peripheralMem
   //Type : axi4_slave_memory
-  //Description : This handle is used as a pointer to a object which holds local memory which is 
-  // pre-initialized 
+  //Description : This handle is used as a pointer to a object which holds local memory which is
+  // pre-initialized
   static axi4_slave_memory peripheralMem; // used as reference source and desti
-  
+
   //Variable: trigSrcInfoChannel
   //Type : trigReqEnum
   //Description : This variable is used to keep track of the request type from the peripheral
-  // through the trigger for the source side 
-  static trigReqEnum trigSrcInfoChannel[dmaGlobalPkg::NUM_CHANNELS]; 
+  // through the trigger for the source side
+  static trigReqEnum trigSrcInfoChannel[dmaGlobalPkg::NUM_CHANNELS];
 
   //Variable: trigDesInfoChannel
   //Type : trigReqEnum
@@ -179,8 +179,8 @@ class sharedResource extends uvm_object;
   static trigReqEnum trigDesInfoChannel[dmaGlobalPkg::NUM_CHANNELS];
 
   //type defination which is needed to keep track of channel when looking to qos based arbitration
-  // and also whether a command has started or ended..is tracked for each slave axi interface as a 
-  // source and destination with respected to channel 
+  // and also whether a command has started or ended..is tracked for each slave axi interface as a
+  // source and destination with respected to channel
   typedef struct packed{
     int channelPri;
     int srcAddr;
@@ -191,15 +191,15 @@ class sharedResource extends uvm_object;
   }channelPriority;
 
   typedef struct {
-   bit readDone;
-   int readCounter[$];
-   int count;
+    bit readDone;
+    int readCounter[$];
+    int count;
   }commandStatus;
 
   static  bit managerWriteAccess;
- 
+
   static  bit managerReadAccess;
- 
+
   static commandStatus commandStatusPerChannel[dmaGlobalPkg :: NUM_CHANNELS];
 
   static bit[31:0]writeRoundRobinPtr,readRoundRobinPtr;
@@ -207,58 +207,58 @@ class sharedResource extends uvm_object;
   //Variable: prioritySrcPerChannel
   //Type : channelPriority
   //Description : This variable is used to keep track of channel information for the read path for
-  // each interface 
-  static channelPriority prioritySrcPerChannel[][dmaGlobalPkg :: NUM_CHANNELS]; 
+  // each interface
+  static channelPriority prioritySrcPerChannel[][dmaGlobalPkg :: NUM_CHANNELS];
 
   //Variable: priorityDesPerChannel
   //Type : channelPriority
   //Description : This variable is used to keep track of channel information for the write path for
-  // each interface 
+  // each interface
   static channelPriority priorityDesPerChannel[][dmaGlobalPkg :: NUM_CHANNELS];
 
   //Variable: interruptControl
   //Type : semaphore
-  //Description : This handle of semaphore is used to control when to get a packet of interrupt type   //ex in scenario when we are expecting an error and interrupt enable is asserted for an error  
+  //Description : This handle of semaphore is used to control when to get a packet of interrupt type   //ex in scenario when we are expecting an error and interrupt enable is asserted for an error
   static semaphore interruptControl;
-  
+
   //Variable: semaPhoreTriggerHandle
   //Type : semaphore
   //Description : This handle of semaphore is used to control when we can expect a trigger
-  //key is allocated when we are expecting a harware based trigger and not during software one 
+  //key is allocated when we are expecting a harware based trigger and not during software one
   static semaphore semaPhoreTriggerHandle[axi4_globals_pkg::NO_OF_SLAVES+1];
- 
-  static semaphore semaPhoreTriggerOutHandle[axi4_globals_pkg::NO_OF_SLAVES+1]; 
+
+  static semaphore semaPhoreTriggerOutHandle[axi4_globals_pkg::NO_OF_SLAVES+1];
   //Variable: readWriteTriggerMap
   //Type : array of bits
-  //Description : This variable is used to keep track of whether a trigger port is for source or is 
-  // it for the destination side 
+  //Description : This variable is used to keep track of whether a trigger port is for source or is
+  // it for the destination side
   static bit readWriteTriggerMap[axi4_globals_pkg::NO_OF_SLAVES+1];
- 
+
   //Variable: interruptAccessed
-  //Type : int 
+  //Type : int
   //Description : This variable is used to keep track whether an interrupt is being accessed
   static int interruptAccessed;
-  
+
   //Variable: expectedReadAddr
-  //Type : int 
-  //Description :This variableisarray of channels whose elements are queue of expected read address 
+  //Type : int
+  //Description :This variableisarray of channels whose elements are queue of expected read address
   // for the associated channel
-  static int expectedReadAddr[dmaGlobalPkg :: NUM_CHANNELS][$];  
- 
+  static int expectedReadAddr[dmaGlobalPkg :: NUM_CHANNELS][$];
+
   //Variable: expectedWriteAddr
   //Type : int
   //Description :This variable is array of channels whose elements are queue of expected writeaddress
-  // for the associated channel 
-  static int expectedWriteAddr[dmaGlobalPkg :: NUM_CHANNELS][$]; 
+  // for the associated channel
+  static int expectedWriteAddr[dmaGlobalPkg :: NUM_CHANNELS][$];
 
   extern function new(string name="sharedResource");
-  extern static task initializeCommands();  
+  extern static task initializeCommands();
   extern static task initiateSrcTriggerTransfer(int channel);
   extern static task initiateDesTriggerTransfer(int channel);
   extern static task raiseError(int channel, string error_msg);
-  extern static task raiseInterrupt(int channel, string info_msg); 
+  extern static task raiseInterrupt(int channel, string info_msg);
   extern static task setUp1DAddress(int channel);
-  extern static function int determineNumberOfReads(int channel);  
+  extern static function int determineNumberOfReads(int channel);
   extern static function int determineNumberOfWrites(int channel);
   extern static task initiateTriggerOutTransfer(int channel);
   extern static task setUpTrigger(int selectedChannel);
@@ -278,15 +278,15 @@ task sharedResource :: setUpTrigger(int selectedChannel);
     disable setUpTrigger; //no need to allocate trigger if error has occured
   end
   fork
-    if(sharedResource ::dmaChannelRegHandle[selectedChannel].CH_CTRL.USESRCTRIGIN==1)begin                 if(sharedResource ::triggerSrcTaskCall[selectedChannel] == 0)begin  
+    if(sharedResource ::dmaChannelRegHandle[selectedChannel].CH_CTRL.USESRCTRIGIN==1)begin                 if(sharedResource ::triggerSrcTaskCall[selectedChannel] == 0)begin
         sharedResource ::numberOfReadReq[selectedChannel] = sharedResource ::determineNumberOfReads(selectedChannel);
         sharedResource ::numberOfWriteReq[selectedChannel] = sharedResource ::determineNumberOfWrites(selectedChannel);
-	sharedResource ::setUp1DAddress(selectedChannel);
-	`uvm_info("TOP_SCOREBOARD",$sformatf("THE COMMAND IN CHANNEL[%0D] HAS %0D AND %0d NUMBER OF EXPECTED READS AND WRITES",selectedChannel,sharedResource::numberOfReadReq[selectedChannel],sharedResource :: numberOfWriteReq[selectedChannel]),UVM_HIGH)
+        sharedResource ::setUp1DAddress(selectedChannel);
+        `uvm_info("TOP_SCOREBOARD",$sformatf("THE COMMAND IN CHANNEL[%0D] HAS %0D AND %0d NUMBER OF EXPECTED READS AND WRITES",selectedChannel,sharedResource::numberOfReadReq[selectedChannel],sharedResource :: numberOfWriteReq[selectedChannel]),UVM_HIGH)
         sharedResource ::initiateSrcTriggerTransfer(selectedChannel);
-      end 
-    end 
-    else begin 
+      end
+    end
+    else begin
       sharedResource ::channelPriority priorityStack;
       int selectedInterface;
       `uvm_info("TOP_SCOREBOARD","EXPECTED READ AXI TRANSFERS WITHOUT TRIGGER AS TRIGGER IS DISABLED IN CTRL",UVM_HIGH)
@@ -315,12 +315,12 @@ task sharedResource :: setUpTrigger(int selectedChannel);
       priorityStack.channelPri = sharedResource ::dmaChannelRegHandle[selectedChannel].CH_CTRL.CHPRIO;
       sharedResource ::prioritySrcPerChannel[selectedInterface][selectedChannel] = priorityStack;
     end
-          
-    if(sharedResource ::dmaChannelRegHandle[selectedChannel].CH_CTRL.USEDESTRIGIN==1)begin 
+
+    if(sharedResource ::dmaChannelRegHandle[selectedChannel].CH_CTRL.USEDESTRIGIN==1)begin
       if(sharedResource ::triggerDesTaskCall[selectedChannel] == 0)begin
         sharedResource ::initiateDesTriggerTransfer(selectedChannel);
       end
-    end 
+    end
     else begin
       sharedResource ::channelPriority priorityStack;
       int selectedInterface;
@@ -341,25 +341,25 @@ task sharedResource :: setUpTrigger(int selectedChannel);
           selectedInterface=i;
           break;
         end
-      end 
+      end
       priorityStack.srcAddr = sharedResource ::dmaChannelRegHandle[selectedChannel].CH_SRCADDR;
       priorityStack.desAddr = sharedResource ::dmaChannelRegHandle[selectedChannel].CH_DESADDR;
       priorityStack.commandStart = 1;
       priorityStack.commandDone = 0;
       priorityStack.channelPri = sharedResource ::dmaChannelRegHandle[selectedChannel].CH_CTRL.CHPRIO;
       sharedResource ::priorityDesPerChannel[selectedInterface][selectedChannel] = priorityStack;
-    end 
-          
+    end
+
     if(sharedResource ::dmaChannelRegHandle[selectedChannel].CH_CTRL.USETRIGOUT)begin
       if(sharedResource ::triggerOutTaskCall[selectedChannel]==0) begin
         sharedResource ::initiateTriggerOutTransfer(selectedChannel);
-      end 
-    end 
+      end
+    end
   join
 endtask
 function sharedResource :: new(string name="sharedResource");
   super.new(name); //better to initialize semaphore here or in top scb
-endfunction  
+endfunction
 
 task sharedResource:: initializeCommands();
   for(int i=0;i<dmaGlobalPkg::NUM_CHANNELS;i++) begin
@@ -390,24 +390,24 @@ endtask
 // received) assert a flag so that no future trigg check  takes place and for SW trigg if interrupt
 // is enabled interrupt check is also done (for source ports)
 task sharedResource::initiateSrcTriggerTransfer(int channel);
-  int triggerPort; 
+  int triggerPort;
   // Initialize status
   dmaChannelRegHandle[channel].CH_STATUS.STAT_SRCTRIGINWAIT = 1;
   triggerPort = dmaChannelRegHandle[channel].CH_SRCTRIGINCFG.SRCTRIGINSEL;
   if(dmaChannelRegHandle[channel].CH_INTREN.INTREN_SRCTRIGINWAIT==1) begin
-     dmaChannelRegHandle[channel].CH_STATUS.INTR_SRCTRIGINWAIT=1;
+    dmaChannelRegHandle[channel].CH_STATUS.INTR_SRCTRIGINWAIT=1;
   end
   // reloadCount[channel]=dmaChannelRegHandle[channel].CH_AUTOCFG.CMDRESTARTCNT;
 
-  // need a guard so that this block is not entered when the pause or stop sw commands is given 
-  // Handle source trigger 
+  // need a guard so that this block is not entered when the pause or stop sw commands is given
+  // Handle source trigger
   if (dmaChannelRegHandle[channel].CH_SRCTRIGINCFG.SRCTRIGINTYPE == 2'b10) begin
     // Hardware trigger
     triggerPort = dmaChannelRegHandle[channel].CH_SRCTRIGINCFG.SRCTRIGINSEL;
-   
-    if(dmaChannelRegHandle[channel].CH_SRCTRIGINCFG.SRCTRIGINMODE ==2 || dmaChannelRegHandle[channel].CH_SRCTRIGINCFG.SRCTRIGINMODE ==3) begin 
+
+    if(dmaChannelRegHandle[channel].CH_SRCTRIGINCFG.SRCTRIGINMODE ==2 || dmaChannelRegHandle[channel].CH_SRCTRIGINCFG.SRCTRIGINMODE ==3) begin
       flowControl[triggerPort]=1;
-    end 
+    end
     if (triggerAccessed[triggerPort] == 0 ) begin
       readWriteTriggerMap[triggerPort] = 0; // read operation
       semaPhoreTriggerHandle[triggerPort].put(1);
@@ -420,13 +420,13 @@ task sharedResource::initiateSrcTriggerTransfer(int channel);
       triggerPortChannelMap[triggerPort] = channel;
       dmaChannelRegHandle[channel].CH_ERRINFO.SRCTRIGINSELERR=0;
     end else begin
-    // Trigger port conflict - raise error
-    
-    dmaChannelRegHandle[channel].CH_ERRINFO.SRCTRIGINSELERR=1;
-    if (dmaChannelRegHandle[channel].CH_INTREN.INTREN_ERR == 1) begin
-      raiseError(channel, " SRC Trigger port conflict");
+      // Trigger port conflict - raise error
+
+      dmaChannelRegHandle[channel].CH_ERRINFO.SRCTRIGINSELERR=1;
+      if (dmaChannelRegHandle[channel].CH_INTREN.INTREN_ERR == 1) begin
+        raiseError(channel, " SRC Trigger port conflict");
+      end
     end
-  end    
   end else if (dmaChannelRegHandle[channel].CH_CMD.SRCSWTRIGINREQ == 1) begin
     // Software trigger
     channelPriority priorityStack;
@@ -462,19 +462,19 @@ task sharedResource::initiateSrcTriggerTransfer(int channel);
       raiseInterrupt(channel, "Source trigger wait timeout");
     end
   end
-  
+
 endtask
 
 //Task name: initiateDesTriggerTransfer
 //Description : Used to check for the trigger and once trigger HW/SW is initiated (key allocated/Req
-// received) assert a flag so that no future trigg check  takes place and for SW trigg if interrupt 
+// received) assert a flag so that no future trigg check  takes place and for SW trigg if interrupt
 // is enabled interrupt check is also done (for destination ports)
 task sharedResource :: initiateDesTriggerTransfer(int channel);
   int triggerPort;
   dmaChannelRegHandle[channel].CH_STATUS.STAT_DESTRIGINWAIT=1;
   triggerPort = dmaChannelRegHandle[channel].CH_DESTRIGINCFG.DESTRIGINSEL;
   if(dmaChannelRegHandle[channel].CH_INTREN.INTREN_DESTRIGINWAIT==1) begin
-     dmaChannelRegHandle[channel].CH_STATUS.INTR_DESTRIGINWAIT=1;
+    dmaChannelRegHandle[channel].CH_STATUS.INTR_DESTRIGINWAIT=1;
   end
 
   if (dmaChannelRegHandle[channel].CH_DESTRIGINCFG.DESTRIGINTYPE == 2'b10) begin
@@ -504,7 +504,7 @@ task sharedResource :: initiateDesTriggerTransfer(int channel);
       end
     end
   end else if (dmaChannelRegHandle[channel].CH_CMD.DESSWTRIGINREQ == 1) begin
-    
+
     // Software trigger
     channelPriority priorityStack;
     int selectedInterface;
@@ -525,7 +525,7 @@ task sharedResource :: initiateDesTriggerTransfer(int channel);
     `uvm_info("TOP_SCOREBOARD",$sformatf("A SW trigger For Des has been received for channel[%0d] and selected interface is %0d",channel,selectedInterface),UVM_HIGH)
 
     // Write operation (destination trigger)
-    
+
     priorityStack.srcAddr = dmaChannelRegHandle[channel].CH_SRCADDR;
     priorityStack.desAddr = dmaChannelRegHandle[channel].CH_DESADDR;
     priorityStack.commandStart = 1;
@@ -533,32 +533,32 @@ task sharedResource :: initiateDesTriggerTransfer(int channel);
     priorityStack.channelPri = dmaChannelRegHandle[channel].CH_CTRL.CHPRIO;
     priorityDesPerChannel[selectedInterface][channel] = priorityStack;
   end else begin
-   `uvm_info("TOP_SCOREBOARD",$sformatf("The command in channel[%0d] is waiting for a destination port sw trigger req through port %0d",channel,triggerPort),UVM_HIGH)
+    `uvm_info("TOP_SCOREBOARD",$sformatf("The command in channel[%0d] is waiting for a destination port sw trigger req through port %0d",channel,triggerPort),UVM_HIGH)
     // No trigger - raise interrupt if enabled
     if (dmaChannelRegHandle[channel].CH_INTREN.INTREN_DESTRIGINWAIT == 1) begin
       raiseInterrupt(channel, "Destination trigger wait timeout");
     end
   end
-endtask 
-
-
-task sharedResource::raiseError(int channel, string error_msg);
-    dmaChannelRegHandle[channel].CH_STATUS.STAT_ERR = 1;
-    dmaChannelRegHandle[channel].CH_STATUS.INTR_ERR = 1;
-    `uvm_error("TOP_SCOREBOARD", $sformatf("Channel[%0d]: %s", channel, error_msg))
 endtask
 
 
-//Task name : raiseInterrupt 
+task sharedResource::raiseError(int channel, string error_msg);
+  dmaChannelRegHandle[channel].CH_STATUS.STAT_ERR = 1;
+  dmaChannelRegHandle[channel].CH_STATUS.INTR_ERR = 1;
+  `uvm_error("TOP_SCOREBOARD", $sformatf("Channel[%0d]: %s", channel, error_msg))
+endtask
+
+
+//Task name : raiseInterrupt
 //Description : Is used to handle interrupt port transaction
 task sharedResource::raiseInterrupt(int channel, string info_msg);
-    `uvm_info("TOP_SCOREBOARD", $sformatf("Channel[%0d]: %s", channel, info_msg), UVM_MEDIUM)
+  `uvm_info("TOP_SCOREBOARD", $sformatf("Channel[%0d]: %s", channel, info_msg), UVM_MEDIUM)
 endtask
 
 
 //Task name: setUp1DAddress
 //Descriptipon : This task is used to determine the expected address for both write and read side
-//for the channel for which the task is called based on the xtype and y type as well as based on 
+//for the channel for which the task is called based on the xtype and y type as well as based on
 //the srcxsize and desxsize and src/des ysize
 task sharedResource::setUp1DAddress(int channel);
   int beat_bytes;
@@ -595,39 +595,39 @@ task sharedResource::setUp1DAddress(int channel);
   srcYaddrStride = dmaChannelRegHandle[channel].CH_YADDRSTRIDE.SRCYADDRSTRIDE;
   desYaddrStride = dmaChannelRegHandle[channel].CH_YADDRSTRIDE.DESYADDRSTRIDE;
   has2D=dmaChannelRegHandle[channel].CH_BUILDCFG1.HAS_2D;
-  if(dmaChannelRegHandle[channel].CH_XADDRINC.SRCXADDRINC[15]==1)begin //to support negative dir 
-   srcIncr[31:16] = '1;
-   srcIncr[15:0] = dmaChannelRegHandle[channel].CH_XADDRINC.SRCXADDRINC;
-  end 
-  else begin 
+  if(dmaChannelRegHandle[channel].CH_XADDRINC.SRCXADDRINC[15]==1)begin //to support negative dir
+    srcIncr[31:16] = '1;
+    srcIncr[15:0] = dmaChannelRegHandle[channel].CH_XADDRINC.SRCXADDRINC;
+  end
+  else begin
     srcIncr = dmaChannelRegHandle[channel].CH_XADDRINC.SRCXADDRINC;
-  end 
-  if(dmaChannelRegHandle[channel].CH_XADDRINC.DESXADDRINC[15]==1)begin 
+  end
+  if(dmaChannelRegHandle[channel].CH_XADDRINC.DESXADDRINC[15]==1)begin
     desIncr[31:16]='1;
     desIncr[15:0] = dmaChannelRegHandle[channel].CH_XADDRINC.DESXADDRINC;
-  end 
-  else begin 
+  end
+  else begin
     desIncr = dmaChannelRegHandle[channel].CH_XADDRINC.DESXADDRINC;
-  end 
+  end
   calculateSrcXsize = determineNumberOfReads(channel);
   calculateDesXsize = determineNumberOfWrites(channel);;
   beat_bytes = 1 << tranSize;
-  if(flagHasTemp) begin 
+  if(flagHasTemp) begin
     if (xType == X_CONTINUE || xType==X_FILL) begin
       totalTransfers = (srcXsize<desXsize)?srcXsize:desXsize;
     end
     else begin
       totalTransfers = desXsize;
     end
-  
-    if(dmaChannelRegHandle[channel].CH_TMPLTCFG.SRCTMPLTSIZE> 0) begin 
+
+    if(dmaChannelRegHandle[channel].CH_TMPLTCFG.SRCTMPLTSIZE> 0) begin
       int validCheck=0;
-      for(int i=0;i<totalTransfers;i++) begin 
-        if (dmaChannelRegHandle[channel].CH_SRCTMPLT[validCheck] !=1) begin 
-             i--;
-             srcAddr = srcAddr + beat_bytes; // skip this address 
-             validCheck = ((validCheck+1)%(dmaChannelRegHandle[channel].CH_TMPLTCFG.SRCTMPLTSIZE+1));
-             continue;
+      for(int i=0;i<totalTransfers;i++) begin
+        if (dmaChannelRegHandle[channel].CH_SRCTMPLT[validCheck] !=1) begin
+          i--;
+          srcAddr = srcAddr + beat_bytes; // skip this address
+          validCheck = ((validCheck+1)%(dmaChannelRegHandle[channel].CH_TMPLTCFG.SRCTMPLTSIZE+1));
+          continue;
 
         end
         case (xType)
@@ -637,9 +637,9 @@ task sharedResource::setUp1DAddress(int channel);
             expectedSrcXsize[channel].push_back(calculateSrcXsize);
           end
           X_WRAP: begin
-             expectedReadAddr[channel].push_back(srcAddr);
-             calculateSrcXsize--;
-             expectedSrcXsize[channel].push_back(calculateSrcXsize);
+            expectedReadAddr[channel].push_back(srcAddr);
+            calculateSrcXsize--;
+            expectedSrcXsize[channel].push_back(calculateSrcXsize);
           end
           X_FILL: begin
             if (i < srcXsize) begin
@@ -651,7 +651,7 @@ task sharedResource::setUp1DAddress(int channel);
         endcase
         if(dmaChannelRegHandle[channel].CH_SRCTMPLT[validCheck] ==1)begin
           validCheck = ((validCheck+1)%(dmaChannelRegHandle[channel].CH_TMPLTCFG.SRCTMPLTSIZE+1));
-          /*if(xType != X_WRAP) begin //the trm doesnt clearly mentions whether the dimension rules should be applicable or not 
+          /*if(xType != X_WRAP) begin //the trm doesnt clearly mentions whether the dimension rules should be applicable or not
             srcAddr = srcAddr + beat_bytes;
           end
           else if(i % srcXsize ==0 && i>0) begin
@@ -663,66 +663,66 @@ task sharedResource::setUp1DAddress(int channel);
           srcAddr = srcAddr + beat_bytes;
         end
 
-        if(calculateSrcXsize == 1 && (determineNumberOfReads(channel) > srcXsize)) begin 
+        if(calculateSrcXsize == 1 && (determineNumberOfReads(channel) > srcXsize)) begin
           calculateSrcXsize = (determineNumberOfReads(channel) +1);
-        end 
-      end      
-    end 
-    else begin 
+        end
+      end
+    end
+    else begin
       for (int i = 0; i < totalTransfers; i++) begin
         case (xType)
 
-          X_CONTINUE: begin 
+          X_CONTINUE: begin
             expectedReadAddr[channel].push_back(srcAddr + (i * beat_bytes));
             calculateSrcXsize--;
             expectedSrcXsize[channel].push_back(calculateSrcXsize);
-          end 
+          end
           X_WRAP: begin
             expectedReadAddr[channel].push_back(srcAddr + ((i % srcXsize) * beat_bytes));
             calculateSrcXsize--;
             expectedSrcXsize[channel].push_back(calculateSrcXsize);
-          end 
-          X_FILL: begin 
-            if (i < srcXsize) begin 
+          end
+          X_FILL: begin
+            if (i < srcXsize) begin
               expectedReadAddr[channel].push_back(srcAddr + (i * beat_bytes));
               calculateSrcXsize--;
               expectedSrcXsize[channel].push_back(calculateSrcXsize);
-            end 
+            end
           end
         endcase
-        if(calculateSrcXsize == 1 && (determineNumberOfReads(channel) >srcXsize)) begin 
+        if(calculateSrcXsize == 1 && (determineNumberOfReads(channel) >srcXsize)) begin
           calculateSrcXsize = (determineNumberOfReads(channel) +1);
-        end 
+        end
         `uvm_info("TOP_SCOREBOARD",$sformatf("1D Excepted Write Addr:%p, Excepted Read Addr:%p",expectedWriteAddr,expectedReadAddr),UVM_NONE)
-      end 
+      end
     end
 
-    if(dmaChannelRegHandle[channel].CH_TMPLTCFG.DESTMPLTSIZE> 0) begin 
+    if(dmaChannelRegHandle[channel].CH_TMPLTCFG.DESTMPLTSIZE> 0) begin
       int validCheck=0;
-      for(int i=0;i<totalTransfers;i++) begin 
-         if (dmaChannelRegHandle[channel].CH_DESTMPLT[validCheck] !=1) begin
-             i--;
-             desAddr = desAddr + beat_bytes; // skip this address
-             validCheck = ((validCheck+1)%(dmaChannelRegHandle[channel].CH_TMPLTCFG.DESTMPLTSIZE+1));
-             continue;
-         end
-         calculateDesXsize--;
-         expectedDesXsize[channel].push_back(calculateDesXsize);
-         expectedWriteAddr[channel].push_back(desAddr);
-         desAddr = desAddr + beat_bytes; // skip this address
-         validCheck = ((validCheck+1)%(dmaChannelRegHandle[channel].CH_TMPLTCFG.DESTMPLTSIZE+1));
-      end      
-    end 
-    else begin 
+      for(int i=0;i<totalTransfers;i++) begin
+        if (dmaChannelRegHandle[channel].CH_DESTMPLT[validCheck] !=1) begin
+          i--;
+          desAddr = desAddr + beat_bytes; // skip this address
+          validCheck = ((validCheck+1)%(dmaChannelRegHandle[channel].CH_TMPLTCFG.DESTMPLTSIZE+1));
+          continue;
+        end
+        calculateDesXsize--;
+        expectedDesXsize[channel].push_back(calculateDesXsize);
+        expectedWriteAddr[channel].push_back(desAddr);
+        desAddr = desAddr + beat_bytes; // skip this address
+        validCheck = ((validCheck+1)%(dmaChannelRegHandle[channel].CH_TMPLTCFG.DESTMPLTSIZE+1));
+      end
+    end
+    else begin
       for (int i = 0; i < totalTransfers; i++) begin
         calculateDesXsize--;
         expectedDesXsize[channel].push_back(calculateDesXsize);
         expectedWriteAddr[channel].push_back(desAddr +(i * beat_bytes));
-      end 
-    end 
-  end 
-  if(!flagHasTemp) begin 
-    if(yType == Y_DISABLE || (has2D == 0 || (has2D == 1 && srcYsize == 1)))begin 
+      end
+    end
+  end
+  if(!flagHasTemp) begin
+    if(yType == Y_DISABLE || (has2D == 0 || (has2D == 1 && srcYsize == 1)))begin
       if (xType == X_CONTINUE) begin
         totalTransfers = (srcXsize<desXsize)?srcXsize:desXsize;
       end
@@ -733,35 +733,35 @@ task sharedResource::setUp1DAddress(int channel);
       for (int i = 0; i < totalTransfers; i++) begin
         case (xType)
 
-          X_CONTINUE: begin 
+          X_CONTINUE: begin
             expectedReadAddr[channel].push_back(srcAddr +  (srcIncr * i * beat_bytes));
             calculateSrcXsize--;
             expectedSrcXsize[channel].push_back(calculateSrcXsize);
-          end 
+          end
           X_WRAP: begin
             expectedReadAddr[channel].push_back(srcAddr + ((i % srcXsize) * beat_bytes *srcIncr));
             calculateSrcXsize--;
             expectedSrcXsize[channel].push_back(calculateSrcXsize);
-          end 
-          X_FILL: begin 
-            if(i < srcXsize) begin 
+          end
+          X_FILL: begin
+            if(i < srcXsize) begin
               expectedReadAddr[channel].push_back(srcAddr + (i * beat_bytes * srcIncr));
               calculateSrcXsize--;
               expectedSrcXsize[channel].push_back(calculateSrcXsize);
-            end 
+            end
           end
         endcase
         calculateDesXsize--;
         expectedDesXsize[channel].push_back(calculateDesXsize);
-        if(calculateSrcXsize == 1 && (determineNumberOfReads(channel) >srcXsize)) begin 
+        if(calculateSrcXsize == 1 && (determineNumberOfReads(channel) >srcXsize)) begin
           calculateSrcXsize = (determineNumberOfReads(channel) +1);
-        end 
+        end
         expectedWriteAddr[channel].push_back(desAddr +(i * beat_bytes));
 
         `uvm_info("TOP_SCOREBOARD",$sformatf("1D Excepted Write Addr:%p, Excepted Read Addr:%p",expectedWriteAddr,expectedReadAddr),UVM_NONE)
       end
     end
-    
+
     else  begin //2d
       int totalTransferPerRow;
       int totalElements;
@@ -772,18 +772,18 @@ task sharedResource::setUp1DAddress(int channel);
 
       for(int i=0;i<numberOfReadReq[channel];i++) begin
         push_addr = push_addr + ( ((totalTransferPerRow==0 )|| (totalTransferPerRow%srcXsize)==0&& (i!=1)) ? 0 : (int'(beat_bytes *srcIncr)));
-        totalTransferPerRow++; 
+        totalTransferPerRow++;
         totalElements++;
         expectedReadAddr[channel].push_back(push_addr);
-       `uvm_info("TOP_SCOREBOARD",$sformatf("2D Excepted Read Addr:%p and qsize is %0d row_no=%0d srcysize=%0d noOfElem=%0d ytype %s",expectedReadAddr,expectedReadAddr[channel].size(),row_no,srcYsize,totalTransferPerRow,yType),UVM_NONE)
- 
+        `uvm_info("TOP_SCOREBOARD",$sformatf("2D Excepted Read Addr:%p and qsize is %0d row_no=%0d srcysize=%0d noOfElem=%0d ytype %s",expectedReadAddr,expectedReadAddr[channel].size(),row_no,srcYsize,totalTransferPerRow,yType),UVM_NONE)
+
         calculateSrcXsize--;
         expectedSrcXsize[channel].push_back(calculateSrcXsize);
         if(calculateSrcXsize == 1 ) begin
           calculateSrcXsize = srcXsize;
         end
-  
-        if((yType==Y_WRAP  && totalElements == (srcXsize * srcYsize) && xType==X_CONTINUE) || (yType==Y_WRAP && ((totalTransferPerRow % desXsize)==0)&&(row_no==(srcYsize) && xType != X_CONTINUE) && (desXsize <= srcXsize))  || (yType==Y_WRAP && ((totalTransferPerRow % srcXsize)==0)&&(row_no==(srcYsize) && xType == X_FILL) && (desXsize > srcXsize)) || (yType==Y_WRAP && ((totalTransferPerRow % desXsize)==0)&&(row_no==(srcYsize) && xType == X_WRAP) && (desXsize > srcXsize)))begin //is not triggered for xtype fill/wrap and ytype in des is greater 
+
+        if((yType==Y_WRAP  && totalElements == (srcXsize * srcYsize) && xType==X_CONTINUE) || (yType==Y_WRAP && ((totalTransferPerRow % desXsize)==0)&&(row_no==(srcYsize) && xType != X_CONTINUE) && (desXsize <= srcXsize))  || (yType==Y_WRAP && ((totalTransferPerRow % srcXsize)==0)&&(row_no==(srcYsize) && xType == X_FILL) && (desXsize > srcXsize)) || (yType==Y_WRAP && ((totalTransferPerRow % desXsize)==0)&&(row_no==(srcYsize) && xType == X_WRAP) && (desXsize > srcXsize)))begin //is not triggered for xtype fill/wrap and ytype in des is greater
           row_base = srcAddr;
           row_no=1;
           push_addr = row_base;
@@ -794,39 +794,39 @@ task sharedResource::setUp1DAddress(int channel);
           push_addr = row_base ;
           row_no++;
           totalTransferPerRow=0;
-        end else if(((totalTransferPerRow % srcXsize) ==0)&& (xType==X_CONTINUE || xType==X_FILL))begin 
+        end else if(((totalTransferPerRow % srcXsize) ==0)&& (xType==X_CONTINUE || xType==X_FILL))begin
           row_base = row_base + (srcYaddrStride *beat_bytes);
           push_addr = row_base;
           row_no++;
           totalTransferPerRow=0;
-        end  
-        else if(((totalTransferPerRow % srcXsize) == 0 )&& (xType==X_WRAP)) begin //will execute when src < des and not when src==des
-          push_addr = row_base; //dont make row elements zero here 
         end
-      end 
+        else if(((totalTransferPerRow % srcXsize) == 0 )&& (xType==X_WRAP)) begin //will execute when src < des and not when src==des
+          push_addr = row_base; //dont make row elements zero here
+        end
+      end
 
       push_addr = desAddr;
       row_base = push_addr;
-      for(int i=0;i<numberOfWriteReq[channel];i++) begin 
+      for(int i=0;i<numberOfWriteReq[channel];i++) begin
         push_addr = push_addr + ( ((i==0 )|| (i%desXsize)==0&& (i!=1)) ? 0 : (beat_bytes *desIncr));
         expectedWriteAddr[channel].push_back(push_addr);
         calculateDesXsize--;
         expectedDesXsize[channel].push_back(calculateDesXsize);
- 
-        if(((i % desXsize) ==(desXsize-1))&& i!=0) begin 
+
+        if(((i % desXsize) ==(desXsize-1))&& i!=0) begin
           row_base = row_base + (desYaddrStride * beat_bytes);
           push_addr = row_base;
-        end 
-      end 
-    end  
-  end 
+        end
+      end
+    end
+  end
 endtask
 
 
 //Function name: determineNumberOfReads
-//Description : This function is used to determine the number of reads transfer in general to be 
-//expected for a channel based on the src and des XSIZE and src and des YSIZE and mainly the XTYPE 
-// and YTPE of the channel 
+//Description : This function is used to determine the number of reads transfer in general to be
+//expected for a channel based on the src and des XSIZE and src and des YSIZE and mainly the XTYPE
+// and YTPE of the channel
 function int sharedResource :: determineNumberOfReads(int channel);
   int numberOfRows;
   int numberOfColumns;
@@ -845,96 +845,96 @@ function int sharedResource :: determineNumberOfReads(int channel);
       totalTransfers = dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE;
     end
     return totalTransfers;
-  end  
+  end
 
   if(dmaChannelRegHandle[channel].CH_BUILDCFG1.HAS_2D == 1)begin
-    if((dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE == dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE)&& (dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE< dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE))begin 
+    if((dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE == dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE)&& (dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE< dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE))begin
       return (dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE *dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE);
-    end 
+    end
     case(dmaChannelRegHandle[channel].CH_CTRL.YTYPE)
-     Y_WRAP: begin 
-       case(dmaChannelRegHandle[channel].CH_CTRL.XTYPE)
-         X_WRAP : begin 
-           return dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE;
-         end 
-         X_CONTINUE: begin 
-           return dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE;
-         end 
-         X_FILL : begin 
+      Y_WRAP: begin
+        case(dmaChannelRegHandle[channel].CH_CTRL.XTYPE)
+          X_WRAP : begin
+            return dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE;
+          end
+          X_CONTINUE: begin
+            return dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE;
+          end
+          X_FILL : begin
             biggestColumn = (dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE > dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE)? dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE : dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE ;
             return dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE * biggestColumn;
-         end 
-         X_DISABLE: return  0;
-       endcase
-     end 
-     Y_CONTINUE : begin 
-       case(dmaChannelRegHandle[channel].CH_CTRL.XTYPE)
-         X_WRAP : begin 
-           smallestRow = (dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE > dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE) ? dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE : dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE;
-           return dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE * smallestRow;
-         end 
-         X_CONTINUE: begin 
-           if((dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE) > (dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE)) begin 
-              return (dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE); 
-           end 
-           else begin 
-            return (dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE);
-           end            
-         end 
-         X_FILL : begin 
-           biggestColumn = (dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE > dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE)? dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE : dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE ;
-           smallestRow = (dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE > dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE)? dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE : dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE;
-           
-            return biggestColumn * smallestRow;
-         end  
-         X_DISABLE :begin 
-           return 0;
-         end 
-       endcase
-     end
-     Y_FILL : begin
-       case(dmaChannelRegHandle[channel].CH_CTRL.XTYPE)
-         X_FILL : begin 
-           biggestColumn = (dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE > dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE)? dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE : dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE ;
-           smallestRow = (dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE > dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE)? dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE : dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE;
-           return biggestColumn * smallestRow;
-         end  
-
-         X_CONTINUE: begin 
-           if((dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE) > (dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE)) begin
-              return (dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE);
-           end
-           else begin
-            return (dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE);
-           end
-         end 
-         X_WRAP : begin
-           smallestRow = (dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE > dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE )? dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE : dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE;
+          end
+          X_DISABLE: return  0;
+        endcase
+      end
+      Y_CONTINUE : begin
+        case(dmaChannelRegHandle[channel].CH_CTRL.XTYPE)
+          X_WRAP : begin
+            smallestRow = (dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE > dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE) ? dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE : dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE;
             return dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE * smallestRow;
-         end 
-       endcase      
-     end
+          end
+          X_CONTINUE: begin
+            if((dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE) > (dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE)) begin
+              return (dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE);
+            end
+            else begin
+              return (dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE);
+            end
+          end
+          X_FILL : begin
+            biggestColumn = (dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE > dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE)? dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE : dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE ;
+            smallestRow = (dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE > dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE)? dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE : dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE;
+
+            return biggestColumn * smallestRow;
+          end
+          X_DISABLE :begin
+            return 0;
+          end
+        endcase
+      end
+      Y_FILL : begin
+        case(dmaChannelRegHandle[channel].CH_CTRL.XTYPE)
+          X_FILL : begin
+            biggestColumn = (dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE > dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE)? dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE : dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE ;
+            smallestRow = (dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE > dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE)? dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE : dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE;
+            return biggestColumn * smallestRow;
+          end
+
+          X_CONTINUE: begin
+            if((dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE) > (dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE)) begin
+              return (dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE);
+            end
+            else begin
+              return (dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE);
+            end
+          end
+          X_WRAP : begin
+            smallestRow = (dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE > dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE )? dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE : dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE;
+            return dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE * smallestRow;
+          end
+        endcase
+      end
     endcase
   end
-  else begin 
+  else begin
     if(dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE == 0) begin
-      return dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE;  
+      return dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE;
     end
-    case( dmaChannelRegHandle[channel].CH_CTRL.XTYPE) 
+    case( dmaChannelRegHandle[channel].CH_CTRL.XTYPE)
       X_CONTINUE: begin
         biggestColumn = (dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE > dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE) ? dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE : dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE ;
         return biggestColumn;
-      end 
-      X_WRAP: begin 
+      end
+      X_WRAP: begin
         return dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE;
-      end 
-      X_FILL :begin 
+      end
+      X_FILL :begin
         biggestColumn = (dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE > dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE )? dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE : dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE ;
         return biggestColumn;
-      end 
-    endcase 
-  end   
-endfunction 
+      end
+    endcase
+  end
+endfunction
 
 //Function name: determineNumberOfWrites
 //Description : This function is used to determine the number of writes transfer in general to be
@@ -960,35 +960,35 @@ function int sharedResource :: determineNumberOfWrites(int channel);
   end
 
   if(dmaChannelRegHandle[channel].CH_BUILDCFG1.HAS_2D == 1)begin
-    if(dmaChannelRegHandle[channel].CH_CTRL.XTYPE  == X_CONTINUE && dmaChannelRegHandle[channel].CH_CTRL.YTYPE == Y_CONTINUE) begin 
+    if(dmaChannelRegHandle[channel].CH_CTRL.XTYPE  == X_CONTINUE && dmaChannelRegHandle[channel].CH_CTRL.YTYPE == Y_CONTINUE) begin
       if((dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE) > (dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE)) begin
         return (dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE);
       end
       else begin
         return (dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE);
       end
-    end 
-    else if(dmaChannelRegHandle[channel].CH_CTRL.YTYPE  == Y_CONTINUE)begin 
-     if(dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE > dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE) begin 
-       return (dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE);
-     end 
-     else begin 
-       return (dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE);
-     end 
-    end 
-    else begin 
-     return (dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE);
+    end
+    else if(dmaChannelRegHandle[channel].CH_CTRL.YTYPE  == Y_CONTINUE)begin
+      if(dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE > dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE) begin
+        return (dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE);
+      end
+      else begin
+        return (dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE);
+      end
+    end
+    else begin
+      return (dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE);
     end
   end
-  else begin 
-    if(dmaChannelRegHandle[channel].CH_CTRL.XTYPE  == X_CONTINUE ) begin 
+  else begin
+    if(dmaChannelRegHandle[channel].CH_CTRL.XTYPE  == X_CONTINUE ) begin
       biggestColumn = (dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE > dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE ? dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE : dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE );
-      return biggestColumn;  
+      return biggestColumn;
     end
-    else begin 
+    else begin
       return dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE;
-    end   
-  end  
+    end
+  end
 endfunction
 
 
@@ -996,70 +996,70 @@ endfunction
 //Description : Used to check for the trigger and once trigger HW/SW is initiated (key allocated/Req
 task sharedResource::initiateTriggerOutTransfer(int channel);
   int triggerPort;
-   triggerPort=dmaChannelRegHandle[channel].CH_TRIGOUTCFG.TRIGOUTSEL;
-    if (dmaChannelRegHandle[channel].CH_TRIGOUTCFG.TRIGOUTTYPE == 2'b10) begin 
-      if(triggerOutAccessed[triggerPort] == 0) begin
-	triggerOutTaskCall[channel]=1;
-        semaPhoreTriggerOutHandle[triggerPort].put(1); 
-        triggerOutAccessed[triggerPort]=1;
-        triggerOutPortChannelMap[triggerPort]=channel;
-      end  
-      else begin 
-        dmaChannelRegHandle[channel].CH_ERRINFO.TRIGOUTSELERR=1;
-        if (dmaChannelRegHandle[channel].CH_INTREN.INTREN_ERR == 1) begin
-          raiseError(channel, "Trigger OUT port conflict");
-        end
-      end 
-    end 
-    else if(dmaChannelRegHandle[channel].CH_CMD.SWTRIGOUTACK == 1) begin 
-      triggerOutAccessed[triggerPort]=0;
+  triggerPort=dmaChannelRegHandle[channel].CH_TRIGOUTCFG.TRIGOUTSEL;
+  if (dmaChannelRegHandle[channel].CH_TRIGOUTCFG.TRIGOUTTYPE == 2'b10) begin
+    if(triggerOutAccessed[triggerPort] == 0) begin
       triggerOutTaskCall[channel]=1;
-      dmaChannelRegHandle[channel].CH_STATUS.STAT_TRIGOUTACKWAIT=0;
-      dmaChannelRegHandle[channel].CH_STATUS.INTR_TRIGOUTACKWAIT=0;
-      if(sharedResource::dmaChannelRegHandle[channel].CH_SRCTRIGINCFG.SRCTRIGINTYPE ==2'b 10) begin
-         sharedResource::commandDone[sharedResource ::dmaChannelRegHandle[channel].CH_SRCTRIGINCFG.SRCTRIGINSEL] = 1;
+      semaPhoreTriggerOutHandle[triggerPort].put(1);
+      triggerOutAccessed[triggerPort]=1;
+      triggerOutPortChannelMap[triggerPort]=channel;
+    end
+    else begin
+      dmaChannelRegHandle[channel].CH_ERRINFO.TRIGOUTSELERR=1;
+      if (dmaChannelRegHandle[channel].CH_INTREN.INTREN_ERR == 1) begin
+        raiseError(channel, "Trigger OUT port conflict");
       end
-      if(sharedResource::dmaChannelRegHandle[channel].CH_DESTRIGINCFG.DESTRIGINTYPE ==2'b 10) begin
-         sharedResource::commandDone[sharedResource ::dmaChannelRegHandle[channel].CH_DESTRIGINCFG.DESTRIGINSEL] = 1;
+    end
+  end
+  else if(dmaChannelRegHandle[channel].CH_CMD.SWTRIGOUTACK == 1) begin
+    triggerOutAccessed[triggerPort]=0;
+    triggerOutTaskCall[channel]=1;
+    dmaChannelRegHandle[channel].CH_STATUS.STAT_TRIGOUTACKWAIT=0;
+    dmaChannelRegHandle[channel].CH_STATUS.INTR_TRIGOUTACKWAIT=0;
+    if(sharedResource::dmaChannelRegHandle[channel].CH_SRCTRIGINCFG.SRCTRIGINTYPE ==2'b 10) begin
+      sharedResource::commandDone[sharedResource ::dmaChannelRegHandle[channel].CH_SRCTRIGINCFG.SRCTRIGINSEL] = 1;
+    end
+    if(sharedResource::dmaChannelRegHandle[channel].CH_DESTRIGINCFG.DESTRIGINTYPE ==2'b 10) begin
+      sharedResource::commandDone[sharedResource ::dmaChannelRegHandle[channel].CH_DESTRIGINCFG.DESTRIGINSEL] = 1;
+    end
+    if(sharedResource::numberOfWriteReq[channel] ==0) begin
+      if(sharedResource::dmaChannelRegHandle[channel].CH_CTRL.DONETYPE==1) begin
+        sharedResource::dmaChannelRegHandle[channel].CH_STATUS.STAT_DONE=1;
+        if(sharedResource::dmaChannelRegHandle[channel].CH_INTREN.INTREN_DONE ==1) begin
+          sharedResource::dmaChannelRegHandle[channel].CH_STATUS.INTR_DONE =1;
+          sharedResource::raiseInterrupt(channel,"DONE INTERRUPT RAISED");
+        end
       end
-      if(sharedResource::numberOfWriteReq[channel] ==0) begin
-         if(sharedResource::dmaChannelRegHandle[channel].CH_CTRL.DONETYPE==1) begin
-           sharedResource::dmaChannelRegHandle[channel].CH_STATUS.STAT_DONE=1;
-           if(sharedResource::dmaChannelRegHandle[channel].CH_INTREN.INTREN_DONE ==1) begin
-             sharedResource::dmaChannelRegHandle[channel].CH_STATUS.INTR_DONE =1;
-             sharedResource::raiseInterrupt(channel,"DONE INTERRUPT RAISED");
-           end
-         end
-       end        
-      if(sharedResource ::dmaChannelRegHandle[channel].CH_CMD.DISABLECMD==1) begin
-       `uvm_info("TOP_SCOREBOARD",$sformatf("The command in channel[%0d] has been disabled",channel),UVM_HIGH)
-       sharedResource ::disableChannel[channel] = 1;
-       sharedResource ::dmaChannelRegHandle[channel].CH_CMD.ENABLECMD=0;
-       sharedResource ::dmaChannelRegHandle[channel].CH_STATUS.STAT_DISABLED=1;
-       if(sharedResource::dmaChannelRegHandle[channel].CH_INTREN.INTREN_DISABLED) begin
-          sharedResource::dmaChannelRegHandle[channel].CH_STATUS.INTR_DISABLED=1;
-       end
-     end
+    end
+    if(sharedResource ::dmaChannelRegHandle[channel].CH_CMD.DISABLECMD==1) begin
+      `uvm_info("TOP_SCOREBOARD",$sformatf("The command in channel[%0d] has been disabled",channel),UVM_HIGH)
+      sharedResource ::disableChannel[channel] = 1;
+      sharedResource ::dmaChannelRegHandle[channel].CH_CMD.ENABLECMD=0;
+      sharedResource ::dmaChannelRegHandle[channel].CH_STATUS.STAT_DISABLED=1;
+      if(sharedResource::dmaChannelRegHandle[channel].CH_INTREN.INTREN_DISABLED) begin
+        sharedResource::dmaChannelRegHandle[channel].CH_STATUS.INTR_DISABLED=1;
+      end
+    end
 
-     if(numberOfReadReq[channel] != 0) begin
-       `uvm_error("TOP SCOREBOARD","NUMBER OF EXPECTED READS HAS NOT TAKEN PLACE")
-     end
-     else begin
-       `uvm_info("TOP SCOREBOARD","NUMBER OF EXPECTED READS HAS TAKEN PLACE ",UVM_HIGH)
-     end
-     if(numberOfWriteReq[channel] != 0) begin
-       `uvm_error("TOP SCOREBOARD","NUMBER OF EXPECTED WRITES HAS NOT TAKEN PLACE ")
-     end
+    if(numberOfReadReq[channel] != 0) begin
+      `uvm_error("TOP SCOREBOARD","NUMBER OF EXPECTED READS HAS NOT TAKEN PLACE")
+    end
+    else begin
+      `uvm_info("TOP SCOREBOARD","NUMBER OF EXPECTED READS HAS TAKEN PLACE ",UVM_HIGH)
+    end
+    if(numberOfWriteReq[channel] != 0) begin
+      `uvm_error("TOP SCOREBOARD","NUMBER OF EXPECTED WRITES HAS NOT TAKEN PLACE ")
+    end
     else begin
       `uvm_info("TOP SCOREBOARD","NUMBER OF EXPECTED WRITES HAS TAKEN PLACE ",UVM_HIGH)
     end
-    end 
-    else begin 
-      if (dmaChannelRegHandle[channel].CH_INTREN.INTREN_TRIGOUTACKWAIT == 1) begin
-        raiseInterrupt(channel, "SW TRIG OUT ACK WAIT");
-      end
-    end 
+  end
+  else begin
+    if (dmaChannelRegHandle[channel].CH_INTREN.INTREN_TRIGOUTACKWAIT == 1) begin
+      raiseInterrupt(channel, "SW TRIG OUT ACK WAIT");
+    end
+  end
 endtask
 
 `endif
- 
+

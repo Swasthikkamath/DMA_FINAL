@@ -11,7 +11,7 @@
 //------------------------------------------------------------------------------
 
 class triggerMasterSeqItemConverter extends uvm_object;
-  
+
   // Constructor
   extern function new(string name = "triggerMasterSeqItemConverter");
 
@@ -43,17 +43,17 @@ endfunction: new
 // Used before sending data to BFM
 //------------------------------------------------------------------------------
 function void triggerMasterSeqItemConverter::from_class(input triggerMasterTx inputConvHandle,output triggerStructPacket outputConvHandle);
-  
+
   `uvm_info("triggerMasterSeqItemConverter",$sformatf("--------------------FROM CLASS-----------------------------------------"),UVM_HIGH);
- 
-  outputConvHandle.trigInReq  = inputConvHandle.trigInReq; 
+
+  outputConvHandle.trigInReq  = inputConvHandle.trigInReq;
   outputConvHandle.trigInAck  = inputConvHandle.trigInAck;
-  outputConvHandle.trigOutReq = inputConvHandle.trigOutReq; 
-  outputConvHandle.trigOutAck = inputConvHandle.trigOutAck; 
+  outputConvHandle.trigOutReq = inputConvHandle.trigOutReq;
+  outputConvHandle.trigOutAck = inputConvHandle.trigOutAck;
   outputConvHandle.reqType    = inputConvHandle.reqTypeName;
   outputConvHandle.ackType    = inputConvHandle.ackType;
 
-endfunction : from_class 
+endfunction : from_class
 
 
 //------------------------------------------------------------------------------
@@ -65,14 +65,14 @@ endfunction : from_class
 function void triggerMasterSeqItemConverter::to_class(input triggerStructPacket inputConvHandle, ref triggerMasterTx outputConvHandle);
 
   `uvm_info("triggerMasterSeqItemConverter",$sformatf("--------------------TO CLASS-----------------------------------------"),UVM_HIGH);
-  
-  outputConvHandle.trigInReq  = inputConvHandle.trigInReq; 
-  outputConvHandle.trigInAck  = inputConvHandle.trigInAck; 
-  outputConvHandle.trigOutReq = inputConvHandle.trigOutReq; 
-  outputConvHandle.trigOutAck = inputConvHandle.trigOutAck; 
+
+  outputConvHandle.trigInReq  = inputConvHandle.trigInReq;
+  outputConvHandle.trigInAck  = inputConvHandle.trigInAck;
+  outputConvHandle.trigOutReq = inputConvHandle.trigOutReq;
+  outputConvHandle.trigOutAck = inputConvHandle.trigOutAck;
   outputConvHandle.reqTypeName    = inputConvHandle.reqType;
   outputConvHandle.ackType    = inputConvHandle.ackType;
-     
+
 endfunction : to_class
 
 
@@ -98,7 +98,7 @@ function void triggerMasterSeqItemConverter::do_print(uvm_printer printer);
   printer.print_field("TriggerOutReq",triggerStructPacketHandle.trigOutReq,$bits(triggerStructPacketHandle.trigOutReq),UVM_DEC);
 
   printer.print_field("TriggerOutAck",triggerStructPacketHandle.trigOutAck,$bits(triggerStructPacketHandle.trigOutAck),UVM_DEC);
-    
-endfunction : do_print  
+
+endfunction : do_print
 
 `endif
