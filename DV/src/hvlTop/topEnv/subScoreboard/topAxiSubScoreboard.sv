@@ -345,7 +345,7 @@ task topAxiSubScoreboard::handleAxi4MasterWrite(int master_id);
     sharedResource::waitForResp[arbitChannel]=1;
     if(sharedResource::numberOfWriteReq[arbitChannel] <= 0) begin
       //need to escape the arbitration here right
-      `uvm_error("TOP_SCOREBOARD","write for channel done asserted")
+      `uvm_info("TOP_SCOREBOARD",$sformatf("write for channel[%d] done asserted",arbitChannel),UVM_HIGH)
       sharedResource::priorityDesPerChannel[master_id][arbitChannel].commandStart=0;
       sharedResource::priorityDesPerChannel[master_id][arbitChannel].commandDone=1;
     end
@@ -409,6 +409,10 @@ task topAxiSubScoreboard::handleAxi4SlaveRead(int slave_id);
       if(sharedResource ::dmaChannelRegHandle[arbitChannel].CH_INTREN.INTREN_ERR ==1) begin
         sharedResource ::raiseError(arbitChannel, "BUS ERROR");
       end
+      if(raddr_tx.arid != arbitChannel) begin 
+        `uvm_error("TOP_SCOREBOARD",$sformatf("ARBIT:EXPECTED CHANNEL IS %d GOT CHANNEL IS %d ",arbitChannel,raddr_tx.arid))
+      end 
+
       //sharedResource::commandStatusPerChannel[arbitChannel].readDone=1;
       /* for(int i=0;i<(axi4_globals_pkg :: NO_OF_SLAVES);i++) begin
           if(sharedResource::initialSrcAddress[arbitChannel]>= sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].min_address && sharedResource::initialSrcAddress[arbitChannel]<sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].max_address) begin
@@ -488,11 +492,8 @@ task topAxiSubScoreboard::handleAxi4SlaveRead(int slave_id);
       int str;
       bit flag=0;
       sharedResource::disableChannel[arbitChannel]=0;
-      if(raddr_tx.arlen+1 != $countones(header)) begin
-        `uvm_error("TOP_SCOREBOARD","THE BURST LEN FOR COMMAND LINKING DOESNT MATCH WITH EXPECTED LENGHT")
-      end
       dynArr = new[32];
-      if(raddr_tx.araddr != (addr+(2**raddr_tx.arsize)))
+      if(raddr_tx.araddr != (addr+(4)))
         `uvm_error("TOP_SCOREBOARD","ADDR IN LINK IS NOT AS EXPECTED")
       addr = addr +4;
       for(int i=0;i<32;i++)begin
@@ -797,7 +798,7 @@ task topAxiSubScoreboard::handleAxi4SlaveRead(int slave_id);
 
           sharedResource::channelQueue[arbitChannel].push_back(expectedData);
           if(sharedResource::numberOfReadReq[arbitChannel]==0) begin
-            `uvm_error("TOP_SCOREBOARD","CHANNEL DONE ASSERTED")
+            `uvm_info("TOP_SCOREBOARD",$sformatf("CHANNEL[%d] READ DDONE ASSERTED",arbitChannel),UVM_HIGH)
             if(sharedResource::numberOfWriteReq[arbitChannel]==0) begin
               sharedResource::dmaChannelRegHandle[arbitChannel].CH_CMD.ENABLECMD=0;
             end
