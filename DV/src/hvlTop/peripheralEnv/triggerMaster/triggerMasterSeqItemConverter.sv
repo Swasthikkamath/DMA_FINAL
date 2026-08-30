@@ -51,7 +51,6 @@ function void triggerMasterSeqItemConverter::from_class(input triggerMasterTx in
   outputConvHandle.trigOutReq = inputConvHandle.trigOutReq; 
   outputConvHandle.trigOutAck = inputConvHandle.trigOutAck; 
   outputConvHandle.reqType    = inputConvHandle.reqTypeName;
-  $display("SEQ ITEM CONV REQ TYPE IS %s",inputConvHandle.reqTypeName);
   outputConvHandle.ackType    = inputConvHandle.ackType;
 
 endfunction : from_class 

@@ -15,7 +15,6 @@ endclass
 task triggerMasterSequence::body();
   super.body();
   req = triggerMasterTx :: type_id :: create("triggerMasterTx");
-  $display("REQ TYPE IS %s",this.reqType);
   req.randomize()with{reqTypeName == reqType;};
   start_item(req);
   finish_item(req);

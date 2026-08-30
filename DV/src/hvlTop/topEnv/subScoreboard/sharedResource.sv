@@ -408,7 +408,6 @@ task sharedResource::initiateSrcTriggerTransfer(int channel);
     if(dmaChannelRegHandle[channel].CH_SRCTRIGINCFG.SRCTRIGINMODE ==2 || dmaChannelRegHandle[channel].CH_SRCTRIGINCFG.SRCTRIGINMODE ==3) begin 
       flowControl[triggerPort]=1;
     end 
-    $display("SRC CHECK STARTED TRIGGER");
     if (triggerAccessed[triggerPort] == 0 ) begin
       readWriteTriggerMap[triggerPort] = 0; // read operation
       semaPhoreTriggerHandle[triggerPort].put(1);
@@ -486,7 +485,6 @@ task sharedResource :: initiateDesTriggerTransfer(int channel);
       flowControl[triggerPort]=1;
     end
 
-    $display("DES CHECK STARTED TRIGGER triggerAccessed is %d",triggerAccessed[triggerPort]);
     if (triggerAccessed[triggerPort] == 0 ) begin
       readWriteTriggerMap[triggerPort] = 1; // Read operation
       semaPhoreTriggerHandle[triggerPort].put(1);
@@ -624,14 +622,10 @@ task sharedResource::setUp1DAddress(int channel);
   
     if(dmaChannelRegHandle[channel].CH_TMPLTCFG.SRCTMPLTSIZE> 0) begin 
       int validCheck=0;
-      $display("V2 TRANSFER IS %0d tmplt is %b size is %d",totalTransfers,dmaChannelRegHandle[channel].CH_SRCTMPLT,dmaChannelRegHandle[channel].CH_TMPLTCFG.SRCTMPLTSIZE);
       for(int i=0;i<totalTransfers;i++) begin 
-        $display("THE TMPLT BIT CONSIDERED IS %D and its value is %d",validCheck,dmaChannelRegHandle[channel].CH_SRCTMPLT[validCheck]);
         if (dmaChannelRegHandle[channel].CH_SRCTMPLT[validCheck] !=1) begin 
              i--;
-             $display("speaking this address %d",srcAddr);
              srcAddr = srcAddr + beat_bytes; // skip this address 
-             $display("new address is %d",srcAddr);
              validCheck = ((validCheck+1)%(dmaChannelRegHandle[channel].CH_TMPLTCFG.SRCTMPLTSIZE+1));
              continue;
 
@@ -656,7 +650,6 @@ task sharedResource::setUp1DAddress(int channel);
           end
         endcase
         if(dmaChannelRegHandle[channel].CH_SRCTMPLT[validCheck] ==1)begin
-          $display("valid is one");
           validCheck = ((validCheck+1)%(dmaChannelRegHandle[channel].CH_TMPLTCFG.SRCTMPLTSIZE+1));
           /*if(xType != X_WRAP) begin //the trm doesnt clearly mentions whether the dimension rules should be applicable or not 
             srcAddr = srcAddr + beat_bytes;
@@ -668,7 +661,6 @@ task sharedResource::setUp1DAddress(int channel);
             srcAddr = srcAddr + beat_bytes;
           end */
           srcAddr = srcAddr + beat_bytes;
-          $display("new address is %d",srcAddr);
         end
 
         if(calculateSrcXsize == 1 && (determineNumberOfReads(channel) > srcXsize)) begin 
@@ -704,7 +696,6 @@ task sharedResource::setUp1DAddress(int channel);
         `uvm_info("TOP_SCOREBOARD",$sformatf("1D Excepted Write Addr:%p, Excepted Read Addr:%p",expectedWriteAddr,expectedReadAddr),UVM_NONE)
       end 
     end
-    $display("V2 CHECK %p",expectedReadAddr[channel]);
 
     if(dmaChannelRegHandle[channel].CH_TMPLTCFG.DESTMPLTSIZE> 0) begin 
       int validCheck=0;
@@ -730,7 +721,6 @@ task sharedResource::setUp1DAddress(int channel);
       end 
     end 
   end 
-   $display("V2 DES IS %p",expectedWriteAddr[channel]); 
   if(!flagHasTemp) begin 
     if(yType == Y_DISABLE || (has2D == 0 || (has2D == 1 && srcYsize == 1)))begin 
       if (xType == X_CONTINUE) begin
@@ -785,7 +775,6 @@ task sharedResource::setUp1DAddress(int channel);
         totalTransferPerRow++; 
         totalElements++;
         expectedReadAddr[channel].push_back(push_addr);
-        $display("PUSH ADDRESS = %d", push_addr);
        `uvm_info("TOP_SCOREBOARD",$sformatf("2D Excepted Read Addr:%p and qsize is %0d row_no=%0d srcysize=%0d noOfElem=%0d ytype %s",expectedReadAddr,expectedReadAddr[channel].size(),row_no,srcYsize,totalTransferPerRow,yType),UVM_NONE)
  
         calculateSrcXsize--;
@@ -829,7 +818,6 @@ task sharedResource::setUp1DAddress(int channel);
           push_addr = row_base;
         end 
       end 
-      $display("DESTINATION ADDRESS=%p",expectedWriteAddr[channel]);
     end  
   end 
 endtask
@@ -886,8 +874,6 @@ function int sharedResource :: determineNumberOfReads(int channel);
            return dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE * smallestRow;
          end 
          X_CONTINUE: begin 
-             $display("HHEY ITS HERE ");
-             $display("SRCXSIZE %d desxsize %d srcysize %d  desysize %d",dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE,dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE,dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE,dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE);
            if((dmaChannelRegHandle[channel].CH_YSIZE.DESYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE) > (dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE)) begin 
               return (dmaChannelRegHandle[channel].CH_YSIZE.SRCYSIZE * dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE); 
            end 

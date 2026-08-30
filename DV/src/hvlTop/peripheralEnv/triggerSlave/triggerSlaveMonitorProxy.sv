@@ -96,7 +96,6 @@ task triggerSlaveMonitorProxy ::run_phase(uvm_phase phase);
 
       // Send transaction to analysis port
       triggerSlaveMonitorAnalysisPort.write(req);
-      $display("TRIGGER GOT @%t",$time());
     end 
   
     forever begin   

@@ -131,12 +131,10 @@
       end 
       else begin
         sharedResource::commandStatusPerChannel[arbitChannel].readCounter[0] = sharedResource::commandStatusPerChannel[arbitChannel].readCounter[0] - (addressTx.awlen+1);
-        $display("POPPING CHANNEL %d remaining is %d count is %d read done is %d %d",arbitChannel,sharedResource::commandStatusPerChannel[arbitChannel].readCounter[0],sharedResource::commandStatusPerChannel[arbitChannel].count,sharedResource::commandStatusPerChannel[0].readDone,sharedResource::commandStatusPerChannel[1].readDone);
         if(sharedResource::commandStatusPerChannel[arbitChannel].readCounter[0] ==0) begin
            void'(sharedResource::commandStatusPerChannel[arbitChannel].readCounter.pop_front());
            sharedResource::commandStatusPerChannel[arbitChannel].count--;
           sharedResource::commandStatusPerChannel[arbitChannel].readDone=0;
-          $display("COUNT ZERO SO READ IS MADE ZERO FOR CHANNEL %d",arbitChannel);
           
         end 
       end 
@@ -186,18 +184,12 @@
         if(!sharedResource::pauseChannel[arbitChannel] && !sharedResource::stopChannel[arbitChannel]) begin 
           //expectedAddr = sharedResource::expectedWriteAddr[arbitChannel].pop_front();
           sharedResource::dmaChannelRegHandle[arbitChannel].CH_DESADDR = expectedAddr;
-          $display("HEY BYE SRC %d DES %d transfer %d",sharedResource::initialSrcXsize[arbitChannel],sharedResource::initialDesXsize[arbitChannel],numberOfTransfer[arbitChannel]);
           if((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE == X_CONTINUE) &&(sharedResource::initialSrcXsize[arbitChannel] > sharedResource::initialDesXsize[arbitChannel])&&(numberOfTransfer[arbitChannel] == sharedResource::initialSrcXsize[arbitChannel]))begin 
             numOfRows[arbitChannel]++;
-            $display("HELLO CHECK NUMBER OF ROWS %d",numOfRows[arbitChannel]);
-            $display("HELLO CHECK NUMBER OF TRANSFER %d",numberOfTransfer[arbitChannel]);
             numberOfTransfer[arbitChannel]=0;
-            $display("HEY BYE");
           end 
           else if((numberOfTransfer[arbitChannel] ==  sharedResource::initialSrcXsize[arbitChannel] )&&((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE == X_CONTINUE) &&(sharedResource::initialSrcXsize[arbitChannel] <= sharedResource::initialDesXsize[arbitChannel]))) begin 
             numOfRows[arbitChannel]++;
-            $display("HELLO CHECK NUMBER OF ROWS %d",numOfRows[arbitChannel]);
-            $display("HELLO CHECK NUMBER OF TRANSFER %d",numberOfTransfer[arbitChannel]);
             numberOfTransfer[arbitChannel]=0;
           end
           else if (sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE != X_CONTINUE &&(numberOfTransfer[arbitChannel] == sharedResource::initialDesXsize[arbitChannel]))begin
@@ -299,18 +291,14 @@
           end
         end  
         sharedResource::dmaChannelRegHandle[arbitChannel].CH_DESADDR = expectedAddr;
-        $display("HEY BYE SRC %d DES %d transfer %d",sharedResource::initialSrcXsize[arbitChannel],sharedResource::initialDesXsize[arbitChannel],numberOfTransfer[arbitChannel]);
 
         if((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE == X_CONTINUE) &&(sharedResource::initialSrcXsize[arbitChannel] > sharedResource::initialDesXsize[arbitChannel])&&(numberOfTransfer[arbitChannel] == sharedResource::initialSrcXsize[arbitChannel]))begin 
           numOfRows[arbitChannel]++;
           numberOfTransfer[arbitChannel]=0;
-          $display("HEY BYE");
         end 
         else if((numberOfTransfer[arbitChannel] ==  sharedResource::initialSrcXsize[arbitChannel] )&&((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE == X_CONTINUE) &&(sharedResource::initialSrcXsize[arbitChannel] <= sharedResource::initialDesXsize[arbitChannel]))) begin 
           numOfRows[arbitChannel]++;
-          $display("HELLO CHECK NUMBER OF TRANSFER %d",numberOfTransfer[arbitChannel]);
            
-          $display("HELLO CHECK THIS %d",numOfRows[arbitChannel]);
           numberOfTransfer[arbitChannel]=0;
 
         end
@@ -354,7 +342,6 @@
           end 
         end      
       end 
-      $display("RESP ASSERT IS DONE");
       sharedResource::waitForResp[arbitChannel]=1; 
       if(sharedResource::numberOfWriteReq[arbitChannel] <= 0) begin
         //need to escape the arbitration here right
@@ -411,13 +398,11 @@
           int maxQos;
           bit first;
           if(sharedResource::dmaChannelRegHandle[i].CH_XADDRINC.SRCXADDRINC>1 && sharedResource::prioritySrcPerChannel[selectedInterface][i].commandDone !=1)begin
-            $display("TIERED OF THE ARBIT");
            sharedResource::prioritySrcPerChannel[selectedInterface][i].commandStart=1;
             sharedResource::prioritySrcPerChannel[selectedInterface][i].channelPri = sharedResource::dmaChannelRegHandle[i].CH_CTRL.CHPRIO; 
           end 
         end 
         arbitChannel = checkArbit(selectedInterface,1);
-        $display("HI BYE HELLO");
         sharedResource::dmaChannelRegHandle[arbitChannel].CH_ERRINFO.BUSERR = 1; //arbit using start and done and for this interface it will be 0 right 
         sharedResource ::dmaChannelRegHandle[arbitChannel].CH_ERRINFO.ERRINFO.AXIRDRESPERR =1;
         sharedResource ::dmaChannelRegHandle[arbitChannel].CH_STATUS.STAT_ERR =1; //come out of arbitration
@@ -445,7 +430,6 @@
       
         for(int i=0;i<4;i++) begin //4 bytes fetched header (unaligned support)
           str = address % (DATA_WIDTH/8);
-          $display("address for header is %d str is %d data is %h complete data is %h",address,str,rdata_tx.rdata[0][8*str +:8],rdata_tx.rdata[0]);
           header[8*i +:8] = rdata_tx.rdata[0][8*str +:8];
           address +=1;
         end 
@@ -504,7 +488,6 @@
         bit[31:0] dynArr[];
         int str;
         bit flag=0;
-        $display("ARBIT LINK IS %D header is %b",raddr_tx.arlen,header);
         sharedResource::disableChannel[arbitChannel]=0;
         if(raddr_tx.arlen+1 != $countones(header)) begin 
           `uvm_error("TOP_SCOREBOARD","THE BURST LEN FOR COMMAND LINKING DOESNT MATCH WITH EXPECTED LENGHT")
@@ -527,7 +510,6 @@
             else begin 
               subtract = (2**(raddr_tx.arsize));
             end
-            $display("THE SUB IS %0d",subtract);
             for(int j=0,k=0;j<subtract;j++,k++) begin     
               str= (addr %(axi4_globals_pkg ::DATA_WIDTH /8));
 
@@ -537,7 +519,6 @@
               end
               else begin 
                 expectedData[8*str +:8] = rdata_tx.rdata[0][8*str +:8]; //keeps bytes alligned
-                $display("updated link expected data is %h",expectedData);
               end 
 
               if((addr %4) ==0 && (addr %(axi4_globals_pkg ::DATA_WIDTH /8))!=0) begin 
@@ -601,8 +582,6 @@
         sharedResource::prioritySrcPerChannel[slave_id][arbitChannel].commandStart=0;
         sharedResource::prioritySrcPerChannel[slave_id][arbitChannel].commandDone=1;
         sharedResource::commandStatusPerChannel[arbitChannel].readDone=0;
-        $display("NEW CONFIG IS %p",sharedResource::dmaChannelRegHandle);
-        $display("TRIGG ACC IS %p",sharedResource::triggerAccessed);
         sharedResource::expectedReadAddr[arbitChannel].delete();
         sharedResource::expectedWriteAddr[arbitChannel].delete(); 
         sharedResource::numberOfReadReq[arbitChannel] = sharedResource::determineNumberOfReads(arbitChannel);
@@ -703,7 +682,6 @@
             `uvm_error("TOP_SCOREBOARD",$sformatf("ARLEN ERROR FOR BLOCK BASED TRANSFER WHEN ARLEN IS %0d AND MAX LEN FOR BURST IS %0D AND BLK SIZE FOR SRC IS %0D",raddr_tx.arlen,sharedResource::dmaChannelRegHandle[arbitChannel].CH_SRCTRANSCFG.SRCMAXBURSTLEN,sharedResource::dmaChannelRegHandle[arbitChannel].CH_SRCTRIGINCFG.SRCTRIGINBLKSIZE))
           end 
           expectedAddr =sharedResource::expectedReadAddr[arbitChannel].pop_front();
-          $display("EXPECTED READ ADDR Q IS %p",sharedResource::expectedReadAddr[arbitChannel]);
           if(raddr_tx.araddr == expectedAddr) begin
             `uvm_info("TOP_SCOREBOARD","THE EXPECTED READ ADDR MATCHES WITH THE ACTUAL ADDRESS FOR READ PATH",UVM_HIGH)
           end
@@ -714,11 +692,8 @@
           for(int index =0 ; index < (raddr_tx.arlen);index++) begin //<3  0 1 2
             if(!sharedResource::pauseChannel[arbitChannel] && !sharedResource::stopChannel[arbitChannel])begin
               sharedResource::readCounter[arbitChannel]++;
-              $display("the read counter is %d,max is %d,xtype is %d",sharedResource::readCounter[arbitChannel],sharedResource::dmaChannelRegHandle[arbitChannel].CH_DESTRANSCFG.DESMAXBURSTLEN,sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE);
-              $display("BROTHER IS %D",((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP)&&(sharedResource::readCounter[arbitChannel] > sharedResource::dmaChannelRegHandle[arbitChannel].CH_DESTRANSCFG.DESMAXBURSTLEN)));
               if(((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP)&&sharedResource::readCounter[arbitChannel]==sharedResource::initialDesXsize[arbitChannel]) || ((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_FILL) &&(sharedResource::readCounter[arbitChannel]==(sharedResource::initialSrcXsize[arbitChannel] <= sharedResource::initialDesXsize[arbitChannel]?sharedResource::initialSrcXsize[arbitChannel] : sharedResource::initialDesXsize[arbitChannel]))) || ((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP ||sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_FILL )&&(sharedResource::readCounter[arbitChannel] > sharedResource::dmaChannelRegHandle[arbitChannel].CH_DESTRANSCFG.DESMAXBURSTLEN)) || (sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.YTYPE == Y_FILL && sharedResource::numberOfReadReq[arbitChannel]==0 &&sharedResource::numberOfWriteReq[arbitChannel]!=0))begin 
                 sharedResource::commandStatusPerChannel[arbitChannel].readDone=1;
-                 $display("READ DONE IS MADE 1 FOR CHANNEL %d READ COUNTER =%0d",arbitChannel,sharedResource::readCounter[arbitChannel]);
                  sharedResource::readCounter[arbitChannel]=0;
                  sharedResource::commandStatusPerChannel[arbitChannel].readCounter.push_back(sharedResource::readCounter[arbitChannel]);
                  sharedResource::commandStatusPerChannel[arbitChannel].count++;
@@ -760,7 +735,6 @@
               end
             end 
             expectedAddr =sharedResource::expectedReadAddr[arbitChannel].pop_front();
-            $display("EXPECTED READ ADDR Q IS %p",sharedResource::expectedReadAddr[arbitChannel]);
             sharedResource::dmaChannelRegHandle[arbitChannel].CH_SRCADDR = expectedAddr;
             peripheralUnitAxi4SlavePathReadDataAnalysisExport[slave_id].get(rdata_tx);//2 3 4 
             if(sharedResource::numberOfReadReq[arbitChannel] ==0) begin
@@ -791,11 +765,8 @@
             //expectedAddr =sharedResource::expectedReadAddr[arbitChannel].pop_front();
             sharedResource::dmaChannelRegHandle[arbitChannel].CH_SRCADDR = expectedAddr;
             sharedResource::readCounter[arbitChannel]++;
-            $display("the read counter out is %d max len is %d,xtype =%d",sharedResource::readCounter[arbitChannel],sharedResource::dmaChannelRegHandle[arbitChannel].CH_DESTRANSCFG.DESMAXBURSTLEN,sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE);
-            $display("BROTHER IS %D",((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP)&&(sharedResource::readCounter[arbitChannel] > sharedResource::dmaChannelRegHandle[arbitChannel].CH_DESTRANSCFG.DESMAXBURSTLEN)));
             if(((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP)&&sharedResource::readCounter[arbitChannel]==sharedResource::initialDesXsize[arbitChannel]) || ((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_FILL) &&(sharedResource::readCounter[arbitChannel]==(sharedResource::initialSrcXsize[arbitChannel] <= sharedResource::initialDesXsize[arbitChannel]?sharedResource::initialSrcXsize[arbitChannel] : sharedResource::initialDesXsize[arbitChannel]))) || ((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_FILL)&&(sharedResource::readCounter[arbitChannel] > sharedResource::dmaChannelRegHandle[arbitChannel].CH_DESTRANSCFG.DESMAXBURSTLEN)) || (sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.YTYPE == Y_FILL && sharedResource::numberOfReadReq[arbitChannel]==0 &&sharedResource::numberOfWriteReq[arbitChannel]!=0))begin 
                sharedResource::commandStatusPerChannel[arbitChannel].readDone=1;
-              $display("READ DONE IS MADE 1 FOR CHANNEL %d READ COUNTER =%0d",arbitChannel,sharedResource::readCounter[arbitChannel]);
                sharedResource::readCounter[arbitChannel]=0;
                sharedResource::commandStatusPerChannel[arbitChannel].readCounter.push_back(sharedResource::readCounter[arbitChannel]);
                sharedResource::commandStatusPerChannel[arbitChannel].count++;
@@ -869,7 +840,6 @@
             break;
           end
         end
-        $display("BUS ERR IN RESP");
         sharedResource::priorityDesPerChannel[selectedInterface][arbitChannel].commandDone =1; //exiting the arbitChannel
         continue;
       end 
@@ -890,7 +860,6 @@
           end
         end
 
-        $display("STARTED LINK EN FOR ARBIT FOR CHANNEL %d slave id is %d link addr is %d",arbitChannel,slave_id,sharedResource::dmaChannelRegHandle[arbitChannel].CH_LINKADDR.LINKADDR);
 
         sharedResource::dmaChannelRegHandle[arbitChannel].CH_CMD.ENABLECMD=1;
         sharedResource::prioritySrcPerChannel[slave_id][arbitChannel].commandStart=1;
@@ -1149,7 +1118,6 @@
       int maxPri;
       for(int i=0;i<NUM_CHANNELS;i++) begin
         if(sharedResource::dmaChannelRegHandle[i].CH_CMD.ENABLECMD==0 ||   sharedResource::prioritySrcPerChannel[slaveId][i].commandStart==0 || (sharedResource::prioritySrcPerChannel[slaveId][i].commandDone==1)||sharedResource::pauseChannel[i]==1 || sharedResource::stopChannel[i]==1 ) begin 
-          $display("CHNANEL %d is continue because enable is %d start is %d done is %d",i,sharedResource::dmaChannelRegHandle[i].CH_CMD.ENABLECMD,sharedResource::prioritySrcPerChannel[slaveId][i].commandStart,sharedResource::prioritySrcPerChannel[slaveId][i].commandDone);
           continue;
         end 
         if(firstPri==0) begin
@@ -1169,7 +1137,6 @@
         end
       end
 
-      $display("ARBIT QUEUE IS %p and round robin is %d",queueForSamePri,sharedResource::readRoundRobinPtr);
 
       if(sharedResource::managerReadAccess !=0) begin
         `uvm_error("TOP_SCOREBOARD","TRYING TO ACCESS THE MANAGER READ PATH WHEN ITS ALREADY BEING ACCESSED")

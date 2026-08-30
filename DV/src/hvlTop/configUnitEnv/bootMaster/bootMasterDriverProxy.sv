@@ -38,7 +38,6 @@ task bootMasterDriverProxy :: run_phase(uvm_phase phase);
   //
   forever begin 
     seq_item_port.get_next_item(req);
-    $display("ORIGINL ADDDDD IS %d",req.bootAddr);
     bootMasterSeqItemConverter :: fromClass(req,bootStructPacketHandle);
     bootMasterDriverBfmHandle.bootDrive(bootStructPacketHandle);
     bootMasterSeqItemConverter :: toClass(bootStructPacketHandle,req);

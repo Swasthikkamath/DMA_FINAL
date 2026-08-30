@@ -17,7 +17,6 @@
 
   function bootMasterSeqItemConverter :: fromClass(input bootMasterTx bootMasterTxHandle,output bootStructPacket bootStructPacketHandle);
     bootStructPacketHandle.bootEn = bootMasterTxHandle.bootEn;
-    $display("ADDDDDDD IS %d",bootMasterTxHandle.bootAddr);
     bootStructPacketHandle.bootAddr = bootMasterTxHandle.bootAddr;
 
   endfunction 

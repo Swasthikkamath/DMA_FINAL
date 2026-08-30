@@ -182,7 +182,6 @@ function void peripheralEnv :: connect_phase(uvm_phase phase);
   end 
 
   if(peripheralEnvConfigHandle.triggerMasterAgentConfigHandle[peripheralNum].is_active == UVM_ACTIVE) begin 
-    $display("SEQR CONNECTED FOR PERIF %d",peripheralNum);
     peripheralEnvVirtualSequencerHandle.triggerMasterSequencerHandle = triggerMasterAgentHandle.triggerMasterSequencerHandle;
   end 
  end 

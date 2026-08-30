@@ -715,7 +715,6 @@ struct_read_packet.rid = read_pkt.arid;
        `uvm_info("DEBUG_MEMORY_WRITE",$sformatf("memory_task_arlen=%d",read_pkt.arlen),UVM_DEBUG)
         for(int strb=0;strb<((2**(read_pkt.arsize))-amount);strb++) begin
           k = addr % (DATA_WIDTH/8);
-          $display("FIRST WHICH BYTE %D",k);
           if(axi4_slave_mem_h.is_slave_addr_exists(addr) && read_pkt.araddr inside {[axi4_slave_agent_cfg_h.min_address :axi4_slave_agent_cfg_h.max_address]})begin
 
              axi4_slave_mem_h.mem_read(addr,struct_read_packet.rdata[0][8*k+7 -: 8]);

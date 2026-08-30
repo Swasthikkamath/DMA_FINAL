@@ -76,7 +76,6 @@ function void apb_master_adapter::bus2reg( uvm_sequence_item bus_item,
                  "bus_item is not of the apb_master_tx type." )
      return;
   end
-  $display("ENTERED ADAPTER AGAIN");
   // Assuming these address range falls in the slave0 domain
   // TODO(mshariff): Need to add more logic to be intelligent to pick correct pselx value
   apb_tx.pselx = SLAVE_0; 

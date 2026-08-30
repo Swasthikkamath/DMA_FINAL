@@ -68,7 +68,6 @@ endfunction
 //--------------------------------------------------------------------------------------------
 function void axi4_slave_memory::mem_read(input bit [ADDRESS_WIDTH-1 :0]slave_address, output bit [DATA_WIDTH-1:0]data);
    data = slave_memory[slave_address];
-   $display("data read is %h",data);
 endfunction : mem_read
 
 

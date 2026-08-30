@@ -55,7 +55,6 @@ task peripheralTriggerMasterOnlyVirtualSequence::body();
   fork
    begin
      triggerMasterSequenceHandle.reqType = reqType;
-     $display("TRIGGER MASTER STARTED AS REQTYPE %s",triggerMasterSequenceHandle.reqType);
      forever begin 
         triggerMasterSequenceHandle.start(p_sequencer.triggerMasterSequencerHandle);
      end

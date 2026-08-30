@@ -103,11 +103,9 @@ task topTriggerSubScoreboard::handleTriggers();
 
                 flag=1;
               end 
-              $display("STARTED PACKET WAIT FOR TRIGGER %d channel is %d",triggerNum,channel); 
               
               peripheralUnitTriggerSlavePathAnalysisExport[triggerNum].get(triggerTx);         
               
-              $display("TRIGGER GOT AT SCB @%t for trigger %d",$time(),triggerNum);
               
               if(sharedResource::pauseChannel[channel]==1)begin
                 `uvm_error("TOP_SCOREBOARD",$sformatf("OBTAINED TRIGGER PACKET AT PORT %d INSPITE OF PAUSE",triggerNum))
@@ -187,7 +185,6 @@ task topTriggerSubScoreboard::handleTriggers();
             end 
           end 
         join
-        $display("DISABLE FOR TRIGGER %d",triggerNum);
         if(done==0 && !sharedResource::pauseChannel[channel] && !sharedResource::stopChannel[channel] ) begin 
           `uvm_error("TOP_SCOREBOARD",$sformatf("THE TRIGGER PORT %d HANDSHAKE HAS NOT TAKEN PLACE",triggerNum))
         end 
@@ -200,7 +197,6 @@ task topTriggerSubScoreboard::handleTriggers();
           sharedResource ::triggerDesTaskCall[channel]=0;
         end 
         sharedResource::triggerAccessed[triggerNum] = 0;
-        $display("TRIGGER PORT[%d] HAS BEEN RELEASED",triggerNum);
         `uvm_info("TOP_SCOREBOARD",$sformatf("TRIGGER PORT[%d] HAS BEEN RELEASED",triggerNum),UVM_HIGH)
         sharedResource::commandDone[triggerNum] =0;
       end
@@ -244,7 +240,6 @@ task topTriggerSubScoreboard :: handleTriggerOut();
           end
         end
 
-        $display("STARTED LINK EN FOR ARBIT FOR CHANNEL %d slave id is %d link addr is %d",channel,slave_id,sharedResource::dmaChannelRegHandle[channel].CH_LINKADDR.LINKADDR);
         sharedResource::dmaChannelRegHandle[channel].CH_CMD.ENABLECMD=1;
         sharedResource::prioritySrcPerChannel[slave_id][channel].commandStart=1;
         sharedResource::prioritySrcPerChannel[slave_id][channel].commandDone=0;
@@ -275,7 +270,6 @@ task topTriggerSubScoreboard :: handleTriggerOut();
 
        sharedResource::triggerOutAccessed[triggerNum]=0;
       
-        $display("TRIGGER ACCESSED CHECK AT SRC IS %d",sharedResource::triggerAccessed[0]);
        if(sharedResource::numberOfReadReq[channel] == 0) begin
          `uvm_info("TOP SCOREBOARD","NUMBER OF EXPECTED READS HAS TAKEN PLACE",UVM_HIGH)
        end
@@ -381,18 +375,12 @@ task topTriggerSubScoreboard :: handleTriggerOut();
             1: begin 
               sharedResource ::dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE = sharedResource::initialSrcXsize[channel];    
               sharedResource ::dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE = sharedResource::initialDesXsize[channel];
-              $display("SRC ADDR IS %d",sharedResource ::dmaChannelRegHandle[channel].CH_SRCADDR);
-              $display("EXCESS IS %d",(( sharedResource ::dmaChannelRegHandle[channel].CH_SRCADDR - sharedResource::initialSrcAddress[channel])%((sharedResource ::dmaChannelRegHandle[channel].CH_YADDRSTRIDE.SRCYADDRSTRIDE)*(2**(sharedResource ::dmaChannelRegHandle[channel].CH_CTRL.TRANSIZE)))));
-              $display("MODULUS IS %d of %d",(sharedResource ::dmaChannelRegHandle[channel].CH_YADDRSTRIDE.DESYADDRSTRIDE)*(2**(sharedResource ::dmaChannelRegHandle[channel].CH_CTRL.TRANSIZE)),sharedResource ::dmaChannelRegHandle[channel].CH_SRCADDR);
-              $display("cond is %d",((sharedResource ::dmaChannelRegHandle[channel].CH_SRCADDR %((sharedResource ::dmaChannelRegHandle[channel].CH_YADDRSTRIDE.SRCYADDRSTRIDE)*(2**(sharedResource::dmaChannelRegHandle[channel].CH_CTRL.TRANSIZE))))==0));
-              $display("brotehr sub is %d",(((sharedResource ::dmaChannelRegHandle[channel].CH_SRCADDR %((sharedResource ::dmaChannelRegHandle[channel].CH_YADDRSTRIDE.SRCYADDRSTRIDE)*(2**(sharedResource ::dmaChannelRegHandle[channel].CH_CTRL.TRANSIZE))))==0) ? ((sharedResource ::dmaChannelRegHandle[channel].CH_YADDRSTRIDE.SRCYADDRSTRIDE)*(2**(sharedResource ::dmaChannelRegHandle[channel].CH_CTRL.TRANSIZE))):(((sharedResource::dmaChannelRegHandle[channel].CH_SRCADDR-sharedResource::initialSrcAddress[channel]))%((sharedResource ::dmaChannelRegHandle[channel].CH_YADDRSTRIDE.SRCYADDRSTRIDE)*(2**(sharedResource::dmaChannelRegHandle[channel].CH_CTRL.TRANSIZE)))))); 
             /*  sharedResource::dmaChannelRegHandle[channel].CH_DESADDR = sharedResource::dmaChannelRegHandle[channel].CH_DESADDR + ((sharedResource::dmaChannelRegHandle[channel].CH_YADDRSTRIDE.DESYADDRSTRIDE) * (2**(sharedResource::dmaChannelRegHandle[channel].CH_CTRL.TRANSIZE))) - ((sharedResource::dmaChannelRegHandle[channel].CH_DESADDR %(((sharedResource::dmaChannelRegHandle[channel].CH_YADDRSTRIDE.DESYADDRSTRIDE) * (2**(sharedResource::dmaChannelRegHandle[channel].CH_CTRL.TRANSIZE)))))==0? (((sharedResource::dmaChannelRegHandle[channel].CH_YADDRSTRIDE.DESYADDRSTRIDE) * (2**(sharedResource::dmaChannelRegHandle[channel].CH_CTRL.TRANSIZE)))):(((sharedResource::dmaChannelRegHandle[channel].CH_DESADDR - sharedResource::initialDesAddress[channel])) % ((sharedResource::dmaChannelRegHandle[channel].CH_YADDRSTRIDE.DESYADDRSTRIDE) * (2**(sharedResource::dmaChannelRegHandle[channel].CH_CTRL.TRANSIZE)))));
 */
                
               sharedResource ::dmaChannelRegHandle[channel].CH_DESADDR = sharedResource ::dmaChannelRegHandle[channel].CH_DESADDR +((sharedResource ::dmaChannelRegHandle[channel].CH_YADDRSTRIDE.DESYADDRSTRIDE)*(2**(sharedResource::dmaChannelRegHandle[channel].CH_CTRL.TRANSIZE)))-(((((sharedResource::dmaChannelRegHandle[channel].CH_DESADDR-sharedResource::initialDesAddress[channel]))%((sharedResource ::dmaChannelRegHandle[channel].CH_YADDRSTRIDE.DESYADDRSTRIDE)*(2**(sharedResource::dmaChannelRegHandle[channel].CH_CTRL.TRANSIZE))))==0)? ((sharedResource ::dmaChannelRegHandle[channel].CH_YADDRSTRIDE.DESYADDRSTRIDE)*(2**(sharedResource::dmaChannelRegHandle[channel].CH_CTRL.TRANSIZE))) : ((((sharedResource::dmaChannelRegHandle[channel].CH_DESADDR-sharedResource::initialDesAddress[channel]))%((sharedResource ::dmaChannelRegHandle[channel].CH_YADDRSTRIDE.DESYADDRSTRIDE)*(2**(sharedResource::dmaChannelRegHandle[channel].CH_CTRL.TRANSIZE))))));
                
               sharedResource ::dmaChannelRegHandle[channel].CH_SRCADDR = sharedResource ::dmaChannelRegHandle[channel].CH_SRCADDR +((sharedResource ::dmaChannelRegHandle[channel].CH_YADDRSTRIDE.SRCYADDRSTRIDE)*(2**(sharedResource::dmaChannelRegHandle[channel].CH_CTRL.TRANSIZE)))-(((((sharedResource::dmaChannelRegHandle[channel].CH_SRCADDR-sharedResource::initialSrcAddress[channel]))%((sharedResource ::dmaChannelRegHandle[channel].CH_YADDRSTRIDE.SRCYADDRSTRIDE)*(2**(sharedResource::dmaChannelRegHandle[channel].CH_CTRL.TRANSIZE))))==0)? ((sharedResource ::dmaChannelRegHandle[channel].CH_YADDRSTRIDE.SRCYADDRSTRIDE)*(2**(sharedResource::dmaChannelRegHandle[channel].CH_CTRL.TRANSIZE))) : ((((sharedResource::dmaChannelRegHandle[channel].CH_SRCADDR-sharedResource::initialSrcAddress[channel]))%((sharedResource ::dmaChannelRegHandle[channel].CH_YADDRSTRIDE.SRCYADDRSTRIDE)*(2**(sharedResource::dmaChannelRegHandle[channel].CH_CTRL.TRANSIZE))))));
-              $display("SRC ADDR IS %d",sharedResource ::dmaChannelRegHandle[channel].CH_SRCADDR);
             end 
          
             3: begin 
@@ -406,7 +394,6 @@ task topTriggerSubScoreboard :: handleTriggerOut();
               sharedResource ::dmaChannelRegHandle[channel].CH_XSIZE.SRCXSIZE = sharedResource::initialSrcXsize[channel];
               sharedResource ::dmaChannelRegHandle[channel].CH_XSIZE.DESXSIZE = sharedResource::initialDesXsize[channel];
               sharedResource ::dmaChannelRegHandle[channel].CH_DESADDR = sharedResource::initialDesAddress[channel];
-              $display("SRC ADDR IS %d",sharedResource ::dmaChannelRegHandle[channel].CH_SRCADDR);
               sharedResource ::dmaChannelRegHandle[channel].CH_SRCADDR = sharedResource ::dmaChannelRegHandle[channel].CH_SRCADDR +((sharedResource ::dmaChannelRegHandle[channel].CH_YADDRSTRIDE.SRCYADDRSTRIDE)*(2**(sharedResource::dmaChannelRegHandle[channel].CH_CTRL.TRANSIZE)))-(((((sharedResource::dmaChannelRegHandle[channel].CH_SRCADDR-sharedResource::initialSrcAddress[channel]))%((sharedResource ::dmaChannelRegHandle[channel].CH_YADDRSTRIDE.SRCYADDRSTRIDE)*(2**(sharedResource::dmaChannelRegHandle[channel].CH_CTRL.TRANSIZE))))==0)? ((sharedResource ::dmaChannelRegHandle[channel].CH_YADDRSTRIDE.SRCYADDRSTRIDE)*(2**(sharedResource::dmaChannelRegHandle[channel].CH_CTRL.TRANSIZE))) : ((((sharedResource::dmaChannelRegHandle[channel].CH_SRCADDR-sharedResource::initialSrcAddress[channel]))%((sharedResource ::dmaChannelRegHandle[channel].CH_YADDRSTRIDE.SRCYADDRSTRIDE)*(2**(sharedResource::dmaChannelRegHandle[channel].CH_CTRL.TRANSIZE))))));
               
                    
@@ -440,7 +427,6 @@ task topTriggerSubScoreboard :: handleTriggerOut();
 	        sharedResource::setUp1DAddress(channel);
 	        sharedResource :: setUpTrigger(channel);
           sharedResource::reloadCount[channel] = sharedResource::reloadCount[channel]-1;
-          $display("left count is %d",sharedResource::reloadCount[channel]);
         end 
       end 
 

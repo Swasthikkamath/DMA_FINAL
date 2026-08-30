@@ -23,7 +23,6 @@ int flag;
 task triggerDriveToBfm(inout triggerStructPacket structPacket);
   @(triggerMasterCb);
    triggerMasterCb.trigInReq <= 1;
-  $display("HDL REQ TYPE IS %b",structPacket.reqType);
    triggerMasterCb.reqType <= structPacket.reqType;
   do begin 
     @(triggerMasterCb);

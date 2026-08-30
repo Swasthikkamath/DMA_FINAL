@@ -103,15 +103,12 @@ end
        /* for(int i = 0;i< dmaGlobalPkg::NUM_CHANNELS; i++) begin //need to optimize this
           if(executedCommand[i] == topEnvConfigHandle.numberOfCommandPerChannel[i]) begin 
             noChannels++;
-          $display("INCR DONE 88 noChannels is %d and NUM_CHANNELS IS %d  i = %d",noChannels,dmaGlobalPkg::NUM_CHANNELS,i);
           end 
         end*/
         if(noChannels == dmaGlobalPkg ::NUM_CHANNELS)begin
-           $display("DISABLING THE REQ  88 ");
            disable terminating;
         end 
         configUnitInterruptSlaveOnlyVirtualSequenceHandle.start(p_sequencer.configUnitEnvVirtualSequencerHandle);
-        $display("IRQ entered at %t",$time);
         toKillWhenInterrupt.suspend();
         for(int i = 0;i< dmaGlobalPkg::NUM_CHANNELS; i++) begin
           automatic int j = i;
@@ -126,7 +123,6 @@ end
             if(temp.STAT_ERR == 1) begin
               topEnvConfigHandle.regBlockHandle.CH_ERRINFO_inst[j].read(status,err);
               if(|err) begin //cfgerror & regvalerr
-               $display("INCRRR");
          //        toKillWhenInterrupt.kill();
                  topEnvConfigHandle.regBlockHandle.CH_STATUS_inst[j].write(status,.value('h20000));
                  noChannels++;
@@ -159,13 +155,11 @@ end
                 end                    
               end
               if(temp.STAT_DONE==1)begin //STAT_DONE
-                $display("HELLO ITS j=%d",j);
                 topEnvConfigHandle.regBlockHandle.CH_STATUS_inst[j].write(status,.value('h10000));
 
                 executedCommand[j]++; 
                 if(executedCommand[j] == topEnvConfigHandle.numberOfCommandPerChannel[j]) begin 
                    noChannels++;
-                 $display("INCR DONE 88 noChannels is %d and NUM_CHANNELS IS %d  j = %d",noChannels,dmaGlobalPkg::NUM_CHANNELS,j);
                 end 
               end
               if(temp.STAT_STOPPED == 1) begin 
