@@ -184,7 +184,7 @@ interface axi4_slave_driver_bfm(input                     aclk    ,
     @(axiSlaveCb);
     `uvm_info(name,$sformatf("data_write_packet=\n%p",data_write_packet),UVM_DEBUG)
     `uvm_info(name,$sformatf("cfg_packet=\n%p",cfg_packet),UVM_DEBUG)
-    `uvm_info(name,$sformatf("INSIDE WRITE DATA CHANNEL"),UVM_NONE)
+    `uvm_info(name,$sformatf("INSIDE WRITE DATA CHANNEL"),UVM_HIGH)
     
     axiSlaveCb.wready <= 0;
 
