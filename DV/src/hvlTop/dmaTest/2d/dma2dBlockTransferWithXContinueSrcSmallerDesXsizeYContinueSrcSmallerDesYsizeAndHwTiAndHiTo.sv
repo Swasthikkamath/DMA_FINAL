@@ -57,7 +57,7 @@ function void dma2dBlockTransferWithXContinueSrcSmallerDesXsizeYContinueSrcSmall
   // TRIGGER DEST SEL
   topEnvConfigHandle.allChannelConfig[0][0].CH_DESTRIGINCFG.DESTRIGINSEL = 1;
 
-  topEnvConfigHandle.allChannelConfig[0][0].CH_TMPLTCFG.SRCTMPLTSIZE=4;
+  topEnvConfigHandle.allChannelConfig[0][0].CH_TMPLTCFG.SRCTMPLTSIZE=0;
   topEnvConfigHandle.allChannelConfig[0][0].CH_SRCTMPLT='b 100101;
   topEnvConfigHandle.allChannelConfig[0][0].CH_TMPLTCFG.DESTMPLTSIZE=0;
   topEnvConfigHandle.allChannelConfig[0][0].CH_DESTMPLT='b 11;
