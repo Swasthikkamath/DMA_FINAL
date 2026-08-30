@@ -138,9 +138,9 @@ task topAxiSubScoreboard::handleAxi4MasterWrite(int master_id);
 
       end
     end
-    //if(arbitChannel != addressTx.awid)begin
-    `uvm_error("TOP_SCOREBOARD",$sformatf("LOCAL WRITE CHANNEL GRANT GIVEN TO %d GOT ID IS %d pending write count is %d",arbitChannel,addressTx.awid,sharedResource::numberOfWriteReq[arbitChannel]))
-    // end
+    if(arbitChannel != addressTx.awid)begin
+      `uvm_error("TOP_SCOREBOARD",$sformatf("LOCAL WRITE CHANNEL GRANT GIVEN TO %d GOT ID IS %d pending write count is %d",arbitChannel,addressTx.awid,sharedResource::numberOfWriteReq[arbitChannel]))
+    end
     peripheralUnitAxi4MasterPathWriteDataAnalysisExport[master_id].get(wdata_tx);
     sharedResource::dmaChannelRegHandle[arbitChannel].CH_XSIZE.DESXSIZE=sharedResource::numberOfWriteReq[arbitChannel];
     sharedResource::managerWriteAccess=1;
@@ -423,7 +423,6 @@ task topAxiSubScoreboard::handleAxi4SlaveRead(int slave_id);
       sharedResource::commandStatusPerChannel[arbitChannel].readDone=1;
       continue;
     end
-    `uvm_error("TOP_SCOREBOARD",$sformatf("ARBIT:EXPECTED CHANNEL IS %d GOT CHANNEL IS %d arbit if linking is %p",arbitChannel,raddr_tx.arid,sharedResource::topEnvConfigHandle.addressIfLinking[arbitChannel]))
     if(((raddr_tx.araddr inside {sharedResource::topEnvConfigHandle.addressIfLinking[arbitChannel]}) && headerRead ==0 ) || (configUnitBootPathAnalysisExport[slave_id].used()>0 && (raddr_tx.araddr inside {[sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[slave_id].min_address :sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[slave_id].max_address]}))) begin
       int str;
       int address = raddr_tx.araddr;
