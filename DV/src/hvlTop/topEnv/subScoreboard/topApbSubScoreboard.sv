@@ -132,6 +132,7 @@ task topApbSubScoreboard :: handleApbTransaction();
         sharedResource ::dmaChannelRegHandle[selectedChannel].CH_WRKREGVAL = sharedResource ::initialDesYsize[selectedChannel];
       end
 
+     
       // Check if channel is being enabled
       if(sharedResource ::dmaChannelRegHandle[selectedChannel].CH_CMD.ENABLECMD == 1 && sharedResource::dmaChannelRegHandle[selectedChannel].CH_STATUS.STAT_DONE==0) begin
         sharedResource ::dmaChannelRegHandle[selectedChannel].CH_STATUS.STAT_STOPPED =0;
@@ -307,6 +308,28 @@ task topApbSubScoreboard :: handleApbTransaction();
         end 
       end
     end
+   if(transaction.pwrite==1)begin   
+     int selectedRegStartAddress;
+      int closestChannelBaseAddress;
+      
+      for (int i = 0; i < dmaGlobalPkg::NUM_CHANNELS; i++) begin
+        if (transaction.paddr >= ('h100 + ('h100 * (i))) && 
+            (transaction.paddr < ('h100 + ('h100 * (i + 1))))) begin
+          closestChannelBaseAddress = ('h100 + ('h100 * (i)));
+          break;
+        end
+      end
+      
+      `uvm_info("TOP_SCOREBOARD",$sformatf("APB WRITE HAPPENING FOR CHANNEL %0D ITS BASE ADDRESS IS %0h",selectedChannel,closestChannelBaseAddress),UVM_HIGH);
+      selectedRegStartAddress = (transaction.paddr - closestChannelBaseAddress) * 8;
+      if(selectedRegStartAddress == 32)begin 
+        if(transaction.pwdata=='h 10000)begin 
+          sharedResource::dmaChannelRegHandle[selectedChannel].CH_STATUS.STAT_DONE=0;
+          sharedResource::dmaChannelRegHandle[selectedChannel].CH_STATUS.INTR_DONE=0;
+        end 
+      end 
+
+   end 
   end
 endtask
  

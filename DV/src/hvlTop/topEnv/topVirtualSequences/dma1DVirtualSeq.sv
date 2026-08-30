@@ -160,7 +160,8 @@ end
               end
               if(temp.STAT_DONE==1)begin //STAT_DONE
                 $display("HELLO ITS j=%d",j);
-                topEnvConfigHandle.regBlockHandle.CH_STATUS_inst[j].write(status,.value('h10001));
+                topEnvConfigHandle.regBlockHandle.CH_STATUS_inst[j].write(status,.value('h10000));
+
                 executedCommand[j]++; 
                 if(executedCommand[j] == topEnvConfigHandle.numberOfCommandPerChannel[j]) begin 
                    noChannels++;
