@@ -138,9 +138,9 @@ task topAxiSubScoreboard::handleAxi4MasterWrite(int master_id);
 
       end
     end
-    if(arbitChannel != addressTx.awid)begin
+    //if(arbitChannel != addressTx.awid)begin
       `uvm_error("TOP_SCOREBOARD",$sformatf("LOCAL WRITE CHANNEL GRANT GIVEN TO %d GOT ID IS %d pending write count is %d",arbitChannel,addressTx.awid,sharedResource::numberOfWriteReq[arbitChannel]))
-    end
+   // end
     peripheralUnitAxi4MasterPathWriteDataAnalysisExport[master_id].get(wdata_tx);
     sharedResource::dmaChannelRegHandle[arbitChannel].CH_XSIZE.DESXSIZE=sharedResource::numberOfWriteReq[arbitChannel];
     sharedResource::managerWriteAccess=1;
@@ -409,9 +409,9 @@ task topAxiSubScoreboard::handleAxi4SlaveRead(int slave_id);
       if(sharedResource ::dmaChannelRegHandle[arbitChannel].CH_INTREN.INTREN_ERR ==1) begin
         sharedResource ::raiseError(arbitChannel, "BUS ERROR");
       end
-      if(raddr_tx.arid != arbitChannel) begin 
+      //if(raddr_tx.arid != arbitChannel) begin 
         `uvm_error("TOP_SCOREBOARD",$sformatf("ARBIT:EXPECTED CHANNEL IS %d GOT CHANNEL IS %d ",arbitChannel,raddr_tx.arid))
-      end 
+     // end 
 
       //sharedResource::commandStatusPerChannel[arbitChannel].readDone=1;
       /* for(int i=0;i<(axi4_globals_pkg :: NO_OF_SLAVES);i++) begin
@@ -427,6 +427,7 @@ task topAxiSubScoreboard::handleAxi4SlaveRead(int slave_id);
       sharedResource::commandStatusPerChannel[arbitChannel].readDone=1;
       continue;
     end
+    `uvm_error("TOP_SCOREBOARD",$sformatf("ARBIT:EXPECTED CHANNEL IS %d GOT CHANNEL IS %d ",arbitChannel,raddr_tx.arid))
     if(((raddr_tx.araddr inside {sharedResource::topEnvConfigHandle.addressIfLinking[arbitChannel]}) && headerRead ==0 ) || (configUnitBootPathAnalysisExport[slave_id].used()>0 && (raddr_tx.araddr inside {[sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[slave_id].min_address :sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[slave_id].max_address]}))) begin
       int str;
       int address = raddr_tx.araddr;

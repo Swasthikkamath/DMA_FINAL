@@ -83,7 +83,7 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
 
   // CH_CTRL.TRANSIZE = 2
   topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.TRANSIZE = 2;
-  topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.CHPRIO=5;
+  topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.CHPRIO=7;
   topEnvConfigHandle.allChannelConfig[1][0].CH_CTRL.CHPRIO=7;
   topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.DONETYPE=1;
   topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.REGRELOADTYPE=1;
@@ -233,7 +233,7 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
 
   topEnvConfigHandle.allChannelConfig[1][0].CH_CMD.DISABLECMD = 0;
   topEnvConfigHandle.allChannelConfig[1][0].CH_CMD.ENABLECMD = 1;
-  topEnvConfigHandle.allChannelConfig[1][0].CH_LINKADDR.LINKADDREN =1;
+  topEnvConfigHandle.allChannelConfig[1][0].CH_LINKADDR.LINKADDREN =0;
   topEnvConfigHandle.allChannelConfig[1][0].CH_LINKADDR.LINKADDR = 5000;
   //topEnvConfigHandle.allChannelConfig[0][1].CH_LINKADDR.LINKADDR = 000;
 
