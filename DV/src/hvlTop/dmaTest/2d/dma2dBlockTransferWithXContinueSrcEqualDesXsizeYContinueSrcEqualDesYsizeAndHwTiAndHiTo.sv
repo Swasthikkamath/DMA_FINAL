@@ -19,7 +19,7 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
   super.build_phase(phase);
   topEnvConfigHandle.numberOfCommandPerChannel.rand_mode(0);
   topEnvConfigHandle.numberOfCommandPerChannel[0]=1;
-  topEnvConfigHandle.numberOfCommandPerChannel[1]=2;
+  topEnvConfigHandle.numberOfCommandPerChannel[1]=1;
   foreach(topEnvConfigHandle.allChannelConfig[i]) begin
     topEnvConfigHandle.allChannelConfig[i] = new[topEnvConfigHandle.numberOfCommandPerChannel[i]];
   end
@@ -83,7 +83,7 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
 
   // CH_CTRL.TRANSIZE = 2
   topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.TRANSIZE = 2;
-  topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.CHPRIO=5;
+  topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.CHPRIO=7;
   topEnvConfigHandle.allChannelConfig[1][0].CH_CTRL.CHPRIO=7;
   topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.DONETYPE=1;
   topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.REGRELOADTYPE=1;

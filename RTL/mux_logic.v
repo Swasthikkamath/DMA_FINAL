@@ -79,6 +79,8 @@ module mux_logic #(parameter WIDTH = 32)
     input wire chn_autocfg_wr_en_o,
     input wire chn_yaddr_wr_en_o,
     input wire chn_y_transfer_count_wr_en_o,
+    input wire [15:0] restart_cnt_reg1,//    //
+    input wire cmd_restart_en,
  // internal reg
  output reg [(WIDTH * 21) -1:0] mux_out_reg//to internal reg 
  );
@@ -262,7 +264,7 @@ module mux_logic #(parameter WIDTH = 32)
             // WORD 1 : STATUS
             if (chn_stat_wr_en_reg)
             mux_out_reg[(WIDTH*2)-1:(WIDTH*1)] <= cfg_channel_status;
-            else //if (/*(link_en && data_done) || */cmd_done)
+            else if ((/*link_en && data_done*/cmd_restart_en || (restart_cnt_reg1 != 0)) || cmd_done)
             mux_out_reg[51:48] <= 0;
             
             // WORD 2 : INTREN

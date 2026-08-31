@@ -54,7 +54,8 @@ input wire [1:0] src_trigin_sw_type,des_trigin_sw_type,
     output reg [1:0]            des_trigack_type,
     output reg                  trig_out_req,
     input  wire                 trig_out_ack,
-
+   // output wire cmd_restart_en_out,//
+    output reg [15:0] restart_cnt_reg1,//
 
 
     //
@@ -163,7 +164,7 @@ input wire [1:0] src_trigin_sw_type,des_trigin_sw_type,
      wire [(DATA_W/8)-1:0] WSTRB_wire,WSTRB_COMB;
     wire [6:0] transize_power = (2**transize) + write_base_addr_UPDATED_wire;
     reg [15:0] restart_cnt_reg;
-    reg [15:0] restart_cnt_reg1;
+    //reg [15:0] restart_cnt_reg1;
     wire       ERROR;
        wire  [DATA_W-1:0] prev_WDATA = WDATA;
     wire [31:0] src_xaddr_inc_sign, des_xaddr_inc_sign; 
@@ -1775,7 +1776,7 @@ src_trigack_type <= (src_trigin_type == 2'b10 /*&& (src_trig_req_type == 0||src_
                         else if(ycase5 &&(srcx_transfer_count_reg < desx_transfer_count_reg)&&(srcy_transfer_count_reg >= desy_transfer_count_reg) && ((((srcx_transfer_count_reg * srcy_transfer_count_reg)% desx_transfer_count_reg ) == 0) && x_type == 1)&& y_type == 2 /*&& srcx_transfer_count_reg > desx_transfer_count_reg*/ && (src_y_left == 2) &&(area_src < area_des))begin
                                 src_x_left <= ((area_des % srcx_transfer_count_reg) == 0) ? srcx_transfer_count_reg : area_des % srcx_transfer_count_reg ;//srcx_transfer_count
                       end
-                       else if(ycase5 && src_y_left == 2 && (srcx_transfer_count_reg > desx_transfer_count_reg)&&(srcy_transfer_count_reg >= desy_transfer_count_reg) /* &&(x_type == 3 || x_type == 2)*/ && (y_type == 3 || y_type ==1))begin
+                      else if(ycase5 && src_y_left == 2 && (srcx_transfer_count_reg > desx_transfer_count_reg)&&(srcy_transfer_count_reg >= desy_transfer_count_reg) /* &&(x_type == 3 || x_type == 2)*/ && (y_type == 3 || y_type ==1))begin
                                 src_x_left <=  ((area_des % src_x_left_initial) == 0) ? src_x_left_initial : area_des % src_x_left_initial ; end//srcx_transfer_counte
                        else if(ycase5 && src_y_left == 2 && (srcx_transfer_count_reg > desx_transfer_count_reg)&&(srcy_transfer_count_reg < desy_transfer_count_reg) /* &&(x_type == 3 || x_type == 2)*/ && (y_type == 3 || y_type ==1))begin
                                 src_x_left <=  ((area_des % src_x_left_initial) == 0) ? src_x_left_initial : area_des % src_x_left_initial ;//srcx_transfer_count
@@ -2220,8 +2221,7 @@ end
                  if(use_trigout && trigout_type == 'b10 && trig_out_ack)
                         trig_out_req <= 0;
                  else if (use_trigout && trigout_type == 'b10)
-                        trig_out_req <= (rd_state == RD_IDLE ||((cmd_restart_en || (restart_cnt_reg1 != 0)) && src_x_left  == 0 && src_y_left  == 0 && des_x_left  == 0 && des_y_left  == 0 && (!(rd_state == RD_WRAP_FILL) || (fill_count == 0 && fill_count_y == 0)))) ? 1'b1 : 1'b0;                  
-                 else if (use_trigout && trigout_type == 'b00)             
+                        trig_out_req <= (rd_state == RD_IDLE ||((cmd_restart_en || (restart_cnt_reg1 != 0)) && src_x_left  == 0 && src_y_left  == 0 && des_x_left  == 0 && des_y_left  == 0 && (!(rd_state == RD_WRAP_FILL) || (fill_count == 0 && fill_count_y == 0)))) ? 1'b1 : 1'b0;                  else if (use_trigout && trigout_type == 'b00)             
                         SWTRIGOUTACK_DATA <= (rd_state == RD_IDLE ||((cmd_restart_en || (restart_cnt_reg1 != 0)) && src_x_left  == 0 && src_y_left  == 0 && des_x_left  == 0 && des_y_left  == 0 && (!(rd_state == RD_WRAP_FILL) || (fill_count == 0 && fill_count_y == 0)))) ? 1 : 0;  
                         
                     if (use_trigout && !trig_out_ack_sw && trigout_type == 'b00) 
