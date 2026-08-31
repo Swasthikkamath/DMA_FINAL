@@ -83,7 +83,7 @@ function void dma2dBlockTransferWithXContinueSrcEqualDesXsizeYContinueSrcEqualDe
 
   // CH_CTRL.TRANSIZE = 2
   topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.TRANSIZE = 2;
-  topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.CHPRIO=7;
+  topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.CHPRIO=5;
   topEnvConfigHandle.allChannelConfig[1][0].CH_CTRL.CHPRIO=7;
   topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.DONETYPE=1;
   topEnvConfigHandle.allChannelConfig[0][0].CH_CTRL.REGRELOADTYPE=1;

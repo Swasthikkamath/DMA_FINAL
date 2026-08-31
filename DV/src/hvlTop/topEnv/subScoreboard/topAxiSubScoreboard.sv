@@ -120,7 +120,6 @@ task topAxiSubScoreboard::handleAxi4MasterWrite(int master_id);
       sharedResource::waitForResp[arbitChannel] =1;
       continue;
     end
-
     if(sharedResource::commandStatusPerChannel[arbitChannel].readDone==1 && sharedResource::commandStatusPerChannel[arbitChannel].count>1)begin
       sharedResource::commandStatusPerChannel[arbitChannel].readCounter[0] = sharedResource::commandStatusPerChannel[arbitChannel].readCounter[0] - (addressTx.awlen+1);
 
@@ -138,9 +137,9 @@ task topAxiSubScoreboard::handleAxi4MasterWrite(int master_id);
 
       end
     end
-    //if(arbitChannel != addressTx.awid)begin
+    if(arbitChannel != addressTx.awid)begin
       `uvm_error("TOP_SCOREBOARD",$sformatf("LOCAL WRITE CHANNEL GRANT GIVEN TO %d GOT ID IS %d pending write count is %d",arbitChannel,addressTx.awid,sharedResource::numberOfWriteReq[arbitChannel]))
-   // end
+    end
     peripheralUnitAxi4MasterPathWriteDataAnalysisExport[master_id].get(wdata_tx);
     sharedResource::dmaChannelRegHandle[arbitChannel].CH_XSIZE.DESXSIZE=sharedResource::numberOfWriteReq[arbitChannel];
     sharedResource::managerWriteAccess=1;
@@ -364,6 +363,7 @@ task topAxiSubScoreboard::handleAxi4SlaveRead(int slave_id);
   int subtract;
   bit[axi4_globals_pkg::DATA_WIDTH-1:0] expectedData;
   bit[axi4_globals_pkg::DATA_WIDTH-1:0] readData;
+  bit maxread;
   forever begin
     axi4_slave_tx rdata_tx;
     axi4_slave_tx raddr_tx;
@@ -409,9 +409,6 @@ task topAxiSubScoreboard::handleAxi4SlaveRead(int slave_id);
       if(sharedResource ::dmaChannelRegHandle[arbitChannel].CH_INTREN.INTREN_ERR ==1) begin
         sharedResource ::raiseError(arbitChannel, "BUS ERROR");
       end
-      //if(raddr_tx.arid != arbitChannel) begin 
-        `uvm_error("TOP_SCOREBOARD",$sformatf("ARBIT:EXPECTED CHANNEL IS %d GOT CHANNEL IS %d ",arbitChannel,raddr_tx.arid))
-     // end 
 
       //sharedResource::commandStatusPerChannel[arbitChannel].readDone=1;
       /* for(int i=0;i<(axi4_globals_pkg :: NO_OF_SLAVES);i++) begin
@@ -427,7 +424,10 @@ task topAxiSubScoreboard::handleAxi4SlaveRead(int slave_id);
       sharedResource::commandStatusPerChannel[arbitChannel].readDone=1;
       continue;
     end
-    `uvm_error("TOP_SCOREBOARD",$sformatf("ARBIT:EXPECTED CHANNEL IS %d GOT CHANNEL IS %d ",arbitChannel,raddr_tx.arid))
+       if(raddr_tx.arid != arbitChannel) begin 
+        `uvm_error("TOP_SCOREBOARD",$sformatf("ARBIT:EXPECTED CHANNEL IS %d GOT CHANNEL IS %d ",arbitChannel,raddr_tx.arid))
+      end 
+
     if(((raddr_tx.araddr inside {sharedResource::topEnvConfigHandle.addressIfLinking[arbitChannel]}) && headerRead ==0 ) || (configUnitBootPathAnalysisExport[slave_id].used()>0 && (raddr_tx.araddr inside {[sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[slave_id].min_address :sharedResource ::topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[slave_id].max_address]}))) begin
       int str;
       int address = raddr_tx.araddr;
@@ -692,12 +692,14 @@ task topAxiSubScoreboard::handleAxi4SlaveRead(int slave_id);
 
         for(int index =0 ; index < (raddr_tx.arlen);index++) begin //<3  0 1 2
           if(!sharedResource::pauseChannel[arbitChannel] && !sharedResource::stopChannel[arbitChannel])begin
-            sharedResource::readCounter[arbitChannel]++;
-            if(((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP)&&sharedResource::readCounter[arbitChannel]==sharedResource::initialDesXsize[arbitChannel]) || ((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_FILL) &&(sharedResource::readCounter[arbitChannel]==(sharedResource::initialSrcXsize[arbitChannel] <= sharedResource::initialDesXsize[arbitChannel]?sharedResource::initialSrcXsize[arbitChannel] : sharedResource::initialDesXsize[arbitChannel]))) || ((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP ||sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_FILL )&&(sharedResource::readCounter[arbitChannel] > sharedResource::dmaChannelRegHandle[arbitChannel].CH_DESTRANSCFG.DESMAXBURSTLEN)) || (sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.YTYPE == Y_FILL && sharedResource::numberOfReadReq[arbitChannel]==0 &&sharedResource::numberOfWriteReq[arbitChannel]!=0))begin
+            sharedResource::readCounter[arbitChannel] = sharedResource::readCounter[arbitChannel]+1;;
+            if(((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP)&&sharedResource::readCounter[arbitChannel]==sharedResource::initialDesXsize[arbitChannel]) || ((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_FILL) &&(sharedResource::readCounter[arbitChannel]==(sharedResource::initialSrcXsize[arbitChannel] <= sharedResource::initialDesXsize[arbitChannel]?sharedResource::initialSrcXsize[arbitChannel] : sharedResource::initialDesXsize[arbitChannel]))) || ((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP ||sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_FILL )&&(sharedResource::readCounter[arbitChannel] == (sharedResource::dmaChannelRegHandle[arbitChannel].CH_DESTRANSCFG.DESMAXBURSTLEN+1))) || (sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.YTYPE == Y_FILL && sharedResource::numberOfReadReq[arbitChannel]==0 &&sharedResource::numberOfWriteReq[arbitChannel]!=0))begin
               sharedResource::commandStatusPerChannel[arbitChannel].readDone=1;
-              sharedResource::readCounter[arbitChannel]=0;
               sharedResource::commandStatusPerChannel[arbitChannel].readCounter.push_back(sharedResource::readCounter[arbitChannel]);
+            //  sharedResource::readCounter[arbitChannel]=0;
+            //  sharedResource::commandStatusPerChannel[arbitChannel].readCounter.push_back(sharedResource::readCounter[arbitChannel]);
               sharedResource::commandStatusPerChannel[arbitChannel].count++;
+              maxread=1;
             end
 
 
@@ -766,10 +768,15 @@ task topAxiSubScoreboard::handleAxi4SlaveRead(int slave_id);
           //expectedAddr =sharedResource::expectedReadAddr[arbitChannel].pop_front();
           sharedResource::dmaChannelRegHandle[arbitChannel].CH_SRCADDR = expectedAddr;
           sharedResource::readCounter[arbitChannel]++;
-          if(((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP)&&sharedResource::readCounter[arbitChannel]==sharedResource::initialDesXsize[arbitChannel]) || ((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_FILL) &&(sharedResource::readCounter[arbitChannel]==(sharedResource::initialSrcXsize[arbitChannel] <= sharedResource::initialDesXsize[arbitChannel]?sharedResource::initialSrcXsize[arbitChannel] : sharedResource::initialDesXsize[arbitChannel]))) || ((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_FILL)&&(sharedResource::readCounter[arbitChannel] > sharedResource::dmaChannelRegHandle[arbitChannel].CH_DESTRANSCFG.DESMAXBURSTLEN)) || (sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.YTYPE == Y_FILL && sharedResource::numberOfReadReq[arbitChannel]==0 &&sharedResource::numberOfWriteReq[arbitChannel]!=0))begin
+          if(((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP)&&sharedResource::readCounter[arbitChannel]==sharedResource::initialDesXsize[arbitChannel]) || ((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_FILL) &&(sharedResource::readCounter[arbitChannel]==(sharedResource::initialSrcXsize[arbitChannel] <= sharedResource::initialDesXsize[arbitChannel]?sharedResource::initialSrcXsize[arbitChannel] : sharedResource::initialDesXsize[arbitChannel]))) || ((sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_WRAP || sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_FILL)&&(sharedResource::readCounter[arbitChannel] == (sharedResource::dmaChannelRegHandle[arbitChannel].CH_DESTRANSCFG.DESMAXBURSTLEN+1))) || (sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.YTYPE == Y_FILL && sharedResource::numberOfReadReq[arbitChannel]==0 &&sharedResource::numberOfWriteReq[arbitChannel]!=0) || ( sharedResource::dmaChannelRegHandle[arbitChannel].CH_CTRL.XTYPE==X_CONTINUE && sharedResource::readCounter[arbitChannel] == sharedResource::initialSrcXsize[arbitChannel] ) )begin
             sharedResource::commandStatusPerChannel[arbitChannel].readDone=1;
-            sharedResource::readCounter[arbitChannel]=0;
+            if(maxread==1) begin 
+              sharedResource::readCounter[arbitChannel] = sharedResource::readCounter[arbitChannel] - (sharedResource::dmaChannelRegHandle[arbitChannel].CH_DESTRANSCFG.DESMAXBURSTLEN +1);
+            end 
+
             sharedResource::commandStatusPerChannel[arbitChannel].readCounter.push_back(sharedResource::readCounter[arbitChannel]);
+            sharedResource::readCounter[arbitChannel]=0;
+            //sharedResource::commandStatusPerChannel[arbitChannel].readCounter.push_back(sharedResource::readCounter[arbitChannel]);
             sharedResource::commandStatusPerChannel[arbitChannel].count++;
           end
 
