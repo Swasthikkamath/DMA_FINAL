@@ -16,14 +16,14 @@ interface apb_master_driver_bfm (input  bit   pclk,
                                  input  bit   preset_n,
                                  input  bit   pready,
                                  input  bit   pslverr,
-                                 input  logic [DATA_WIDTH-1:0]prdata,
+                                 input  logic [apb_global_pkg::DATA_WIDTH-1:0]prdata,
                                  output logic [2:0]pprot,
                                  output logic penable,
                                  output logic pwrite,
-                                 output logic [ADDRESS_WIDTH-1:0]paddr,
+                                 output logic [apb_global_pkg::ADDRESS_WIDTH-1:0]paddr,
                                  output logic psel,
-                                 output logic [DATA_WIDTH-1:0]pwdata,
-                                 output logic [(DATA_WIDTH/8)-1:0]pstrb
+                                 output logic [apb_global_pkg::DATA_WIDTH-1:0]pwdata,
+                                 output logic [(apb_global_pkg::DATA_WIDTH/8)-1:0]pstrb
                                 );
 
   //-------------------------------------------------------
@@ -126,7 +126,7 @@ interface apb_master_driver_bfm (input  bit   pclk,
     masterCb.paddr   <= data_packet.paddr;
     masterCb.pwrite  <= data_packet.pwrite;
     
-    if(data_packet.pwrite == WRITE) begin
+    if(data_packet.pwrite == apb_global_pkg::WRITE) begin
       masterCb.pwdata <= data_packet.pwdata;
       masterCb.pstrb  <= data_packet.pstrb;
     end 

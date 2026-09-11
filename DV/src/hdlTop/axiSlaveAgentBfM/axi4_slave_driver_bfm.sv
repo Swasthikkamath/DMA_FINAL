@@ -292,7 +292,7 @@ interface axi4_slave_driver_bfm(input                     aclk    ,
     `uvm_info("SLAVE_DRIVER_RADDR_PHASE", $sformatf("outside of arvalid"), UVM_DEBUG); 
     
     // Sample the values
-    arready         <= 1      ;
+    axiSlaveCb.arready         <= 1      ;
 
     data_read_packet.arid    = axiSlaveCb.arid     ;
     data_read_packet.araddr  = axiSlaveCb.araddr   ;

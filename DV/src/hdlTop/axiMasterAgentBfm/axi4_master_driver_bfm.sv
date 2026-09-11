@@ -14,54 +14,54 @@ import axi4_globals_pkg::*;
 interface axi4_master_driver_bfm(input bit                      aclk, 
                                  input bit                      aresetn,
                                  //Write Address Channel Signals
-                                 output reg               [3:0] awid,
-                                 output reg [ADDRESS_WIDTH-1:0] awaddr,
-                                 output reg               [3:0] awlen,
-                                 output reg               [2:0] awsize,
-                                 output reg               [1:0] awburst,
-                                 output reg               [1:0] awlock,
-                                 output reg               [3:0] awcache,
-                                 output reg               [2:0] awprot,
-                                 output reg               [3:0] awqos,
-                                 output reg               [3:0] awregion,
-                                 output reg                     awuser,
-                                 output reg                     awvalid,
+                                 output wire              [3:0] awid,
+                                 output wire[axi4_globals_pkg::ADDRESS_WIDTH-1:0] awaddr,
+                                 output wire              [3:0] awlen,
+                                 output wire              [2:0] awsize,
+                                 output wire              [1:0] awburst,
+                                 output wire              [1:0] awlock,
+                                 output wire              [3:0] awcache,
+                                 output wire              [2:0] awprot,
+                                 output wire              [3:0] awqos,
+                                 output wire              [3:0] awregion,
+                                 output wire                    awuser,
+                                 output wire                    awvalid,
                                  input    	                    awready,
                                  //Write Data Channel Signals
-                                 output reg    [DATA_WIDTH-1: 0] wdata,
-                                 output reg [(DATA_WIDTH/8)-1:0] wstrb,
-                                 output reg                      wlast,
-                                 output reg                [3:0] wuser,
-                                 output reg                      wvalid,
+                                 output wire   [axi4_globals_pkg::DATA_WIDTH-1: 0] wdata,
+                                 output wire[(axi4_globals_pkg::DATA_WIDTH/8)-1:0] wstrb,
+                                 output wire                     wlast,
+                                 output wire               [3:0] wuser,
+                                 output wire                     wvalid,
                                  input                           wready,
                                  //Write Response Channel Signals
                                  input      [3:0] bid,
                                  input      [1:0] bresp,
                                  input      [3:0] buser,
                                  input            bvalid,
-                                 output	reg       bready,
+                                 output	wire      bready,
                                  //Read Address Channel Signals
-                                 output reg               [3:0] arid,
-                                 output reg [ADDRESS_WIDTH-1:0] araddr,
-                                 output reg               [7:0] arlen,
-                                 output reg               [2:0] arsize,
-                                 output reg               [1:0] arburst,
-                                 output reg               [1:0] arlock,
-                                 output reg               [3:0] arcache,
-                                 output reg               [2:0] arprot,
-                                 output reg               [3:0] arqos,
-                                 output reg               [3:0] arregion,
-                                 output reg               [3:0] aruser,
-                                 output reg                     arvalid,
+                                 output wire              [3:0] arid,
+                                 output wire[axi4_globals_pkg::ADDRESS_WIDTH-1:0] araddr,
+                                 output wire              [7:0] arlen,
+                                 output wire              [2:0] arsize,
+                                 output wire              [1:0] arburst,
+                                 output wire              [1:0] arlock,
+                                 output wire              [3:0] arcache,
+                                 output wire              [2:0] arprot,
+                                 output wire              [3:0] arqos,
+                                 output wire              [3:0] arregion,
+                                 output wire              [3:0] aruser,
+                                 output wire                    arvalid,
                                  input                          arready,
                                  //Read Data Channel Signals
                                  input                  [3:0] rid,
-                                 input      [DATA_WIDTH-1: 0] rdata,
+                                 input      [axi4_globals_pkg::DATA_WIDTH-1: 0] rdata,
                                  input                  [1:0] rresp,
                                  input                        rlast,
                                  input                  [3:0] ruser,
                                  input                        rvalid,
-                                 output	reg                   rready  
+                                 output	wire                  rready  
                                 );  
   
   //-------------------------------------------------------
@@ -255,7 +255,7 @@ task axi4_write_address_channel_task (inout axi4_write_transfer_char_s data_writ
   //-------------------------------------------------------
   task axi4_read_data_channel_task (inout axi4_read_transfer_char_s data_read_packet, input axi4_transfer_cfg_s cfg_packet);
     
-    static reg [7:0]i =0;
+    static reg[7:0]i =0;
     `uvm_info(name,$sformatf("data_read_packet in read data Channel=\n%p",data_read_packet),UVM_DEBUG)
     `uvm_info(name,$sformatf("cfg_packet=\n%p",cfg_packet),UVM_DEBUG)
     `uvm_info(name,$sformatf("DRIVE TO READ DATA CHANNEL"),UVM_HIGH)

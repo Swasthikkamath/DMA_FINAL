@@ -105,51 +105,130 @@ class topCoverage extends uvm_subscriber#(axi4_slave_tx);
 
   // data legal for each of the registers and then cross first adddress reg with legal data 
 
-    LEGAL_VAL:coverpoint  apbTx.pwdata iff(apbTx !=null) {
-      bins legalFirstRegval = {[0:$]} with((!(|item[15:6])) && (!(|item[31:25]))&& (item[23]==0) && (item[19]==0));
-     
-      bins legalSecondRegval = {[0:$]} with ((!(|item[31:27]) )&& (!(|item[23:22])) && (!(|item[15:11])) && (!(|item[7:4])));
+   LEGAL_VAL: coverpoint apbTx.pwdata iff (apbTx != null) {
 
+  // bins legalFirstRegval = {[0:32'hFFFFFFFF]} with((!(|item[15:6])) && (!(|item[31:25]))&& (item[23]==0) && (item[19]==0));
+  bins legalFirstRegval = {[0:32'hFFFFFFFF]} with (
+      ((item & 32'h0000FFC0) == 0) &&   // was item[15:6]
+      ((item & 32'hFE000000) == 0) &&   // was item[31:25]
+      ((item & 32'h00800000) == 0) &&   // was item[23]
+      ((item & 32'h00080000) == 0)      // was item[19]
+  );
 
-      bins legalThirdRegval = {[0:$]} with ((!(|item[31:11]) )&&(!(|item[7:4])));
+  // bins legalSecondRegval = {[0:$]} with ((!(|item[31:27]) )&& (!(|item[23:22])) && (!(|item[15:11])) && (!(|item[7:4])));
+  bins legalSecondRegval = {[0:$]} with (
+      ((item & 32'hF8000000) == 0) &&   // was item[31:27]
+      ((item & 32'h00C00000) == 0) &&   // was item[23:22]
+      ((item & 32'h0000F800) == 0) &&   // was item[15:11]
+      ((item & 32'h000000F0) == 0)      // was item[7:4]
+  );
 
-      bins legalFourthRegval ={[0:'h ffffffff]} with ((!(|item[31:30]) )&& (!(|item[17:15])) && (!(|item[8])) && (!(|item[3])));
+  // bins legalThirdRegval = {[0:$]} with ((!(|item[31:11]) )&&(!(|item[7:4])));
+  bins legalThirdRegval = {[0:$]} with (
+      ((item & 32'hFFFFF800) == 0) &&   // was item[31:11]
+      ((item & 32'h000000F0) == 0)      // was item[7:4]
+  );
 
+  // bins legalFourthRegval ={[0:'h ffffffff]} with ((!(|item[31:30]) )&& (!(|item[17:15])) && (!(|item[8])) && (!(|item[3])));
+  bins legalFourthRegval = {[0:'h ffffffff]} with (
+      ((item & 32'hC0000000) == 0) &&   // was item[31:30]
+      ((item & 32'h00038000) == 0) &&   // was item[17:15]
+      ((item & 32'h00000100) == 0) &&   // was item[8]
+      ((item & 32'h00000008) == 0)      // was item[3]
+  );
 
-      bins allLegalVal ={[0:$]}; //5 to 11 ,13,14,15,16,18,19,23,24,29,30,32,34
+  bins allLegalVal = {[0:$]}; //5 to 11 ,13,14,15,16,18,19,23,24,29,30,32,34
 
-    
-      bins legalEleventhRegVal = {[0:$]} with ((!(|item[31:20]) )&& (!(|item[15:12]))); //11
-     
-      bins legalTwelfthRegVal ={[0:$]}with ((!(|item[31:20]) )&& (!(|item[15:12]))); //12
+  // bins legalEleventhRegVal = {[0:$]} with ((!(|item[31:20]) )&& (!(|item[15:12]))); //11
+  bins legalEleventhRegVal = {[0:$]} with ( //11
+      ((item & 32'hFFF00000) == 0) &&   // was item[31:20]
+      ((item & 32'h0000F000) == 0)      // was item[15:12]
+  );
 
-      bins legalSeventeenthRegVal ={[0:$]} with((!(|item[31:21]) )&& (!(|item[15 :13])) && (!(|item[7:0]))); //17
+  // bins legalTwelfthRegVal ={[0:$]}with ((!(|item[31:20]) )&& (!(|item[15:12]))); //12
+  bins legalTwelfthRegVal = {[0:$]} with ( //12
+      ((item & 32'hFFF00000) == 0) &&
+      ((item & 32'h0000F000) == 0)
+  );
 
-      bins legalTwentiethRegVal ={[0:$]}with ((!(|item[31:24]) )&& (!(|item[15:12]))); //
-      
-      bins legalTwentyOneRegVal ={[0:$]}with ((!(|item[31:24]) )&& (!(|item[15:12])));
+  // bins legalSeventeenthRegVal ={[0:$]} with((!(|item[31:21]) )&& (!(|item[15 :13])) && (!(|item[7:0]))); //17
+  bins legalSeventeenthRegVal = {[0:$]} with ( //17
+      ((item & 32'hFFE00000) == 0) &&   // was item[31:21]
+      ((item & 32'h0000E000) == 0) &&   // was item[15:13]
+      ((item & 32'h000000FF) == 0)      // was item[7:0]
+  );
 
-      bins legalTwentyTwoRegVal={[0:$]} with ((!(|item[31:10]) ));
+  // bins legalTwentiethRegVal ={[0:$]}with ((!(|item[31:24]) )&& (!(|item[15:12])));
+  bins legalTwentiethRegVal = {[0:$]} with (
+      ((item & 32'hFF000000) == 0) &&   // was item[31:24]
+      ((item & 32'h0000F000) == 0)      // was item[15:12]
+  );
 
-      bins legalTwentyFiveRegVal ={[0:$]} with ((!(|item[31:11]) )&& (!(|item[8:0])));
-      bins legalTwentySixRegVal ={[0:$]} with ((!(|item[31:10]) ));
+  // bins legalTwentyOneRegVal ={[0:$]}with ((!(|item[31:24]) )&& (!(|item[15:12])));
+  bins legalTwentyOneRegVal = {[0:$]} with (
+      ((item & 32'hFF000000) == 0) &&
+      ((item & 32'h0000F000) == 0)
+  );
 
-      bins legalTwentySevenRegVal = {[0:$]} with ((!(|item[31:17])));
+  // bins legalTwentyTwoRegVal={[0:$]} with ((!(|item[31:10]) ));
+  bins legalTwentyTwoRegVal = {[0:$]} with (
+      ((item & 32'hFFFFFC00) == 0)      // was item[31:10]
+  );
 
-      bins legalTwentyEigthRegVal ={[0:$]}with ((!(|item[1])));
+  // bins legalTwentyFiveRegVal ={[0:$]} with ((!(|item[31:11]) )&& (!(|item[8:0])));
+  bins legalTwentyFiveRegVal = {[0:$]} with (
+      ((item & 32'hFFFFF800) == 0) &&   // was item[31:11]
+      ((item & 32'h000001FF) == 0)      // was item[8:0]
+  );
 
-      bins legalThirtyOneRegVal ={[0:$]}with ((!(|item[31:4])));
+  // bins legalTwentySixRegVal ={[0:$]} with ((!(|item[31:10]) ));
+  bins legalTwentySixRegVal = {[0:$]} with (
+      ((item & 32'hFFFFFC00) == 0)      // was item[31:10]
+  );
 
-      bins legalThirtyThreeRegVal={[0:$]} with((!(|item[15:8])) && (!(|item[6:5])));
+  // bins legalTwentySevenRegVal = {[0:$]} with ((!(|item[31:17])));
+  bins legalTwentySevenRegVal = {[0:$]} with (
+      ((item & 32'hFFFE0000) == 0)      // was item[31:17]
+  );
 
-      bins legalThirtyFiveRegVal ={[0:$]}with ((!(|item[31:8]) ));
+  // bins legalTwentyEigthRegVal ={[0:$]}with ((!(|item[1])));
+  bins legalTwentyEigthRegVal = {[0:$]} with (
+      ((item & 32'h00000002) == 0)      // was item[1]
+  );
 
-      bins legalThirtySixRegVal ={[0:$]}with (!(|item[31:3]) );
+  // bins legalThirtyOneRegVal ={[0:$]}with ((!(|item[31:4])));
+  bins legalThirtyOneRegVal = {[0:$]} with (
+      ((item & 32'hFFFFFFF0) == 0)      // was item[31:4]
+  );
 
-      bins legalThirtySevenRegVal ={[0:$]}with((!(|item[31:30])) && (!(|item[25])));
+  // bins legalThirtyThreeRegVal={[0:$]} with((!(|item[15:8])) && (!(|item[6:5])));
+  bins legalThirtyThreeRegVal = {[0:$]} with (
+      ((item & 32'h0000FF00) == 0) &&   // was item[15:8]
+      ((item & 32'h00000060) == 0)      // was item[6:5]
+  );
 
-      bins legalThirtyEigthRegVal={[0:$]} with((!(|item[31:26])) && (!(|item[17:13])));
-   }
+  // bins legalThirtyFiveRegVal ={[0:$]}with ((!(|item[31:8]) ));
+  bins legalThirtyFiveRegVal = {[0:$]} with (
+      ((item & 32'hFFFFFF00) == 0)      // was item[31:8]
+  );
+
+  // bins legalThirtySixRegVal ={[0:$]}with (!(|item[31:3]) );
+  bins legalThirtySixRegVal = {[0:$]} with (
+      ((item & 32'hFFFFFFF8) == 0)      // was item[31:3]
+  );
+
+  // bins legalThirtySevenRegVal ={[0:$]}with((!(|item[31:30])) && (!(|item[25])));
+  bins legalThirtySevenRegVal = {[0:$]} with (
+      ((item & 32'hC0000000) == 0) &&   // was item[31:30]
+      ((item & 32'h02000000) == 0)      // was item[25]
+  );
+
+  // bins legalThirtyEigthRegVal={[0:$]} with((!(|item[31:26])) && (!(|item[17:13])));
+  bins legalThirtyEigthRegVal = {[0:$]} with (
+      ((item & 32'hFC000000) == 0) &&   // was item[31:26]
+      ((item & 32'h0003E000) == 0)      // was item[17:13]
+  );
+}
 
     cross LEGAL_ADDR,LEGAL_VAL{
       bins legalRegOne =binsof(LEGAL_ADDR.addrApbFirstReg) && binsof(LEGAL_VAL.legalFirstRegval);
