@@ -17,7 +17,7 @@ package dmaTestPkg;
   import interruptSlavePkg :: *;
   import topVirtualSeqPkg::*;
   import bootMasterPkg :: *;
-  `include "dmaReportServer.sv"
+//  `include "dmaReportServer.sv"
   `include "dmaBaseTest.sv"
 
   //HARDWARE TRIGGER IN AND TRIGGER OUT TESTCASE

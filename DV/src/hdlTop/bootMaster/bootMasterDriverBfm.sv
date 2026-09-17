@@ -15,7 +15,7 @@
       bootMasterCb.bootAddr <= bootStructPacketHandle.bootAddr;
       do begin 
        @(bootMasterCb);
-      end while(!($rose(bootMasterCb.rst)));
+      end while(!($rose(rst)));
     endtask
 
 

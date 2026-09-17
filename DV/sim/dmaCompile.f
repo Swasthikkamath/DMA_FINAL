@@ -10,6 +10,15 @@
 +incdir+../../src/hvlTop/topEnv/topVirtualSequences/
 +incdir+../../src/hvlTop/topEnv/topVirtualSequencer/
 +incdir+../../src/hvlTop/configUnitEnv/interrupt/
++incdir+../../src/hvlTop/configUnitEnv/apbMaster/      
++incdir+../../src/hvlTop/configUnitEnv/bootMaster/    
++incdir+../../src/hvlTop/configUnitEnv/
++incdir+../../src/hvlTop/peripheralEnv/axiMaster/ 
++incdir+../../src/hvlTop/peripheralEnv/axiSlave/ 
++incdir+../../src/hvlTop/peripheralEnv/
++incdir+../../src/hvlTop/topEnv/
++incdir+../../src/hvlTop/dmaTest/
++incdir+../../src/hvlTop/dmaTest/sequences/triggerMasterSequences/      
 +incdir+../../src/hvlTop/dmaTest/sequences/triggerSequences/
 +incdir+../../src/hvlTop/dmaTest/sequences/axi4SlaveSequences/
 +incdir+../../src/hvlTop/topEnv/subScoreboard/

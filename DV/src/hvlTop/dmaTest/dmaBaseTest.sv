@@ -37,9 +37,9 @@ function dmaBaseTest::new(string name = "dmaBaseTest",uvm_component parent = nul
 endfunction
 
 function void dmaBaseTest :: build_phase(uvm_phase phase);
-  dmaReportServer srv;
+//  dmaReportServer srv;
   super.build_phase(phase);
-  srv = new();
+//  srv = new();
   //uvm_report_server::set_server(srv);
   setUpConfigHeirarchy();
   uvm_config_db #(topEnvConfig) :: set(this,"topEnvHandle","topEnvConfigHandle",topEnvConfigHandle);
@@ -93,7 +93,7 @@ endfunction
 function void dmaBaseTest::setUpConfigHeirarchy();
   topEnvConfigHandle  = topEnvConfig :: type_id :: create("topEnvConfigHandle");
   topEnvConfigHandle.hasScoreboard = 1;
-  topEnvConfigHandle.hasCoverage = 0;
+  topEnvConfigHandle.hasCoverage = 1;
   topEnvConfigHandle.hasVirtualSequencer = 1;
   topEnvConfigHandle.regBlockHandle = reg_block_top :: type_id :: create("regBlockHandle");
   topEnvConfigHandle.regBlockHandle.build();

@@ -1,75 +1,72 @@
 package AxiGlobalPackage;
- 
   // Global Parameters
-
+ 
   parameter int NO_OF_MASTERS = 2;
-
-  parameter int NO_OF_SLAVES = 4;
-
+ 
+  parameter int NO_OF_SLAVES = 6;
+ 
   parameter int ADDR_WIDTH = 32;
-
+ 
   parameter int DATA_WIDTH = 32;
-
+ 
   parameter int ID_WIDTH = 4;
-
+ 
   parameter int SLAVE_MEMORY_SIZE = 12; // 2^10 = 1KB per slave
-
+ 
   parameter int QOS_WIDTH = 4; // QoS priority width (0-15, higher is higher priority)
-
+ 
   // AXI Burst Types
-
+ 
   typedef enum logic [1:0] {
-
+ 
     FIXED = 2'b00,
-
+ 
     INCR  = 2'b01,
-
+ 
     WRAP  = 2'b10
-
+ 
   } burst_type_e;
-
+ 
   // AXI Response Types
-
+ 
   typedef enum logic [1:0] {
-
+ 
     OKAY   = 2'b00,
-
+ 
     EXOKAY = 2'b01,
-
+ 
     SLVERR = 2'b10,
-
+ 
     DECERR = 2'b11
-
+ 
   } resp_type_e;
-
+ 
   // AXI Size Encoding
-
+ 
   typedef enum logic [2:0] {
-
+ 
     SIZE_1B   = 3'b000,
-
+ 
     SIZE_2B   = 3'b001,
-
+ 
     SIZE_4B   = 3'b010,
-
+ 
     SIZE_8B   = 3'b011,
-
+ 
     SIZE_16B  = 3'b100,
-
+ 
     SIZE_32B  = 3'b101,
-
+ 
     SIZE_64B  = 3'b110,
-
+ 
     SIZE_128B = 3'b111
-
+ 
   } size_type_e;
- 
 endpackage
-
-import AxiGlobalPackage::*;
-
+ 
 import AxiGlobalPackage::*;
  
+import AxiGlobalPackage::*;
 interface AxiInterconnect #(
   // Cycles a slave may sit in DATA_PHASE with no progress before the
   // interconnect gives up on the transfer and reclaims the slave.
@@ -87,217 +84,213 @@ interface AxiInterconnect #(
   // stuck-forever interconnect is harder to diagnose than a reclaimed one.
   parameter int ABORT_TIMEOUT = 0
 )(
-
+ 
   input logic aclk,
-
+ 
   input logic aresetn,
-
-  axi4_if axiMasterInterface[NO_OF_MASTERS],
-
-  axi4_if axiSlaveInterface[NO_OF_SLAVES+1] // index NO_OF_SLAVES is reserved for the default/decode-error slave
-
+ 
+  axi4_if axiMasterInterface[AxiGlobalPackage::NO_OF_MASTERS],
+ 
+  axi4_if axiSlaveInterface[AxiGlobalPackage::NO_OF_SLAVES+1] // index NO_OF_SLAVES is reserved for the default/decode-error slave
+ 
 );
- 
   // TOTAL_SLAVES = every real, address-mapped slave (0 .. NO_OF_SLAVES-1)
-
+ 
   // plus one reserved default slave at index NO_OF_SLAVES that catches any
-
+ 
   // address which does not decode to a real slave.
-
-  localparam int TOTAL_SLAVES = NO_OF_SLAVES + 1;
-
-  localparam int DEFAULT_SLAVE = NO_OF_SLAVES;
  
+  localparam int TOTAL_SLAVES = AxiGlobalPackage::NO_OF_SLAVES + 1;
+ 
+  localparam int DEFAULT_SLAVE = AxiGlobalPackage::NO_OF_SLAVES;
 
+ 
   // ============================================================================
-
+ 
   // 1. Master Signal Collection (Unpacking)
-
-  // ============================================================================
-
-  logic [ID_WIDTH-1:0]    master_awid[NO_OF_MASTERS];
-
-  logic [ADDR_WIDTH-1:0]  master_awaddr[NO_OF_MASTERS];
-
-  logic [7:0]             master_awlen[NO_OF_MASTERS];
-
-  logic [2:0]             master_awsize[NO_OF_MASTERS];
-
-  logic [1:0]             master_awburst[NO_OF_MASTERS];
-
-  logic                   master_awlock[NO_OF_MASTERS];
-
-  logic [3:0]             master_awcache[NO_OF_MASTERS];
-
-  logic [2:0]             master_awprot[NO_OF_MASTERS];
-
-  logic                   master_awvalid[NO_OF_MASTERS];
-
-  logic [QOS_WIDTH-1:0]   master_awqos[NO_OF_MASTERS];
-
-  logic [DATA_WIDTH-1:0]   master_wdata[NO_OF_MASTERS];
-
-  logic [DATA_WIDTH/8-1:0] master_wstrb[NO_OF_MASTERS];
-
-  logic                    master_wlast[NO_OF_MASTERS];
-
-  logic                    master_wvalid[NO_OF_MASTERS];
-
-  logic                    master_bready[NO_OF_MASTERS];
-
-  logic [ID_WIDTH-1:0]    master_arid[NO_OF_MASTERS];
-
-  logic [ADDR_WIDTH-1:0]  master_araddr[NO_OF_MASTERS];
-
-  logic [7:0]             master_arlen[NO_OF_MASTERS];
-
-  logic [2:0]             master_arsize[NO_OF_MASTERS];
-
-  logic [1:0]             master_arburst[NO_OF_MASTERS];
-
-  logic                   master_arlock[NO_OF_MASTERS];
-
-  logic [3:0]             master_arcache[NO_OF_MASTERS];
-
-  logic [2:0]             master_arprot[NO_OF_MASTERS];
-
-  logic                   master_arvalid[NO_OF_MASTERS];
-
-  logic [QOS_WIDTH-1:0]   master_arqos[NO_OF_MASTERS];
-
-  logic                   master_rready[NO_OF_MASTERS];
  
+  // ============================================================================
+ 
+  logic [ID_WIDTH-1:0]    master_awid[AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  logic [ADDR_WIDTH-1:0]  master_awaddr[AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  logic [7:0]             master_awlen[AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  logic [2:0]             master_awsize[AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  logic [1:0]             master_awburst[AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  logic                   master_awlock[AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  logic [3:0]             master_awcache[AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  logic [2:0]             master_awprot[AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  logic                   master_awvalid[AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  logic [QOS_WIDTH-1:0]   master_awqos[AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  logic [DATA_WIDTH-1:0]   master_wdata[AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  logic [DATA_WIDTH/8-1:0] master_wstrb[AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  logic                    master_wlast[AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  logic                    master_wvalid[AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  logic                    master_bready[AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  logic [ID_WIDTH-1:0]    master_arid[AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  logic [ADDR_WIDTH-1:0]  master_araddr[AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  logic [7:0]             master_arlen[AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  logic [2:0]             master_arsize[AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  logic [1:0]             master_arburst[AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  logic                   master_arlock[AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  logic [3:0]             master_arcache[AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  logic [2:0]             master_arprot[AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  logic                   master_arvalid[AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  logic [QOS_WIDTH-1:0]   master_arqos[AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  logic                   master_rready[AxiGlobalPackage::NO_OF_MASTERS];
   generate
-
-    for (genvar m = 0; m < NO_OF_MASTERS; m++) begin : master_signal_collect
-
+ 
+    for (genvar m = 0; m < AxiGlobalPackage::NO_OF_MASTERS; m++) begin : master_signal_collect
+ 
       always_comb begin
-
+ 
         master_awid[m]     = axiMasterInterface[m].awid;
-
+ 
         master_awaddr[m]   = axiMasterInterface[m].awaddr;
-
+ 
         master_awlen[m]    = axiMasterInterface[m].awlen;
-
+ 
         master_awsize[m]   = axiMasterInterface[m].awsize;
-
+ 
         master_awburst[m]  = axiMasterInterface[m].awburst;
-
+ 
         master_awlock[m]   = axiMasterInterface[m].awlock;
-
+ 
         master_awcache[m]  = axiMasterInterface[m].awcache;
-
+ 
         master_awprot[m]   = axiMasterInterface[m].awprot;
-
+ 
         master_awvalid[m]  = axiMasterInterface[m].awvalid;
-
+ 
         master_awqos[m]    = axiMasterInterface[m].awqos;
-
+ 
         master_wdata[m]    = axiMasterInterface[m].wdata;
-
+ 
         master_wstrb[m]    = axiMasterInterface[m].wstrb;
-
+ 
         master_wlast[m]    = axiMasterInterface[m].wlast;
-
+ 
         master_wvalid[m]   = axiMasterInterface[m].wvalid;
-
+ 
         master_bready[m]   = axiMasterInterface[m].bready;
-
+ 
         master_arid[m]     = axiMasterInterface[m].arid;
-
+ 
         master_araddr[m]   = axiMasterInterface[m].araddr;
-
+ 
         master_arlen[m]    = axiMasterInterface[m].arlen;
-
+ 
         master_arsize[m]   = axiMasterInterface[m].arsize;
-
+ 
         master_arburst[m]  = axiMasterInterface[m].arburst;
-
+ 
         master_arlock[m]   = axiMasterInterface[m].arlock;
-
+ 
         master_arcache[m]  = axiMasterInterface[m].arcache;
-
+ 
         master_arprot[m]   = axiMasterInterface[m].arprot;
-
+ 
         master_arvalid[m]  = axiMasterInterface[m].arvalid;
-
+ 
         master_arqos[m]    = axiMasterInterface[m].arqos;
-
+ 
         master_rready[m]   = axiMasterInterface[m].rready;
-
-      end
-
-    end
-
-  endgenerate
  
+      end
+ 
+    end
+ 
+  endgenerate
   // ============================================================================
-
+ 
   // 2. Slave Signal Collection (Unpacking)
-
+ 
   // Sized to TOTAL_SLAVES so the default slave (index NO_OF_SLAVES) is
-
+ 
   // collected the same way as every real slave.
-
+ 
   // ============================================================================
-
+ 
   logic slave_awready[TOTAL_SLAVES];
-
+ 
   logic slave_wready[TOTAL_SLAVES];
-
-  logic [ID_WIDTH-1:0] slave_bid[TOTAL_SLAVES];
-
+ 
+  logic [AxiGlobalPackage::ID_WIDTH-1:0] slave_bid[TOTAL_SLAVES];
+ 
   logic [1:0]          slave_bresp[TOTAL_SLAVES];
-
+ 
   logic                slave_bvalid[TOTAL_SLAVES];
-
+ 
   logic slave_arready[TOTAL_SLAVES];
-
-  logic [ID_WIDTH-1:0]   slave_rid[TOTAL_SLAVES];
-
-  logic [DATA_WIDTH-1:0] slave_rdata[TOTAL_SLAVES];
-
+ 
+  logic [AxiGlobalPackage::ID_WIDTH-1:0]   slave_rid[TOTAL_SLAVES];
+ 
+  logic [AxiGlobalPackage::DATA_WIDTH-1:0] slave_rdata[TOTAL_SLAVES];
+ 
   logic [1:0]            slave_rresp[TOTAL_SLAVES];
-
+ 
   logic                  slave_rlast[TOTAL_SLAVES];
-
+ 
   logic                  slave_rvalid[TOTAL_SLAVES];
- 
   generate
-
-    for (genvar s = 0; s < TOTAL_SLAVES; s++) begin : slave_signal_collect
-
-      always_comb begin
-
-        slave_awready[s] = axiSlaveInterface[s].awready;
-
-        slave_wready[s]  = axiSlaveInterface[s].wready;
-
-        slave_bid[s]     = axiSlaveInterface[s].bid;
-
-        slave_bresp[s]   = axiSlaveInterface[s].bresp;
-
-        slave_bvalid[s]  = axiSlaveInterface[s].bvalid;
-
-        slave_arready[s] = axiSlaveInterface[s].arready;
-
-        slave_rid[s]     = axiSlaveInterface[s].rid;
-
-        slave_rdata[s]   = axiSlaveInterface[s].rdata;
-
-        slave_rresp[s]   = axiSlaveInterface[s].rresp;
-
-        slave_rlast[s]   = axiSlaveInterface[s].rlast;
-
-        slave_rvalid[s]  = axiSlaveInterface[s].rvalid;
-
-      end
-
-    end
-
-  endgenerate
  
+    for (genvar s = 0; s < TOTAL_SLAVES; s++) begin : slave_signal_collect
+ 
+      always_comb begin
+ 
+        slave_awready[s] = axiSlaveInterface[s].awready;
+ 
+        slave_wready[s]  = axiSlaveInterface[s].wready;
+ 
+        slave_bid[s]     = axiSlaveInterface[s].bid;
+ 
+        slave_bresp[s]   = axiSlaveInterface[s].bresp;
+ 
+        slave_bvalid[s]  = axiSlaveInterface[s].bvalid;
+ 
+        slave_arready[s] = axiSlaveInterface[s].arready;
+ 
+        slave_rid[s]     = axiSlaveInterface[s].rid;
+ 
+        slave_rdata[s]   = axiSlaveInterface[s].rdata;
+ 
+        slave_rresp[s]   = axiSlaveInterface[s].rresp;
+ 
+        slave_rlast[s]   = axiSlaveInterface[s].rlast;
+ 
+        slave_rvalid[s]  = axiSlaveInterface[s].rvalid;
+ 
+      end
+ 
+    end
+ 
+  endgenerate
 
+ 
   // ============================================================================
   // 3. Range-Based Address Decoder
   //
@@ -310,16 +303,16 @@ interface AxiInterconnect #(
   // slave 0 and slave 1 (the loop below claims it for slave 1). Both are fixed
   // by giving every slave the same uniform window.
   // ============================================================================
-  function automatic int decode_address(logic [ADDR_WIDTH-1:0] addr);
-    for (int i = 0; i < NO_OF_SLAVES; i++) begin
-      if (addr >= (i * (1 << SLAVE_MEMORY_SIZE)) &&
-          addr <  ((i + 1) * (1 << SLAVE_MEMORY_SIZE))) begin
+  function automatic int decode_address(logic [AxiGlobalPackage::ADDR_WIDTH-1:0] addr);
+    for (int i = 0; i <AxiGlobalPackage:: NO_OF_SLAVES; i++) begin
+      if (addr >= (i * (1 << AxiGlobalPackage::SLAVE_MEMORY_SIZE)) &&
+          addr <  ((i + 1) * (1 << AxiGlobalPackage::SLAVE_MEMORY_SIZE))) begin
         return i;
       end
     end
     return DEFAULT_SLAVE; // Out of range -> route to the default (decode-error) slave
   endfunction
-
+ 
   // ----------------------------------------------------------------------------
   // Arbitration helper: highest-QoS master currently targeting slaveId.
   //
@@ -337,14 +330,14 @@ interface AxiInterconnect #(
     int  cand;
     int  candQos;
     bit  candReq;
-
+ 
     best    = -1;
     bestQos = -1;
-
-    for (int k = 0; k < NO_OF_MASTERS; k++) begin
+ 
+    for (int k = 0; k < AxiGlobalPackage::NO_OF_MASTERS; k++) begin
       // Scan starting just after whoever was served last on this slave.
-      cand = (lastServed + 1 + k) % NO_OF_MASTERS;
-
+      cand = (lastServed + 1 + k) % AxiGlobalPackage::NO_OF_MASTERS;
+ 
       if (writeRead == 1) begin
         candReq = master_awvalid[cand] && (decode_address(master_awaddr[cand]) == slaveId);
         candQos = int'(master_awqos[cand]);
@@ -352,7 +345,7 @@ interface AxiInterconnect #(
         candReq = master_arvalid[cand] && (decode_address(master_araddr[cand]) == slaveId);
         candQos = int'(master_arqos[cand]);
       end
-
+ 
       // Strictly-greater keeps the earliest candidate in round-robin order on a
       // QoS tie, which is what makes the round-robin fair.
       if (candReq && (candQos > bestQos)) begin
@@ -360,10 +353,10 @@ interface AxiInterconnect #(
         best    = cand;
       end
     end
-
+ 
     return best;
   endfunction
-
+ 
   // ============================================================================
   // 4. Outstanding-transaction tracking
   //
@@ -387,41 +380,41 @@ interface AxiInterconnect #(
   // That is what the per-master destination queue below is for.
   // ============================================================================
   typedef enum bit [1:0] {IDLE, ADDR_PHASE, DATA_PHASE} state_t;
-
+ 
   state_t wr_state[TOTAL_SLAVES];
   int     wr_owner[TOTAL_SLAVES];
   int     wr_last_served[TOTAL_SLAVES];
   int     wr_stall[TOTAL_SLAVES];
-
+ 
   state_t rd_state[TOTAL_SLAVES];
   int     rd_owner[TOTAL_SLAVES];
   int     rd_last_served[TOTAL_SLAVES];
   int     rd_stall[TOTAL_SLAVES];
-
+ 
   // ---- W-channel destination queue, one per master --------------------------
   localparam int WQ_DEPTH = TOTAL_SLAVES;
-
-  int wq_mem [NO_OF_MASTERS][WQ_DEPTH];
-  int wq_head[NO_OF_MASTERS];
-  int wq_tail[NO_OF_MASTERS];
-  int wq_cnt [NO_OF_MASTERS];
-
-  int wq_dest[NO_OF_MASTERS];   // slave the current W burst belongs to (-1 = none)
-
+ 
+  int wq_mem [AxiGlobalPackage::NO_OF_MASTERS][WQ_DEPTH];
+  int wq_head[AxiGlobalPackage::NO_OF_MASTERS];
+  int wq_tail[AxiGlobalPackage::NO_OF_MASTERS];
+  int wq_cnt [AxiGlobalPackage::NO_OF_MASTERS];
+ 
+  int wq_dest[AxiGlobalPackage::NO_OF_MASTERS];   // slave the current W burst belongs to (-1 = none)
+ 
   always_comb begin
-    for (int m = 0; m < NO_OF_MASTERS; m++) begin
+    for (int m = 0; m < AxiGlobalPackage::NO_OF_MASTERS; m++) begin
       wq_dest[m] = (wq_cnt[m] != 0) ? wq_mem[m][wq_head[m]] : -1;
     end
   end
-
+ 
   // ---- R-burst lock, one per master -----------------------------------------
   // Read data from two slaves must not interleave back to one master, so once a
   // burst starts delivering it keeps the master's R channel until RLAST. The
   // lock is only taken when a beat actually transfers, so a slave that is
   // presenting data nobody is consuming cannot wedge the arbiter.
-  int r_lock  [NO_OF_MASTERS];
-  bit r_lock_v[NO_OF_MASTERS];
-
+  int r_lock  [AxiGlobalPackage::NO_OF_MASTERS];
+  bit r_lock_v[AxiGlobalPackage::NO_OF_MASTERS];
+ 
   // ---- Stopped-channel detection -------------------------------------------
   // The DMA carries the channel number in AWID/ARID and only moves to another
   // channel's pending transfer when the current channel is stopped. So if a new
@@ -434,13 +427,13 @@ interface AxiInterconnect #(
   // slave still has a burst in flight and must be allowed to finish it, so the
   // interconnect drains that burst itself (asserting RREADY / BREADY towards the
   // slave) and discards the beats instead of forwarding them.
-  logic [ID_WIDTH-1:0] rd_id[TOTAL_SLAVES];   // ARID captured at AR handshake
-  logic [ID_WIDTH-1:0] wr_id[TOTAL_SLAVES];   // AWID captured at AW handshake
+  logic [AxiGlobalPackage::ID_WIDTH-1:0] rd_id[TOTAL_SLAVES];   // ARID captured at AR handshake
+  logic [AxiGlobalPackage::ID_WIDTH-1:0] wr_id[TOTAL_SLAVES];   // AWID captured at AW handshake
   bit rd_discard[TOTAL_SLAVES];
   bit wr_discard[TOTAL_SLAVES];
-  int r_rr    [NO_OF_MASTERS];  // round-robin pointer for picking the next burst
-  int b_rr    [NO_OF_MASTERS];  // round-robin pointer for B responses
-
+  int r_rr    [AxiGlobalPackage::NO_OF_MASTERS];  // round-robin pointer for picking the next burst
+  int b_rr    [AxiGlobalPackage::NO_OF_MASTERS];  // round-robin pointer for B responses
+ 
   // ----------------------------------------------------------------------------
   // Forward/backward qualification, shared by the muxes and the state machines.
   // ----------------------------------------------------------------------------
@@ -449,20 +442,20 @@ interface AxiInterconnect #(
   bit ar_fwd [TOTAL_SLAVES];
   bit b_sel  [TOTAL_SLAVES];
   bit r_sel  [TOTAL_SLAVES];
-
+ 
   bit wr_done[TOTAL_SLAVES];
   bit rd_done[TOTAL_SLAVES];
   bit wr_kill[TOTAL_SLAVES];
   bit rd_kill[TOTAL_SLAVES];
-
+ 
   // A new address accepted this cycle for each master, and the ID it carried.
-  bit                  new_ar[NO_OF_MASTERS];
-  bit                  new_aw[NO_OF_MASTERS];
-  logic [ID_WIDTH-1:0] new_ar_id[NO_OF_MASTERS];
-  logic [ID_WIDTH-1:0] new_aw_id[NO_OF_MASTERS];
-
+  bit                  new_ar[AxiGlobalPackage::NO_OF_MASTERS];
+  bit                  new_aw[AxiGlobalPackage::NO_OF_MASTERS];
+  logic [AxiGlobalPackage::ID_WIDTH-1:0] new_ar_id[AxiGlobalPackage::NO_OF_MASTERS];
+  logic [AxiGlobalPackage::ID_WIDTH-1:0] new_aw_id[AxiGlobalPackage::NO_OF_MASTERS];
+ 
   always_comb begin
-    for (int m = 0; m < NO_OF_MASTERS; m++) begin
+    for (int m = 0; m < AxiGlobalPackage::NO_OF_MASTERS; m++) begin
       new_ar[m]    = 1'b0;
       new_aw[m]    = 1'b0;
       new_ar_id[m] = '0;
@@ -481,14 +474,14 @@ interface AxiInterconnect #(
       end
     end
   end
-
+ 
   always_comb begin
     int pick;
     int c;
-
+ 
     pick = -1;
     c    = 0;
-
+ 
     for (int s = 0; s < TOTAL_SLAVES; s++) begin
       aw_fwd[s]  = 1'b0;
       w_fwd[s]   = 1'b0;
@@ -500,7 +493,7 @@ interface AxiInterconnect #(
       wr_kill[s] = 1'b0;
       rd_kill[s] = 1'b0;
     end
-
+ 
     // ---- address channels ----
     // Gated only on "this master is still driving an address that decodes to
     // me". No cross-transaction gating: see the topology note above.
@@ -514,18 +507,18 @@ interface AxiInterconnect #(
                     (decode_address(master_araddr[rd_owner[s]]) == s);
       end
     end
-
+ 
     // ---- W channel: strictly to the head of the owner's destination queue ----
     for (int s = 0; s < TOTAL_SLAVES; s++) begin
       if (wr_state[s] == DATA_PHASE && wr_owner[s] >= 0) begin
         w_fwd[s] = master_wvalid[wr_owner[s]] && (wq_dest[wr_owner[s]] == s);
       end
     end
-
+ 
     // ---- R channel: one burst at a time per master, round-robin between them --
-    for (int m = 0; m < NO_OF_MASTERS; m++) begin
+    for (int m = 0; m < AxiGlobalPackage::NO_OF_MASTERS; m++) begin
       pick = -1;
-
+ 
       if (r_lock_v[m]) begin
         // Mid-burst: stay with the locked slave.
         if (rd_state[r_lock[m]] == DATA_PHASE && rd_owner[r_lock[m]] == m &&
@@ -541,15 +534,15 @@ interface AxiInterconnect #(
           end
         end
       end
-
+ 
       if (pick != -1) begin
         r_sel[pick]   = 1'b1;
         rd_done[pick] = slave_rlast[pick] && master_rready[m];
       end
     end
-
+ 
     // ---- B channel: one response at a time per master, round-robin ------------
-    for (int m = 0; m < NO_OF_MASTERS; m++) begin
+    for (int m = 0; m < AxiGlobalPackage::NO_OF_MASTERS; m++) begin
       pick = -1;
       for (int k = 0; k < TOTAL_SLAVES; k++) begin
         c = (b_rr[m] + 1 + k) % TOTAL_SLAVES;
@@ -563,7 +556,7 @@ interface AxiInterconnect #(
         wr_done[pick] = master_bready[m];
       end
     end
-
+ 
     // ---- abandoned-transfer reclaim ----
     for (int s = 0; s < TOTAL_SLAVES; s++) begin
       wr_kill[s] = (ABORT_TIMEOUT != 0) &&
@@ -572,23 +565,23 @@ interface AxiInterconnect #(
                    (rd_state[s] == DATA_PHASE) && (rd_stall[s] >= ABORT_TIMEOUT);
     end
   end
-
+ 
   // ----------------------------------------------------------------------------
   // Per-slave arbitration state machines
   // ----------------------------------------------------------------------------
   generate
     for (genvar s = 0; s < TOTAL_SLAVES; s++) begin : arbitration_logic
-
+ 
       // --- Write Channel ---
       always_ff @(posedge aclk or negedge aresetn) begin
         if (!aresetn) begin
           wr_state[s]       <= IDLE;
           wr_owner[s]       <= -1;
-          wr_last_served[s] <= NO_OF_MASTERS - 1;
+          wr_last_served[s] <= AxiGlobalPackage::NO_OF_MASTERS - 1;
           wr_stall[s]       <= 0;
         end else begin
           case (wr_state[s])
-
+ 
             IDLE: begin
               int best_m;
               best_m      = slaveOwner(s, 1, wr_last_served[s]);
@@ -598,7 +591,7 @@ interface AxiInterconnect #(
                 wr_state[s] <= ADDR_PHASE;
               end
             end
-
+ 
             ADDR_PHASE: begin
               // Losing aw_fwd means the request was withdrawn or re-targeted
               // (a stopped DMA channel does exactly this): release the grant
@@ -611,7 +604,7 @@ interface AxiInterconnect #(
                 wr_stall[s] <= 0;
               end
             end
-
+ 
             DATA_PHASE: begin
               if (wr_done[s] || wr_kill[s]) begin
                 wr_last_served[s] <= wr_owner[s];
@@ -624,26 +617,26 @@ interface AxiInterconnect #(
                 wr_stall[s] <= wr_stall[s] + 1;
               end
             end
-
+ 
             default: begin
               wr_state[s] <= IDLE;
               wr_owner[s] <= -1;
             end
-
+ 
           endcase
         end
       end
-
+ 
       // --- Read Channel ---
       always_ff @(posedge aclk or negedge aresetn) begin
         if (!aresetn) begin
           rd_state[s]       <= IDLE;
           rd_owner[s]       <= -1;
-          rd_last_served[s] <= NO_OF_MASTERS - 1;
+          rd_last_served[s] <= AxiGlobalPackage::NO_OF_MASTERS - 1;
           rd_stall[s]       <= 0;
         end else begin
           case (rd_state[s])
-
+ 
             IDLE: begin
               int best_m;
               best_m      = slaveOwner(s, 0, rd_last_served[s]);
@@ -653,7 +646,7 @@ interface AxiInterconnect #(
                 rd_state[s] <= ADDR_PHASE;
               end
             end
-
+ 
             ADDR_PHASE: begin
               if (!ar_fwd[s]) begin
                 rd_state[s] <= IDLE;
@@ -663,7 +656,7 @@ interface AxiInterconnect #(
                 rd_stall[s] <= 0;
               end
             end
-
+ 
             DATA_PHASE: begin
               if (rd_done[s] || rd_kill[s]) begin
                 rd_last_served[s] <= rd_owner[s];
@@ -676,19 +669,19 @@ interface AxiInterconnect #(
                 rd_stall[s] <= rd_stall[s] + 1;
               end
             end
-
+ 
             default: begin
               rd_state[s] <= IDLE;
               rd_owner[s] <= -1;
             end
-
+ 
           endcase
         end
       end
-
+ 
     end
   endgenerate
-
+ 
   // ----------------------------------------------------------------------------
   // Stopped-channel tracking, per slave.
   //
@@ -719,7 +712,7 @@ interface AxiInterconnect #(
             rd_discard[s] <= 1'b1;
           end
           if (rd_done[s] || rd_kill[s]) rd_discard[s] <= 1'b0;
-
+ 
           // ---- writes ----
           if (wr_state[s] == ADDR_PHASE && wr_owner[s] >= 0 &&
               aw_fwd[s] && slave_awready[s]) begin
@@ -734,12 +727,12 @@ interface AxiInterconnect #(
       end
     end
   endgenerate
-
+ 
   // ----------------------------------------------------------------------------
   // Per-master bookkeeping: W destination queue, R burst lock, round-robin ptrs
   // ----------------------------------------------------------------------------
   generate
-    for (genvar m = 0; m < NO_OF_MASTERS; m++) begin : master_tracking
+    for (genvar m = 0; m < AxiGlobalPackage::NO_OF_MASTERS; m++) begin : master_tracking
       always_ff @(posedge aclk or negedge aresetn) begin
         if (!aresetn) begin
           wq_head[m]  <= 0;
@@ -753,10 +746,10 @@ interface AxiInterconnect #(
         end else begin
           bit did_push;
           bit did_pop;
-
+ 
           did_push = 1'b0;
           did_pop  = 1'b0;
-
+ 
           // Push one entry per accepted AW. A master drives a single address at
           // a time and a grant requires a decode match, so at most one slave can
           // accept an AW for it in any cycle.
@@ -768,7 +761,7 @@ interface AxiInterconnect #(
               did_push               = 1'b1;
             end
           end
-
+ 
           if (wq_cnt[m] != 0) begin
             int hs;
             hs = wq_mem[m][wq_head[m]];
@@ -780,10 +773,10 @@ interface AxiInterconnect #(
               did_pop     = 1'b1;
             end
           end
-
+ 
           if (did_push && !did_pop)      wq_cnt[m] <= wq_cnt[m] + 1;
           else if (!did_push && did_pop) wq_cnt[m] <= wq_cnt[m] - 1;
-
+ 
           // ---- R burst lock ----
           for (int s = 0; s < TOTAL_SLAVES; s++) begin
             if (r_sel[s] && rd_owner[s] == m && master_rready[m]) begin
@@ -805,7 +798,7 @@ interface AxiInterconnect #(
             r_lock_v[m] <= 1'b0;
             r_lock[m]   <= -1;
           end
-
+ 
           // ---- B round-robin ----
           for (int s = 0; s < TOTAL_SLAVES; s++) begin
             if (b_sel[s] && wr_owner[s] == m && master_bready[m]) begin
@@ -816,12 +809,44 @@ interface AxiInterconnect #(
       end
     end
   endgenerate
-
+ 
   // ============================================================================
   // 5. Muxing: Master to Slave (Forward Path)
+  //
+  // axi4_if members are nets, so they must be driven by continuous assignment.
+  // The routing decision is computed procedurally into block-local variables
+  // (*_d) exactly as before, and each variable is continuously assigned onto
+  // its interface net. Routing logic is unchanged.
   // ============================================================================
   generate
     for (genvar s = 0; s < TOTAL_SLAVES; s++) begin : m2s_routing
+      logic [AxiGlobalPackage::ID_WIDTH-1:0]     awid_d;
+      logic [AxiGlobalPackage::ADDR_WIDTH-1:0]   awaddr_d;
+      logic [7:0]                                awlen_d;
+      logic [2:0]                                awsize_d;
+      logic [1:0]                                awburst_d;
+      logic                                      awlock_d;
+      logic [3:0]                                awcache_d;
+      logic [2:0]                                awprot_d;
+      logic [AxiGlobalPackage::QOS_WIDTH-1:0]    awqos_d;
+      logic                                      awvalid_d;
+      logic [AxiGlobalPackage::DATA_WIDTH-1:0]   wdata_d;
+      logic [AxiGlobalPackage::DATA_WIDTH/8-1:0] wstrb_d;
+      logic                                      wlast_d;
+      logic                                      wvalid_d;
+      logic                                      bready_d;
+      logic [AxiGlobalPackage::ID_WIDTH-1:0]     arid_d;
+      logic [AxiGlobalPackage::ADDR_WIDTH-1:0]   araddr_d;
+      logic [7:0]                                arlen_d;
+      logic [2:0]                                arsize_d;
+      logic [1:0]                                arburst_d;
+      logic                                      arlock_d;
+      logic [3:0]                                arcache_d;
+      logic [2:0]                                arprot_d;
+      logic [AxiGlobalPackage::QOS_WIDTH-1:0]    arqos_d;
+      logic                                      arvalid_d;
+      logic                                      rready_d;
+
       always_comb begin
         int wo;
         int ro;
@@ -829,67 +854,67 @@ interface AxiInterconnect #(
         wo = wr_owner[s];
         ro = rd_owner[s];
 
-        axiSlaveInterface[s].awid    = '0;
-        axiSlaveInterface[s].awaddr  = '0;
-        axiSlaveInterface[s].awlen   = '0;
-        axiSlaveInterface[s].awsize  = '0;
-        axiSlaveInterface[s].awburst = '0;
-        axiSlaveInterface[s].awlock  = '0;
-        axiSlaveInterface[s].awcache = '0;
-        axiSlaveInterface[s].awprot  = '0;
-        axiSlaveInterface[s].awqos   = '0;
-        axiSlaveInterface[s].awvalid = 1'b0;
-        axiSlaveInterface[s].wdata   = '0;
-        axiSlaveInterface[s].wstrb   = '0;
-        axiSlaveInterface[s].wlast   = 1'b0;
-        axiSlaveInterface[s].wvalid  = 1'b0;
-        axiSlaveInterface[s].bready  = 1'b0;
-        axiSlaveInterface[s].arid    = '0;
-        axiSlaveInterface[s].araddr  = '0;
-        axiSlaveInterface[s].arlen   = '0;
-        axiSlaveInterface[s].arsize  = '0;
-        axiSlaveInterface[s].arburst = '0;
-        axiSlaveInterface[s].arlock  = '0;
-        axiSlaveInterface[s].arcache = '0;
-        axiSlaveInterface[s].arprot  = '0;
-        axiSlaveInterface[s].arqos   = '0;
-        axiSlaveInterface[s].arvalid = 1'b0;
-        axiSlaveInterface[s].rready  = 1'b0;
+        awid_d    = '0;
+        awaddr_d  = '0;
+        awlen_d   = '0;
+        awsize_d  = '0;
+        awburst_d = '0;
+        awlock_d  = '0;
+        awcache_d = '0;
+        awprot_d  = '0;
+        awqos_d   = '0;
+        awvalid_d = 1'b0;
+        wdata_d   = '0;
+        wstrb_d   = '0;
+        wlast_d   = 1'b0;
+        wvalid_d  = 1'b0;
+        bready_d  = 1'b0;
+        arid_d    = '0;
+        araddr_d  = '0;
+        arlen_d   = '0;
+        arsize_d  = '0;
+        arburst_d = '0;
+        arlock_d  = '0;
+        arcache_d = '0;
+        arprot_d  = '0;
+        arqos_d   = '0;
+        arvalid_d = 1'b0;
+        rready_d  = 1'b0;
 
         if (wr_state[s] == ADDR_PHASE && wo >= 0) begin
-          axiSlaveInterface[s].awid    = master_awid[wo];
-          axiSlaveInterface[s].awaddr  = master_awaddr[wo];
-          axiSlaveInterface[s].awlen   = master_awlen[wo];
-          axiSlaveInterface[s].awsize  = master_awsize[wo];
-          axiSlaveInterface[s].awburst = master_awburst[wo];
-          axiSlaveInterface[s].awlock  = master_awlock[wo];
-          axiSlaveInterface[s].awcache = master_awcache[wo];
-          axiSlaveInterface[s].awprot  = master_awprot[wo];
-          axiSlaveInterface[s].awqos   = master_awqos[wo];
-          axiSlaveInterface[s].awvalid = aw_fwd[s];
+          awid_d    = master_awid[wo];
+          awaddr_d  = master_awaddr[wo];
+          awlen_d   = master_awlen[wo];
+          awsize_d  = master_awsize[wo];
+          awburst_d = master_awburst[wo];
+          awlock_d  = master_awlock[wo];
+          awcache_d = master_awcache[wo];
+          awprot_d  = master_awprot[wo];
+          awqos_d   = master_awqos[wo];
+          awvalid_d = aw_fwd[s];
         end
 
         if (wr_state[s] == DATA_PHASE && wo >= 0) begin
           if (wq_dest[wo] == s) begin
-            axiSlaveInterface[s].wdata  = master_wdata[wo];
-            axiSlaveInterface[s].wstrb  = master_wstrb[wo];
-            axiSlaveInterface[s].wlast  = master_wlast[wo];
-            axiSlaveInterface[s].wvalid = w_fwd[s];
+            wdata_d  = master_wdata[wo];
+            wstrb_d  = master_wstrb[wo];
+            wlast_d  = master_wlast[wo];
+            wvalid_d = w_fwd[s];
           end
-          axiSlaveInterface[s].bready = b_sel[s] && master_bready[wo];
+          bready_d = b_sel[s] && master_bready[wo];
         end
 
         if (rd_state[s] == ADDR_PHASE && ro >= 0) begin
-          axiSlaveInterface[s].arid    = master_arid[ro];
-          axiSlaveInterface[s].araddr  = master_araddr[ro];
-          axiSlaveInterface[s].arlen   = master_arlen[ro];
-          axiSlaveInterface[s].arsize  = master_arsize[ro];
-          axiSlaveInterface[s].arburst = master_arburst[ro];
-          axiSlaveInterface[s].arlock  = master_arlock[ro];
-          axiSlaveInterface[s].arcache = master_arcache[ro];
-          axiSlaveInterface[s].arprot  = master_arprot[ro];
-          axiSlaveInterface[s].arqos   = master_arqos[ro];
-          axiSlaveInterface[s].arvalid = ar_fwd[s];
+          arid_d    = master_arid[ro];
+          araddr_d  = master_araddr[ro];
+          arlen_d   = master_arlen[ro];
+          arsize_d  = master_arsize[ro];
+          arburst_d = master_arburst[ro];
+          arlock_d  = master_arlock[ro];
+          arcache_d = master_arcache[ro];
+          arprot_d  = master_arprot[ro];
+          arqos_d   = master_arqos[ro];
+          arvalid_d = ar_fwd[s];
         end
 
         if (rd_state[s] == DATA_PHASE && ro >= 0) begin
@@ -897,9 +922,36 @@ interface AxiInterconnect #(
           // port is left un-acknowledged: r_sel[s] is already 0 for it, so
           // RREADY stays low and the TB's slave agent never observes a beat
           // that the DMA did not actually take.
-          axiSlaveInterface[s].rready = r_sel[s] && master_rready[ro];
+          rready_d = r_sel[s] && master_rready[ro];
         end
       end
+
+      assign axiSlaveInterface[s].awid    = awid_d;
+      assign axiSlaveInterface[s].awaddr  = awaddr_d;
+      assign axiSlaveInterface[s].awlen   = awlen_d;
+      assign axiSlaveInterface[s].awsize  = awsize_d;
+      assign axiSlaveInterface[s].awburst = awburst_d;
+      assign axiSlaveInterface[s].awlock  = awlock_d;
+      assign axiSlaveInterface[s].awcache = awcache_d;
+      assign axiSlaveInterface[s].awprot  = awprot_d;
+      assign axiSlaveInterface[s].awqos   = awqos_d;
+      assign axiSlaveInterface[s].awvalid = awvalid_d;
+      assign axiSlaveInterface[s].wdata   = wdata_d;
+      assign axiSlaveInterface[s].wstrb   = wstrb_d;
+      assign axiSlaveInterface[s].wlast   = wlast_d;
+      assign axiSlaveInterface[s].wvalid  = wvalid_d;
+      assign axiSlaveInterface[s].bready  = bready_d;
+      assign axiSlaveInterface[s].arid    = arid_d;
+      assign axiSlaveInterface[s].araddr  = araddr_d;
+      assign axiSlaveInterface[s].arlen   = arlen_d;
+      assign axiSlaveInterface[s].arsize  = arsize_d;
+      assign axiSlaveInterface[s].arburst = arburst_d;
+      assign axiSlaveInterface[s].arlock  = arlock_d;
+      assign axiSlaveInterface[s].arcache = arcache_d;
+      assign axiSlaveInterface[s].arprot  = arprot_d;
+      assign axiSlaveInterface[s].arqos   = arqos_d;
+      assign axiSlaveInterface[s].arvalid = arvalid_d;
+      assign axiSlaveInterface[s].rready  = rready_d;
     end
   endgenerate
 
@@ -911,49 +963,76 @@ interface AxiInterconnect #(
   // highest index silently overwrite every lower one - which is how a stale
   // slave handed its read data (RID and all) to the master instead of the slave
   // that was actually addressed.
+  //
+  // Same net-driving scheme as section 5: procedural mux into *_d variables,
+  // continuous assign onto the interface nets.
   // ============================================================================
   generate
-    for (genvar m = 0; m < NO_OF_MASTERS; m++) begin : s2m_routing
+    for (genvar m = 0; m < AxiGlobalPackage::NO_OF_MASTERS; m++) begin : s2m_routing
+      logic                                    awready_d;
+      logic                                    wready_d;
+      logic [AxiGlobalPackage::ID_WIDTH-1:0]   bid_d;
+      logic [1:0]                              bresp_d;
+      logic                                    bvalid_d;
+      logic                                    arready_d;
+      logic [AxiGlobalPackage::ID_WIDTH-1:0]   rid_d;
+      logic [AxiGlobalPackage::DATA_WIDTH-1:0] rdata_d;
+      logic [1:0]                              rresp_d;
+      logic                                    rlast_d;
+      logic                                    rvalid_d;
+
       always_comb begin
-        axiMasterInterface[m].awready = 1'b0;
-        axiMasterInterface[m].wready  = 1'b0;
-        axiMasterInterface[m].bid     = '0;
-        axiMasterInterface[m].bresp   = '0;
-        axiMasterInterface[m].bvalid  = 1'b0;
-        axiMasterInterface[m].arready = 1'b0;
-        axiMasterInterface[m].rid     = '0;
-        axiMasterInterface[m].rdata   = '0;
-        axiMasterInterface[m].rresp   = '0;
-        axiMasterInterface[m].rlast   = 1'b0;
-        axiMasterInterface[m].rvalid  = 1'b0;
+        awready_d = 1'b0;
+        wready_d  = 1'b0;
+        bid_d     = '0;
+        bresp_d   = '0;
+        bvalid_d  = 1'b0;
+        arready_d = 1'b0;
+        rid_d     = '0;
+        rdata_d   = '0;
+        rresp_d   = '0;
+        rlast_d   = 1'b0;
+        rvalid_d  = 1'b0;
 
         for (int s = 0; s < TOTAL_SLAVES; s++) begin
           if (wr_state[s] == ADDR_PHASE && wr_owner[s] == m && aw_fwd[s]) begin
-            axiMasterInterface[m].awready = slave_awready[s];
+            awready_d = slave_awready[s];
           end
           if (wr_state[s] == DATA_PHASE && wr_owner[s] == m && wq_dest[m] == s) begin
-            axiMasterInterface[m].wready = slave_wready[s];
+            wready_d = slave_wready[s];
           end
           if (b_sel[s] && wr_owner[s] == m) begin
-            axiMasterInterface[m].bid    = slave_bid[s];
-            axiMasterInterface[m].bresp  = slave_bresp[s];
-            axiMasterInterface[m].bvalid = 1'b1;
+            bid_d    = slave_bid[s];
+            bresp_d  = slave_bresp[s];
+            bvalid_d = 1'b1;
           end
           if (rd_state[s] == ADDR_PHASE && rd_owner[s] == m && ar_fwd[s]) begin
-            axiMasterInterface[m].arready = slave_arready[s];
+            arready_d = slave_arready[s];
           end
           if (r_sel[s] && rd_owner[s] == m) begin
-            axiMasterInterface[m].rid    = slave_rid[s];
-            axiMasterInterface[m].rdata  = slave_rdata[s];
-            axiMasterInterface[m].rresp  = slave_rresp[s];
-            axiMasterInterface[m].rlast  = slave_rlast[s];
-            axiMasterInterface[m].rvalid = 1'b1;
+            rid_d    = slave_rid[s];
+            rdata_d  = slave_rdata[s];
+            rresp_d  = slave_rresp[s];
+            rlast_d  = slave_rlast[s];
+            rvalid_d = 1'b1;
           end
         end
       end
+
+      assign axiMasterInterface[m].awready = awready_d;
+      assign axiMasterInterface[m].wready  = wready_d;
+      assign axiMasterInterface[m].bid     = bid_d;
+      assign axiMasterInterface[m].bresp   = bresp_d;
+      assign axiMasterInterface[m].bvalid  = bvalid_d;
+      assign axiMasterInterface[m].arready = arready_d;
+      assign axiMasterInterface[m].rid     = rid_d;
+      assign axiMasterInterface[m].rdata   = rdata_d;
+      assign axiMasterInterface[m].rresp   = rresp_d;
+      assign axiMasterInterface[m].rlast   = rlast_d;
+      assign axiMasterInterface[m].rvalid  = rvalid_d;
     end
   endgenerate
-
+ 
   // ============================================================================
   // Routing trace (compile with +define+AXI_IC_DEBUG to enable)
   //
@@ -971,7 +1050,7 @@ interface AxiInterconnect #(
       wr_discard_q[i] <= wr_discard[i];
     end
   end
-
+ 
   generate
     for (genvar s = 0; s < TOTAL_SLAVES; s++) begin : ic_trace_slave
       always_ff @(posedge aclk) begin
@@ -1011,5 +1090,5 @@ interface AxiInterconnect #(
     end
   endgenerate
 `endif
-
+ 
 endinterface

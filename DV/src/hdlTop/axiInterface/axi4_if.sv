@@ -11,54 +11,54 @@ import axi4_globals_pkg::*;
 interface axi4_if(input aclk, input aresetn);
 
   //Write_address_channel
-  logic     [3: 0] awid     ;
-  logic     [ADDRESS_WIDTH-1: 0] awaddr ;
-  logic     [3: 0] awlen     ;
-  logic     [2: 0] awsize    ;
-  logic     [1: 0] awburst   ;
-  logic     [1: 0] awlock    ;
-  logic     [3: 0] awcache   ;
-  logic     [2: 0] awprot    ;
-  logic     [3:0] awqos      ;
-  logic     [3:0] awregion   ;
-  logic           awuser     ;
-  logic            awvalid   ;
-  logic		         awready   ;
+  wire     [3: 0] awid     ;
+  wire     [ADDRESS_WIDTH-1: 0] awaddr ;
+  wire     [7: 0] awlen     ;
+  wire     [2: 0] awsize    ;
+  wire     [1: 0] awburst   ;
+  wire     [1: 0] awlock    ;
+  wire     [3: 0] awcache   ;
+  wire     [2: 0] awprot    ;
+  wire     [3:0] awqos      ;
+  wire     [3:0] awregion   ;
+  wire           awuser     ;
+  wire            awvalid   ;
+  wire		         awready   ;
   //Write_data_channel
-  logic     [DATA_WIDTH-1: 0] wdata     ;
-  logic     [(DATA_WIDTH/8)-1: 0] wstrb ;
-  logic            wlast     ;
-  logic      [3:0] wuser     ;
-  logic            wvalid    ;
- 	logic            wready    ;
+  wire     [DATA_WIDTH-1: 0] wdata     ;
+  wire     [(DATA_WIDTH/8)-1: 0] wstrb ;
+  wire            wlast     ;
+  wire      [3:0] wuser     ;
+  wire            wvalid    ;
+ 	wire            wready    ;
   //Write Response Channel
-  logic     [3: 0] bid       ;
-  logic     [1: 0] bresp     ;
-  logic     [3: 0] buser     ;
-  logic            bvalid    ;
-  logic            bready    ;
+  wire     [3: 0] bid       ;
+  wire     [1: 0] bresp     ;
+  wire     [3: 0] buser     ;
+  wire            bvalid    ;
+  wire            bready    ;
   //Read Address Channel
-  logic     [3: 0] arid     ;
-  logic     [ADDRESS_WIDTH-1:0] araddr  ;
-  logic     [7:0] arlen      ;
-  logic     [2:0] arsize     ;
-  logic     [1:0] arburst    ;
-  logic     [1:0] arlock     ;
-  logic     [3:0] arcache    ;
-  logic     [2:0] arprot     ;
-  logic     [3:0] arqos      ;
-  logic     [3:0] arregion   ;
-  logic     [3:0] aruser     ;
-  logic           arvalid    ;
- 	logic	          arready    ;
+  wire     [3: 0] arid     ;
+  wire     [ADDRESS_WIDTH-1:0] araddr  ;
+  wire     [7:0] arlen      ;
+  wire     [2:0] arsize     ;
+  wire     [1:0] arburst    ;
+  wire     [1:0] arlock     ;
+  wire     [3:0] arcache    ;
+  wire     [2:0] arprot     ;
+  wire     [3:0] arqos      ;
+  wire     [3:0] arregion   ;
+  wire     [3:0] aruser     ;
+  wire           arvalid    ;
+ 	wire	          arready    ;
   //Read Data Channel
-  logic     [3: 0] rid      ;
-  logic     [DATA_WIDTH-1: 0] rdata     ;
-  logic     [1:0] rresp      ;
-  logic           rlast      ;
-  logic     [3:0] ruser      ;
-  logic           rvalid     ;
-  logic  	        rready     ;
+  wire     [3: 0] rid      ;
+  wire     [DATA_WIDTH-1: 0] rdata     ;
+  wire     [1:0] rresp      ;
+  wire           rlast      ;
+  wire     [3:0] ruser      ;
+  wire           rvalid     ;
+  wire  	        rready     ;
   
 
 endinterface: axi4_if 

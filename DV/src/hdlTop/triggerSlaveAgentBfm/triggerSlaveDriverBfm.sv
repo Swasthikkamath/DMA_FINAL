@@ -2,7 +2,7 @@
 `define TRIGGERSLAVEDRIVERBFM_INCLUDED
 
 `timescale 1ns/1ps
-interface triggerSlaveDriverBfm(input bit trigInReq, output bit trigOutReq, input bit trigOutAck,input logic[1:0]reqType,output bit trigInAck,output logic[1:0]ackType,input bit clk);
+interface triggerSlaveDriverBfm(input bit trigInReq, output wire trigOutReq, input bit trigOutAck,input wire[1:0]reqType,output wire trigInAck,output wire[1:0]ackType,input bit clk);
 
 import triggerGlobalPkg :: *;
 

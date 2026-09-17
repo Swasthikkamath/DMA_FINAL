@@ -13,7 +13,7 @@
     task bootMonitor(output  bootStructPacket bootStructPacketHandle);
       do begin 
        @(bootMasterCb);
-      end while(!($rose(bootMasterCb.rst)));
+      end while(!($rose(rst)));
       bootStructPacketHandle.bootAddr <= bootMasterCb.bootAddr; 
       bootStructPacketHandle.bootEn <= bootMasterCb.bootEn;
     endtask
