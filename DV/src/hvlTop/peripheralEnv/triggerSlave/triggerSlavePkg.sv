@@ -14,7 +14,6 @@ package triggerSlavePkg;
   import triggerGlobalPkg::*;
     
   `include "triggerSlaveTx.sv"
-  `include "triggerSlaveSeqItemConverter.sv"  
   `include "triggerSlaveSequencer.sv"
   `include "triggerSlaveAgentConfig.sv"
   `include  "triggerSlaveDriverProxy.sv"

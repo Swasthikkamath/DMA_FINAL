@@ -55,9 +55,7 @@ class axi4_master_driver_proxy extends uvm_driver#(axi4_master_tx);
   //Declaring handle for axi4_master agent config class 
   axi4_master_agent_config axi4_master_agent_cfg_h;
 
-  //Variable: axi4_master_drv_bfm_h
-  //Declaring handle for axi4 driver bfm
-  virtual axi4_master_driver_bfm axi4_master_drv_bfm_h;
+  virtual axi4_if vif;
 
   //Vaiaable : write_data_channel_key
   //Used to assign keys to this semaphore and 
@@ -103,6 +101,13 @@ class axi4_master_driver_proxy extends uvm_driver#(axi4_master_tx);
   extern virtual task run_phase(uvm_phase phase);
   extern virtual task axi4_write_task();
   extern virtual task axi4_read_task();
+  extern virtual task wait_for_aresetn();
+  extern virtual task default_values();
+  extern virtual task axi4_write_address_channel_task(ref axi4_write_transfer_char_s data_write_packet, input axi4_transfer_cfg_s cfg_packet);
+  extern virtual task axi4_write_data_channel_task(ref axi4_write_transfer_char_s data_write_packet, input axi4_transfer_cfg_s cfg_packet);
+  extern virtual task axi4_write_response_channel_task(ref axi4_write_transfer_char_s data_write_packet, input axi4_transfer_cfg_s cfg_packet);
+  extern virtual task axi4_read_address_channel_task(ref axi4_read_transfer_char_s data_read_packet, input axi4_transfer_cfg_s cfg_packet);
+  extern virtual task axi4_read_data_channel_task(ref axi4_read_transfer_char_s data_read_packet, input axi4_transfer_cfg_s cfg_packet);
 
 endclass : axi4_master_driver_proxy
 
@@ -135,7 +140,7 @@ endfunction : new
 //--------------------------------------------------------------------------------------------
 function void axi4_master_driver_proxy::build_phase(uvm_phase phase);
   super.build_phase(phase);
-  axi4_master_drv_bfm_h = axi4_master_agent_cfg_h.axi4MasterDriverBfm;
+  vif = axi4_master_agent_cfg_h.vif;
 endfunction : build_phase
 
 //--------------------------------------------------------------------------------------------
@@ -146,7 +151,9 @@ endfunction : build_phase
 //--------------------------------------------------------------------------------------------
 function void axi4_master_driver_proxy::end_of_elaboration_phase(uvm_phase phase);
   super.end_of_elaboration_phase(phase);
-  axi4_master_drv_bfm_h.axi4_master_drv_proxy_h = this;
+  if(vif == null) begin
+    `uvm_fatal(get_type_name(),"AXI4 master virtual interface is null")
+  end
 endfunction : end_of_elaboration_phase
 
 //--------------------------------------------------------------------------------------------
@@ -160,7 +167,7 @@ endfunction : end_of_elaboration_phase
 task axi4_master_driver_proxy::run_phase(uvm_phase phase);
 
   //waiting for system reset
-  axi4_master_drv_bfm_h.wait_for_aresetn();
+  wait_for_aresetn();
 
   fork 
     axi4_write_task();
@@ -208,9 +215,9 @@ task axi4_master_driver_proxy::axi4_write_task();
      
           `uvm_info(get_type_name(),$sformatf("WRITE_ADDRESS_THREAD::Received_req_write_packet = \n %s",req_wr.sprint()),UVM_DEBUG);
 
-      axi4_master_drv_bfm_h.axi4_write_address_channel_task(struct_write_packet,struct_cfg);
-      axi4_master_drv_bfm_h.axi4_write_data_channel_task(struct_write_packet,struct_cfg);
-      axi4_master_drv_bfm_h.axi4_write_response_channel_task(struct_write_packet,struct_cfg);
+      axi4_write_address_channel_task(struct_write_packet,struct_cfg);
+      axi4_write_data_channel_task(struct_write_packet,struct_cfg);
+      axi4_write_response_channel_task(struct_write_packet,struct_cfg);
 
       completeSingleWrite = 1;
       //Converts the struct packet to req packet
@@ -268,7 +275,7 @@ task axi4_master_driver_proxy::axi4_write_task();
            axi4_master_seq_item_converter::from_write_class(req_wr,struct_write_addr_packet);
           `uvm_info(get_type_name(),$sformatf("WRITE_ADDRESS_THREAD::Checking write address struct packet = %p",struct_write_addr_packet),UVM_DEBUG); 
           //Calling the bfm task which drives write address channel signals
-          axi4_master_drv_bfm_h.axi4_write_address_channel_task(struct_write_addr_packet,struct_cfg);
+          axi4_write_address_channel_task(struct_write_addr_packet,struct_cfg);
           //Converting the write data struct packet to req packet
           axi4_master_seq_item_converter::to_write_class(struct_write_addr_packet,req_wr);
 
@@ -412,7 +419,7 @@ task axi4_master_driver_proxy::axi4_write_task();
                                                struct_write_data_packet),UVM_DEBUG);
 
           //Calling the write data channel in bfm to drive all the write data signals
-          axi4_master_drv_bfm_h.axi4_write_data_channel_task(struct_write_data_packet,struct_cfg);
+          axi4_write_data_channel_task(struct_write_data_packet,struct_cfg);
          
           //Converting the write data struct packet to req packet
          
@@ -521,7 +528,7 @@ task axi4_master_driver_proxy::axi4_write_task();
                                                struct_write_response_packet),UVM_DEBUG); 
           
           //Calls the write response channel on the bfm to sample the write response channel signals
-          axi4_master_drv_bfm_h.axi4_write_response_channel_task(struct_write_response_packet,struct_cfg);
+          axi4_write_response_channel_task(struct_write_response_packet,struct_cfg);
           `uvm_info(get_type_name(),$sformatf("WRITE_RESPONSE_THREAD::Received_struct_packet = %p",
                                                struct_write_response_packet),UVM_DEBUG);
 
@@ -611,8 +618,8 @@ task axi4_master_driver_proxy::axi4_read_task();
 
       //Calling read address channel and read data channel tasks declared in bfm to drive the
       //read address channel signals and to sample the read data channel siganls
-      axi4_master_drv_bfm_h.axi4_read_address_channel_task(struct_read_packet,struct_cfg);
-      axi4_master_drv_bfm_h.axi4_read_data_channel_task(struct_read_packet,struct_cfg);
+      axi4_read_address_channel_task(struct_read_packet,struct_cfg);
+      axi4_read_data_channel_task(struct_read_packet,struct_cfg);
       //Converting transactions into struct data type
       axi4_master_seq_item_converter::to_read_class(struct_read_packet,req_rd);
 
@@ -659,7 +666,7 @@ task axi4_master_driver_proxy::axi4_read_task();
                                                struct_read_address_packet),UVM_DEBUG); 
           
           //Calls the read address channel to drive the read address channel signals
-          axi4_master_drv_bfm_h.axi4_read_address_channel_task(struct_read_address_packet,struct_cfg);
+          axi4_read_address_channel_task(struct_read_address_packet,struct_cfg);
 
           //Converting transactions into struct data type
           axi4_master_seq_item_converter::to_read_class(struct_read_packet,req_rd);
@@ -693,7 +700,7 @@ task axi4_master_driver_proxy::axi4_read_task();
                                                struct_read_data_packet),UVM_DEBUG); 
           
           //Calls the read data channel task in bfm to sample the read data signals
-          axi4_master_drv_bfm_h.axi4_read_data_channel_task(struct_read_data_packet,struct_cfg);
+          axi4_read_data_channel_task(struct_read_data_packet,struct_cfg);
           `uvm_info(get_type_name(),$sformatf("READ_DATA_THREAD::Checking response struct packet = %p",
                                                struct_read_data_packet),UVM_DEBUG); 
           
@@ -728,4 +735,150 @@ task axi4_master_driver_proxy::axi4_read_task();
   end
 endtask : axi4_read_task
 
+task axi4_master_driver_proxy::wait_for_aresetn();
+  @(negedge vif.aresetn);
+  `uvm_info(get_type_name(),$sformatf("SYSTEM RESET DETECTED"),UVM_HIGH)
+  default_values();
+  @(posedge vif.aresetn);
+  `uvm_info(get_type_name(),$sformatf("SYSTEM RESET DEACTIVATED"),UVM_HIGH)
+endtask
+
+task axi4_master_driver_proxy::default_values();
+  vif.masterDrvCb.awvalid  <= 1'b0;
+  vif.masterDrvCb.wvalid   <= 1'b0;
+  vif.masterDrvCb.bready   <= 1'b0;
+  vif.masterDrvCb.arvalid  <= 1'b0;
+  vif.masterDrvCb.rready   <= 1'b0;
+  vif.masterDrvCb.awid     <= 'b0;
+  vif.masterDrvCb.awaddr   <= 'b0;
+  vif.masterDrvCb.awlen    <= 'b0;
+  vif.masterDrvCb.awsize   <= 'b0;
+  vif.masterDrvCb.awburst  <= 'b0;
+  vif.masterDrvCb.awlock   <= 'b0;
+  vif.masterDrvCb.awcache  <= 'b0;
+  vif.masterDrvCb.awprot   <= 'b0;
+  vif.masterDrvCb.awqos    <= 'b0;
+  vif.masterDrvCb.awregion <= 'b0;
+  vif.masterDrvCb.awuser   <= 'b0;
+  vif.masterDrvCb.wdata    <= 'b0;
+  vif.masterDrvCb.wstrb    <= 'b0;
+  vif.masterDrvCb.wlast    <= 'b0;
+  vif.masterDrvCb.wuser    <= 'b0;
+  vif.masterDrvCb.arid     <= 'b0;
+  vif.masterDrvCb.araddr   <= 'b0;
+  vif.masterDrvCb.arlen    <= 'b0;
+  vif.masterDrvCb.arsize   <= 'b0;
+  vif.masterDrvCb.arburst  <= 'b0;
+  vif.masterDrvCb.arlock   <= 'b0;
+  vif.masterDrvCb.arcache  <= 'b0;
+  vif.masterDrvCb.arprot   <= 'b0;
+  vif.masterDrvCb.arqos    <= 'b0;
+  vif.masterDrvCb.arregion <= 'b0;
+  vif.masterDrvCb.aruser   <= 'b0;
+endtask
+
+task axi4_master_driver_proxy::axi4_write_address_channel_task(ref axi4_write_transfer_char_s data_write_packet, input axi4_transfer_cfg_s cfg_packet);
+  @(vif.masterDrvCb);
+  vif.masterDrvCb.awid     <= data_write_packet.awid;
+  vif.masterDrvCb.awaddr   <= data_write_packet.awaddr;
+  vif.masterDrvCb.awlen    <= data_write_packet.awlen;
+  vif.masterDrvCb.awsize   <= data_write_packet.awsize;
+  vif.masterDrvCb.awburst  <= data_write_packet.awburst;
+  vif.masterDrvCb.awlock   <= data_write_packet.awlock;
+  vif.masterDrvCb.awcache  <= data_write_packet.awcache;
+  vif.masterDrvCb.awprot   <= data_write_packet.awprot;
+  vif.masterDrvCb.awqos    <= data_write_packet.awqos;
+  vif.masterDrvCb.awregion <= data_write_packet.awregion;
+  vif.masterDrvCb.awuser   <= data_write_packet.awuser;
+  vif.masterDrvCb.awvalid  <= 1'b1;
+  do begin
+    @(vif.masterDrvCb);
+    data_write_packet.wait_count_write_address_channel++;
+  end while(vif.masterDrvCb.awready !== 1);
+  vif.masterDrvCb.awvalid <= 1'b0;
+endtask
+
+task axi4_master_driver_proxy::axi4_write_data_channel_task(ref axi4_write_transfer_char_s data_write_packet, input axi4_transfer_cfg_s cfg_packet);
+  @(vif.masterDrvCb);
+  for(int i=0; i<data_write_packet.awlen + 1; i++) begin
+    vif.masterDrvCb.wdata  <= data_write_packet.wdata[i];
+    vif.masterDrvCb.wstrb  <= data_write_packet.wstrb[i];
+    vif.masterDrvCb.wuser  <= data_write_packet.wuser[i];
+    vif.masterDrvCb.wlast  <= (data_write_packet.awlen == i);
+    vif.masterDrvCb.wvalid <= 1'b1;
+    do begin
+      @(vif.masterDrvCb);
+    end while(vif.masterDrvCb.wready===0);
+  end
+  vif.masterDrvCb.wlast  <= 1'b0;
+  vif.masterDrvCb.wvalid <= 1'b0;
+endtask
+
+task axi4_master_driver_proxy::axi4_write_response_channel_task(ref axi4_write_transfer_char_s data_write_packet, input axi4_transfer_cfg_s cfg_packet);
+  do begin
+    @(vif.masterDrvCb);
+  end while(vif.masterDrvCb.bvalid !== 1'b1);
+  repeat(data_write_packet.no_of_wait_states) begin
+    @(vif.masterDrvCb);
+    vif.masterDrvCb.bready <= 0;
+  end
+  data_write_packet.bvalid = vif.masterDrvCb.bvalid;
+  data_write_packet.bid    = vif.masterDrvCb.bid;
+  data_write_packet.bresp  = vif.masterDrvCb.bresp;
+  data_write_packet.buser  = vif.masterDrvCb.buser[0];
+  vif.masterDrvCb.bready <= 1'b1;
+  @(vif.masterDrvCb);
+  vif.masterDrvCb.bready <= 1'b0;
+endtask
+
+task axi4_master_driver_proxy::axi4_read_address_channel_task(ref axi4_read_transfer_char_s data_read_packet, input axi4_transfer_cfg_s cfg_packet);
+  @(vif.masterDrvCb);
+  vif.masterDrvCb.arid     <= data_read_packet.arid;
+  vif.masterDrvCb.araddr   <= data_read_packet.araddr;
+  vif.masterDrvCb.arlen    <= data_read_packet.arlen;
+  vif.masterDrvCb.arsize   <= data_read_packet.arsize;
+  vif.masterDrvCb.arburst  <= data_read_packet.arburst;
+  vif.masterDrvCb.arlock   <= data_read_packet.arlock;
+  vif.masterDrvCb.arcache  <= data_read_packet.arcache;
+  vif.masterDrvCb.arprot   <= data_read_packet.arprot;
+  vif.masterDrvCb.arqos    <= data_read_packet.arqos;
+  vif.masterDrvCb.aruser   <= data_read_packet.aruser;
+  vif.masterDrvCb.arregion <= data_read_packet.arregion;
+  vif.masterDrvCb.arvalid  <= 1'b1;
+  do begin
+    @(vif.masterDrvCb);
+    data_read_packet.wait_count_read_address_channel++;
+  end while(vif.masterDrvCb.arready !== 1);
+  vif.masterDrvCb.arvalid <= 1'b0;
+endtask
+
+task axi4_master_driver_proxy::axi4_read_data_channel_task(ref axi4_read_transfer_char_s data_read_packet, input axi4_transfer_cfg_s cfg_packet);
+  int i = 0;
+  do begin
+    @(vif.masterDrvCb);
+    vif.masterDrvCb.rready <= 0;
+  end while(vif.masterDrvCb.rvalid === 1'b0);
+  repeat(data_read_packet.no_of_wait_states) begin
+    @(vif.masterDrvCb);
+  end
+  vif.masterDrvCb.rready <= 1'b1;
+  forever begin
+    do begin
+      @(vif.masterDrvCb);
+    end while(vif.masterDrvCb.rvalid === 1'b0);
+    data_read_packet.rid      = vif.masterDrvCb.rid;
+    data_read_packet.rdata[i] = vif.masterDrvCb.rdata;
+    data_read_packet.ruser[0] = vif.masterDrvCb.ruser;
+    data_read_packet.rresp[i] = vif.masterDrvCb.rresp;
+    i++;
+    if(vif.masterDrvCb.rlast === 1'b1) begin
+      i=0;
+      break;
+    end
+  end
+  @(vif.masterDrvCb);
+  vif.masterDrvCb.rready <= 1'b0;
+endtask
+
 `endif
+

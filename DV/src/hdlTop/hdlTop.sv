@@ -98,13 +98,12 @@ module hdlTop;
   );
   AxiInterconnect inter(pclk,preset_n,axi4InterfaceHandle[(NO_OF_SLAVES+1):(NO_OF_SLAVES+2)],axi4InterfaceHandle[0:(NO_OF_SLAVES)]);
   generate
-    for(genvar i=0;i<(axi4_globals_pkg::NO_OF_SLAVES +1);i++) begin 
-      axi4_master_agent_bfm #(i) axi4MasterAgentBfm(axi4InterfaceHandle[i]);
-      axi4_slave_agent_bfm #(i) axi4SlaveAgentBfm(axi4InterfaceHandle[i]);
-      triggerMasterAgentBfm #(i) triggerMasterAgentBfm(triggerInterfaceHandle[i]);
-      triggerSlaveAgentBfm #(i) triggerSlaveAgentBfm(triggerInterfaceHandle[i]);
+    for(genvar i=0;i<(axi4_globals_pkg::NO_OF_SLAVES +1);i++) begin
+      initial begin
+        uvm_config_db#(virtual axi4_if)::set(null, "*", $sformatf("axi4_if[%0d]", i), axi4InterfaceHandle[i]);
+        uvm_config_db#(virtual triggerInterface)::set(null, "*", $sformatf("triggerInterface[%0d]", i), triggerInterfaceHandle[i]);
+      end
     end
-
   endgenerate
  
   generate
@@ -121,10 +120,11 @@ module hdlTop;
    end 
   endgenerate
 
-  apb_master_agent_bfm apbMasterAgentBfm(apbInterfaceHandle);
-  interruptSlaveAgentBfm interruptSlaveAgentBfmHandle(interruptInterfaceHandle);
-  interruptMasterAgentBfm interruptMasterAgentBfmHandle(interruptInterfaceHandle);
-  bootMasterAgentBfm bootMasterAgentBfmHandle(bootInterfaceHandle);
+  initial begin
+    uvm_config_db#(virtual apb_if)::set(null, "*", "apb_if", apbInterfaceHandle);
+    uvm_config_db#(virtual interruptInterface)::set(null, "*", "interruptInterface", interruptInterfaceHandle);
+    uvm_config_db#(virtual bootInterface)::set(null, "*", "bootInterface", bootInterfaceHandle);
+  end
 
 initial begin
   $dumpfile("simulation_output.vcd");

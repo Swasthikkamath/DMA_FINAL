@@ -23,8 +23,6 @@ package apb_master_pkg;
   //-------------------------------------------------------
   `include "apbMasterAgentConfig.sv"
   `include "apbMasterTx.sv"
-  `include "apbMasterSeqItemConverter.sv"
-  `include "apbMasterCfgConverter.sv"
   `include "apbMasterAdapter.sv"
   `include "apbMasterSequencer.sv"
   `include "apbMasterDriverProxy.sv"

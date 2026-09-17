@@ -12,11 +12,7 @@ class triggerMasterAgentConfig extends uvm_object;
 
   `uvm_object_utils(triggerMasterAgentConfig)
   
-  // Virtual handle to Driver BFM
-  virtual triggerMasterDriverBfm triggerMasterDriverBfmHandle;
-
-  // Virtual handle to Monitor BFM
-  virtual triggerMasterMonitorBfm triggerMasterMonitorBfmHandle;
+  virtual triggerInterface vif;
 
   // Defines whether agent is ACTIVE or PASSIVE
   uvm_active_passive_enum is_active;

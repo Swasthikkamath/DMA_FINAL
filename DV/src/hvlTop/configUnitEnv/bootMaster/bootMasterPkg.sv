@@ -8,7 +8,6 @@ package bootMasterPkg;
 
    `include "bootMasterTx.sv"
    `include"bootMasterAgentConfig.sv"
-   `include "bootMasterSeqItemConverter.sv"
    `include"bootMasterDriverProxy.sv"
    `include"bootMasterMonitorProxy.sv"
    `include"bootMasterSequencer.sv"

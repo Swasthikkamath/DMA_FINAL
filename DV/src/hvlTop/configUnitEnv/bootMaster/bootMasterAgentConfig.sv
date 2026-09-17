@@ -6,8 +6,7 @@
 
     extern function new(string name="bootMasterAgentConfig");
    
-    virtual bootMasterDriverBfm bootMasterDriverBfmHandle;
-    virtual bootMasterMonitorBfm bootMasterMonitorBfmHandle;
+    virtual bootInterface vif;
 
     uvm_active_passive_enum is_active;
    

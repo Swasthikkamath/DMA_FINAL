@@ -63,8 +63,7 @@ class axi4_master_agent_config extends uvm_object;
   //Used to set the qos mode
   qos_mode_e qos_mode_type;
 
-  virtual axi4_master_driver_bfm  axi4MasterDriverBfm;
-  virtual axi4_master_monitor_bfm axi4MasterMonitorBfm;
+  virtual axi4_if vif;
   
   //-------------------------------------------------------
   // Externally defined Tasks and Functions

@@ -12,11 +12,7 @@ class triggerSlaveAgentConfig extends uvm_object;
 
   `uvm_object_utils(triggerSlaveAgentConfig)
 
-  // Virtual handle to Slave Driver BFM
-  virtual triggerSlaveDriverBfm triggerSlaveDriverBfmHandle;
-
-  // Virtual handle to Slave Monitor BFM
-  virtual triggerSlaveMonitorBfm triggerSlaveMonitorBfmHandle;
+  virtual triggerInterface vif;
 
   // Defines whether slave agent works as ACTIVE or PASSIVE
   uvm_active_passive_enum is_active;

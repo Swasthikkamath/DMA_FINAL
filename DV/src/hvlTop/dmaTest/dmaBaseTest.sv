@@ -125,11 +125,8 @@ function void dmaBaseTest::setupAxi4MasterAgentConfig();
     topEnvConfigHandle.peripheralEnvConfigHandle.axi4MasterAgentConfigHandle[i].is_active   = uvm_active_passive_enum'(UVM_PASSIVE);
     topEnvConfigHandle.peripheralEnvConfigHandle.axi4MasterAgentConfigHandle[i].has_coverage = 1;
     topEnvConfigHandle.peripheralEnvConfigHandle.axi4MasterAgentConfigHandle[i].qos_mode_type = QOS_MODE_DISABLE;
-    if(!(uvm_config_db #(virtual axi4_master_driver_bfm) :: get(this , "" , $sformatf("axi4MasterDriverBfm[%0d]",i),topEnvConfigHandle.peripheralEnvConfigHandle.axi4MasterAgentConfigHandle[i].axi4MasterDriverBfm)))begin
-      `uvm_fatal("TEST","FAILED TO GET THE MASTER AXI DRIVER BFM")
-    end
-    if(!(uvm_config_db #(virtual axi4_master_monitor_bfm) :: get(this , "" , $sformatf("axi4MasterMonitorBfm[%0d]",i),topEnvConfigHandle.peripheralEnvConfigHandle.axi4MasterAgentConfigHandle[i].axi4MasterMonitorBfm)))begin
-      `uvm_fatal("TEST","FAILED TO GET THE MASTER AXI MONITOR BFM")
+    if(!(uvm_config_db #(virtual axi4_if) :: get(this , "" , $sformatf("axi4_if[%0d]",i),topEnvConfigHandle.peripheralEnvConfigHandle.axi4MasterAgentConfigHandle[i].vif)))begin
+      `uvm_fatal("TEST","FAILED TO GET THE MASTER AXI INTERFACE")
     end
 
   end
@@ -179,11 +176,8 @@ function void dmaBaseTest::setupAxi4SlaveAgentConfig();
     end
     topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].has_coverage = 1;
 
-    if(!(uvm_config_db #(virtual axi4_slave_driver_bfm) :: get(this , "" , $sformatf("axi4SlaveDriverBfm[%0d]",i),topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].axi4SlaveDriverBfm)))begin
-      `uvm_fatal("TEST","FAILED TO GET THE SLAVE AXI DRIVER BFM")
-    end
-    if(!(uvm_config_db #(virtual axi4_slave_monitor_bfm) :: get(this , "" , $sformatf("axi4SlaveMonitorBfm[%0d]",i),topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].axi4SlaveMonitorBfm)))begin
-      `uvm_fatal("TEST","FAILED TO GET THE SLAVE AXI MONITOR BFM")
+    if(!(uvm_config_db #(virtual axi4_if) :: get(this , "" , $sformatf("axi4_if[%0d]",i),topEnvConfigHandle.peripheralEnvConfigHandle.axi4SlaveAgentConfigHandle[i].vif)))begin
+      `uvm_fatal("TEST","FAILED TO GET THE SLAVE AXI INTERFACE")
     end
   end
 endfunction
@@ -193,12 +187,8 @@ function void dmaBaseTest::setupTriggerSlaveAgentConfig();
   foreach(topEnvConfigHandle.peripheralEnvConfigHandle.triggerSlaveAgentConfigHandle[i]) begin
     topEnvConfigHandle.peripheralEnvConfigHandle.triggerSlaveAgentConfigHandle[i]= triggerSlaveAgentConfig :: type_id :: create($sformatf("triggerSlaveAgentConfigHandle[%0d]",i));
     topEnvConfigHandle.peripheralEnvConfigHandle.triggerSlaveAgentConfigHandle[i].is_active =UVM_PASSIVE;
-    if(!(uvm_config_db #(virtual triggerSlaveMonitorBfm) :: get(this , "" , $sformatf("triggerSlaveMonitorBfm[%0d]",i),topEnvConfigHandle.peripheralEnvConfigHandle.triggerSlaveAgentConfigHandle[i].triggerSlaveMonitorBfmHandle)))begin
-      `uvm_fatal("TEST","FAILED TO GET THE SLAVE TRIGGER MONITOR BFM")
-    end
-
-    if(!(uvm_config_db #(virtual triggerSlaveDriverBfm) :: get(this , "" , $sformatf("triggerSlaveDriverBfm[%0d]",i),topEnvConfigHandle.peripheralEnvConfigHandle.triggerSlaveAgentConfigHandle[i].triggerSlaveDriverBfmHandle)))begin
-      `uvm_fatal("TEST","FAILED TO GET THE SLAVE TRIGGER DRIVER BFM")
+    if(!(uvm_config_db #(virtual triggerInterface) :: get(this , "" , $sformatf("triggerInterface[%0d]",i),topEnvConfigHandle.peripheralEnvConfigHandle.triggerSlaveAgentConfigHandle[i].vif)))begin
+      `uvm_fatal("TEST","FAILED TO GET THE SLAVE TRIGGER INTERFACE")
     end
   end
 endfunction
@@ -208,12 +198,8 @@ function void dmaBaseTest::setupTriggerMasterAgentConfig();
   foreach(topEnvConfigHandle.peripheralEnvConfigHandle.triggerMasterAgentConfigHandle[i]) begin
     topEnvConfigHandle.peripheralEnvConfigHandle.triggerMasterAgentConfigHandle[i]= triggerMasterAgentConfig :: type_id :: create($sformatf("triggerMasterAgentConfigHandle[%0d]",i));
     topEnvConfigHandle.peripheralEnvConfigHandle.triggerMasterAgentConfigHandle[i].is_active =UVM_ACTIVE;
-    if(!(uvm_config_db #(virtual triggerMasterMonitorBfm) :: get(this , "" , $sformatf("triggerMasterMonitorBfm[%0d]",i),topEnvConfigHandle.peripheralEnvConfigHandle.triggerMasterAgentConfigHandle[i].triggerMasterMonitorBfmHandle)))begin
-      `uvm_fatal("TEST","FAILED TO GET THE MASTER TRIGGER MONITOR BFM")
-    end
-
-    if(!(uvm_config_db #(virtual triggerMasterDriverBfm) :: get(this , "" , $sformatf("triggerMasterDriverBfm[%0d]",i),topEnvConfigHandle.peripheralEnvConfigHandle.triggerMasterAgentConfigHandle[i].triggerMasterDriverBfmHandle)))begin
-      `uvm_fatal("TEST","FAILED TO GET THE MASTER TRIGGER DRIVER BFM")
+    if(!(uvm_config_db #(virtual triggerInterface) :: get(this , "" , $sformatf("triggerInterface[%0d]",i),topEnvConfigHandle.peripheralEnvConfigHandle.triggerMasterAgentConfigHandle[i].vif)))begin
+      `uvm_fatal("TEST","FAILED TO GET THE MASTER TRIGGER INTERFACE")
     end
   end
 endfunction
@@ -229,11 +215,8 @@ endfunction
 function void dmaBaseTest :: setupBootMasterAgentConfig();
   topEnvConfigHandle.configUnitEnvConfigHandle.bootMasterAgentConfigHandle = bootMasterAgentConfig :: type_id :: create("bootMasterAgentConfigHandle");
   topEnvConfigHandle.configUnitEnvConfigHandle.bootMasterAgentConfigHandle.is_active = UVM_ACTIVE;
-  if(!(uvm_config_db #(virtual bootMasterDriverBfm) :: get(this,"","bootMasterDriverBfmHandle",topEnvConfigHandle.configUnitEnvConfigHandle.bootMasterAgentConfigHandle.bootMasterDriverBfmHandle)) )begin
-    `uvm_fatal("TEST","FAILED TO GET BOOT DRIVER")
-  end
-  if(!(uvm_config_db #(virtual bootMasterMonitorBfm) :: get(this,"","bootMasterMonitorBfmHandle",topEnvConfigHandle.configUnitEnvConfigHandle.bootMasterAgentConfigHandle.bootMasterMonitorBfmHandle)) )begin
-    `uvm_fatal("TEST","FAILED TO GET BOOT MONITOR")
+  if(!(uvm_config_db #(virtual bootInterface) :: get(this,"","bootInterface",topEnvConfigHandle.configUnitEnvConfigHandle.bootMasterAgentConfigHandle.vif)) )begin
+    `uvm_fatal("TEST","FAILED TO GET BOOT INTERFACE")
   end
 
 endfunction

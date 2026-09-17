@@ -7,7 +7,6 @@ package interruptSlavePkg;
   import interruptGlobalPkg::*;
   `include "interruptSlaveAgentConfig.sv"
   `include "interruptSlaveTx.sv"
- `include "interruptSlaveSeqItemConverter.sv"
   `include "interruptSlaveSequencer.sv"
   `include "interruptSlaveAgentConfig.sv"
   `include "interruptSlaveDriverProxy.sv"

@@ -60,8 +60,7 @@ class axi4_slave_agent_config extends uvm_object;
   //Used to set default read data
   bit[DATA_WIDTH-1:0] user_rdata;
 
-  virtual axi4_slave_driver_bfm axi4SlaveDriverBfm;
-  virtual axi4_slave_monitor_bfm axi4SlaveMonitorBfm;
+  virtual axi4_if vif;
 
   //constraint: maximum_txns
   //Make sure to have minimum txns to perform out_of_order

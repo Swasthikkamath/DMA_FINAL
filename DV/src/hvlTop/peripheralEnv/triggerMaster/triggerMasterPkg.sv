@@ -17,7 +17,6 @@ package triggerMasterPkg;
   import apb_global_pkg ::*;
     
   `include "triggerMasterTx.sv"
-  `include "triggerMasterSeqItemConverter.sv"
   `include "triggerMasterSequencer.sv"
   `include "triggerMasterAgentConfig.sv"
   `include "triggerMasterDriverProxy.sv"
